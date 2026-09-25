@@ -1,0 +1,36 @@
+@startuml
+' LMS AI source structure - readable report diagram
+!theme plain
+title LMS AI Service - Cấu trúc mã nguồn
+
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam BackgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 24
+skinparam rectangle {
+  FontSize 24
+  FontColor #111827
+  BorderColor #475569
+}
+
+rectangle "LMS_AI" as root #F8FAFC {
+  rectangle "Entrypoints\nmain.py\napi_service.py\nworker.py" as entry #DBEAFE
+  rectangle "ai_etl/\npipeline.py\npdf_processing.py\nembedding_client.py\nllm_client.py\ntag_quality.py\ndb.py" as etl #DCFCE7
+  rectangle "ai_gateway/\nrecommender.py\nconfig.py" as gateway #FCE7F3
+  rectangle "scripts/\nbackfill_vectors.py\nreprocess_ai_metadata.py\nrun_live_gemini_report.py\nmock tools" as scripts #FEF3C7
+  rectangle "tests/\npipeline tests\nAPI contract tests\nrecommender tests\nworker contract tests" as tests #EDE9FE
+  rectangle "Runtime + database\ninit_schema.sql\ndocker-compose.yml\nDockerfile\nrequirements.txt" as runtime #E0F2FE
+  rectangle "models/ + test_pdfs/\nALS model artifact\nsample PDFs" as data #F1F5F9
+}
+
+entry -[hidden]down- etl
+entry -[hidden]right- etl
+gateway -[hidden]right- scripts
+tests -[hidden]right- runtime
+entry -[hidden]down- gateway
+etl -[hidden]down- scripts
+gateway -[hidden]down- tests
+scripts -[hidden]down- runtime
+tests -[hidden]down- data
+@enduml

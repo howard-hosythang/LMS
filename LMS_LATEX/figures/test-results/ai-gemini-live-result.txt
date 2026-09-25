@@ -1,0 +1,5 @@
+status=PASSED_WITH_FALLBACK
+live_status=FAILED
+fallback_used=True
+summary=Tài liệu này giới thiệu ứng dụng học máy để cải thiện tìm kiếm sách, gợi ý cá nhân hóa, embedding ngữ nghĩa, collaborative filtering và đánh giá hệ thống khuyến nghị trong thư viện đại học. Nội dung có liên quan trực tiếp đến Học Máy, Chuẩn Hóa Dữ Liệu, Học Có Giám Sát, Trí Tuệ Nhân Tạo, giúp người đọc xây dựng nền tảng, nắm phương pháp thực hành và định hướng ứng dụng kiến thức vào học tập hoặc dự án kỹ thuật.
+tags=Học Máy, Chuẩn Hóa Dữ Liệu, Học Có Giám Sát, Trí Tuệ Nhân Tạo, Cơ Sở Dữ Liệu

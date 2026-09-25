@@ -1,0 +1,15 @@
+build/
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.bak
+.DS_Store
+*:Zone.Identifier

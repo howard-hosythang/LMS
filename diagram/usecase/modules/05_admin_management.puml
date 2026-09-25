@@ -1,0 +1,47 @@
+@startuml
+!theme plain
+title Use Case - Chức năng quản trị
+
+left to right direction
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam ArrowMessageAlignment center
+skinparam packageStyle rectangle
+skinparam nodesep 34
+skinparam ranksep 38
+
+actor "Quản trị viên" as Admin
+actor "Dịch vụ Email" as EmailService
+
+rectangle "Hệ thống LMS - Chức năng quản trị" {
+  usecase "Quản lý\nthủ thư" as UC_ManageLibrarians
+  usecase "Tạo tài khoản\nthủ thư" as UC_CreateLibrarian
+  usecase "Quản lý\nngười dùng" as UC_ManageUsers
+  usecase "Khóa/mở khóa\nngười dùng" as UC_ChangeUserStatus
+  usecase "Xác minh\ntài khoản" as UC_VerifyUser
+  usecase "Cập nhật chính sách\nmượn trả" as UC_UpdatePolicy
+  usecase "Xem nhật ký\nhệ thống" as UC_AuditLogs
+  usecase "Cấu hình\nhệ thống" as UC_SystemSettings
+  usecase "Gửi email\nkích hoạt tài khoản" as UC_SendActivationEmail
+}
+
+Admin --> UC_ManageLibrarians
+Admin --> UC_ManageUsers
+Admin --> UC_UpdatePolicy
+Admin --> UC_AuditLogs
+Admin --> UC_SystemSettings
+
+EmailService --> UC_SendActivationEmail
+
+UC_ManageLibrarians ..> UC_CreateLibrarian : <back:#FFFFFF><<include>></back>
+UC_CreateLibrarian ..> UC_SendActivationEmail : <back:#FFFFFF><<include>></back>
+UC_ManageUsers ..> UC_ChangeUserStatus : <back:#FFFFFF><<include>></back>
+UC_ManageUsers ..> UC_VerifyUser : <back:#FFFFFF><<include>></back>
+
+UC_ManageLibrarians -[hidden]right- UC_ManageUsers
+UC_ManageUsers -[hidden]right- UC_UpdatePolicy
+UC_UpdatePolicy -[hidden]right- UC_AuditLogs
+UC_AuditLogs -[hidden]right- UC_SystemSettings
+
+@enduml

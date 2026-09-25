@@ -1,0 +1,79 @@
+digraph BorrowReservationReturnFlowSlide {
+  graph [
+    rankdir=TB,
+    bgcolor="white",
+    pad="0.4",
+    nodesep="0.6",
+    ranksep="0.5",
+    splines=true,
+    outputorder=edgesfirst,
+    labelloc="t",
+    label="Luồng nghiệp vụ mượn - đặt trước - trả sách",
+    fontname="Arial Bold",
+    fontsize=22,
+    fontcolor="#0F172A"
+  ];
+
+  node [
+    shape=rect,
+    style="rounded,filled",
+    fontname="Arial",
+    fontsize=14,
+    margin="0.2,0.12",
+    width=2.5,
+    height=0.7,
+    penwidth=1.5,
+    color="#1E3A8A",
+    fillcolor="#F8FAFC",
+    fontcolor="#0F172A"
+  ];
+
+  edge [
+    color="#1E3A8A",
+    penwidth=2.0,
+    arrowsize=0.9,
+    fontname="Arial",
+    fontsize=12,
+    fontcolor="#334155"
+  ];
+
+  # --- CỘT 1: BẮT ĐẦU LUỒNG ---
+  start [label="Bạn đọc\ntìm sách", fillcolor="#DBEAFE"];
+  copy_status [label="Xem trạng thái\nbản sao", fillcolor="#E0F2FE"];
+  request [label="Gửi yêu cầu\nmượn hoặc đặt trước", fillcolor="#DCFCE7"];
+
+  # --- CỘT 2: HỆ THỐNG & XỬ LÝ ---
+  backend_check [label="Backend kiểm tra\npolicy và trạng thái item", fillcolor="#FEF3C7"];
+  librarian_confirm [label="Thủ thư duyệt /\nxác nhận nhận sách", fillcolor="#FFEDD5"];
+  update_system [label="Cập nhật transaction,\nitem status, notification", fillcolor="#F3E8FF"];
+
+  # --- CỘT 3: TRẢ SÁCH & KẾT THÚC ---
+  return_book [label="Khi trả sách:\ntính quá hạn / hư / mất", fillcolor="#FFE4E6"];
+  fine [label="Tạo fine\nnếu phát sinh", fillcolor="#FEE2E2"];
+  payment [label="Thanh toán\ntiền mặt hoặc PayOS", fillcolor="#CCFBF1"];
+  end [label="Hoàn tất luồng\nmượn - trả", fillcolor="#E2E8F0"];
+
+  # Định hình 3 cột dọc bằng cách xếp rank nằm ngang cho các đầu chuỗi
+  { rank=same; start; backend_check; return_book; }
+  { rank=same; copy_status; librarian_confirm; fine; }
+  { rank=same; request; update_system; payment; }
+  { rank=same; end; }
+
+  # Luồng đi dọc xuống ở Cột 1
+  start -> copy_status;
+  copy_status -> request;
+
+  # Chuyển sang Cột 2 và đi dọc xuống
+  request -> backend_check [weight=10, color="#1E3A8A"];
+  backend_check -> librarian_confirm;
+  librarian_confirm -> update_system;
+
+  # Chuyển sang Cột 3 và đi dọc xuống
+  update_system -> return_book [weight=10, color="#1E3A8A"];
+  return_book -> fine;
+  fine -> payment;
+  payment -> end;
+
+  # Đường đi phụ khi không phát sinh phí (Nối trực tiếp từ ô Trả sách xuống ô Kết thúc)
+  return_book -> end [label="không phát sinh phí", color="#16A34A", fontcolor="#166534", weight=1];
+}

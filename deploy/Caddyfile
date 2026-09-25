@@ -1,0 +1,53 @@
+{
+	email {$ACME_EMAIL}
+
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://{$PUBLIC_DOMAIN} wss://{$PUBLIC_DOMAIN}; frame-src 'self' https://accounts.google.com https://www.google.com; form-action 'self'"
+	}
+}
+
+{$PUBLIC_DOMAIN} {
+	import security_headers
+	encode gzip zstd
+	log {
+		output stdout
+		format json
+	}
+
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	handle /actuator/health* {
+		reverse_proxy backend:8080
+	}
+
+	handle /actuator/info {
+		reverse_proxy backend:8080
+	}
+
+	handle /ws/* {
+		reverse_proxy backend:8080
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}
+
+www.{$PUBLIC_DOMAIN} {
+	import security_headers
+	redir https://{$PUBLIC_DOMAIN}{uri} permanent
+}

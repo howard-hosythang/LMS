@@ -1,0 +1,171 @@
+@startuml User Module - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+
+package "User Module" {
+
+    class User <<AggregateRoot>> {
+        - id: UserId
+        - email: Email
+        - passwordHash: PasswordHash
+        - profile: UserProfile
+        - roles: Set<Role>
+        - status: UserStatus
+        - lastLoginAt: LocalDateTime
+        - domainEvents: List<Object>
+        ====
+        + {static} create(email, password, profile, defaultRole): User
+        + {static} createForMapper(...): User
+        ----
+        + assignRole(role: Role): void
+        + removeRole(role: Role): void
+        + hasRole(roleName: String): boolean
+        + getRoles(): Set<Role>
+        ----
+        + activate(): void
+        + deactivate(): void
+        + suspend(): void
+        + isActive(): boolean
+        ----
+        + updateProfile(newProfile: UserProfile): void
+        + changePassword(newPasswordHash: PasswordHash): void
+        + verifyPassword(password: String, hasher: IPasswordHasher): boolean
+        + recordLogin(): void
+        + toggleAIPersonalization(enabled: boolean): void
+        ----
+        + canBorrowBooks(): boolean
+        + isLibrarian(): boolean
+        + isAdmin(): boolean
+        + pollDomainEvents(): List<Object>
+    }
+
+    class Role <<Entity>> {
+        - id: RoleId
+        - roleName: String
+        - description: String
+        ====
+        + {static} of(id, roleName, description): Role
+        + {static} create(roleName, description): Role
+        ----
+        + updateDetails(roleName: String, description: String): void
+        + isSystemRole(): boolean
+    }
+
+    enum UserStatus <<Enum>> {
+        ACTIVE
+        INACTIVE
+        SUSPENDED
+        DEACTIVATED
+    }
+
+    class UserId <<ValueObject>> {
+        - value: UUID
+        ====
+        + {static} generate(): UserId
+        + {static} of(value: UUID): UserId
+        + getValue(): UUID
+    }
+
+    class RoleId <<ValueObject>> {
+        - value: UUID
+        ====
+        + {static} generate(): RoleId
+        + {static} of(value: UUID): RoleId
+    }
+
+    class Email <<ValueObject>> {
+        - value: String
+        ====
+        + {static} of(email: String): Email
+        + getValue(): String
+    }
+
+    class PasswordHash <<ValueObject>> {
+        - value: String
+        ====
+        + {static} hash(password: String, hasher: IPasswordHasher): PasswordHash
+        + {static} of(hashedValue: String): PasswordHash
+        + matches(password: String, hasher: IPasswordHasher): boolean
+        + getValue(): String
+    }
+
+    class UserProfile <<ValueObject>> {
+        - firstName: String
+        - lastName: String
+        - phoneNumber: String
+        - address: String
+        ====
+        + {static} of(firstName, lastName, phoneNumber, address): UserProfile
+        + getFullName(): String
+    }
+
+    ' Events
+    class UserCreatedEvent {
+        - userId: UserId
+        - email: String
+        - occurredAt: LocalDateTime
+    }
+
+    class UserStatusChangedEvent {
+        - userId: UserId
+        - oldStatus: UserStatus
+        - newStatus: UserStatus
+        - occurredAt: LocalDateTime
+    }
+
+    ' Repository Interface
+    interface UserRepository {
+        + save(user: User): User
+        + findById(id: UserId): Optional<User>
+        + findByEmail(email: Email): Optional<User>
+        + findAll(): List<User>
+        + delete(id: UserId): void
+    }
+
+    interface RoleRepository {
+        + save(role: Role): Role
+        + findById(id: RoleId): Optional<Role>
+        + findByRoleName(roleName: String): Optional<Role>
+        + findAll(): List<Role>
+    }
+
+    ' Domain Service
+    interface UserDomainService {
+        + createUser(email, password, profile, roleId): User
+        + changeUserPassword(userId, oldPassword, newPassword): void
+        + assignRoleToUser(userId, roleId): void
+    }
+
+    ' Relationships
+    User "1" *-- "1" UserId : has
+    User "1" *-- "1" Email : has
+    User "1" *-- "1" PasswordHash : has
+    User "1" *-- "1" UserProfile : has
+    User "1" *-- "1" UserStatus : has
+    User "1" o-- "*" Role : contains
+
+    Role "1" *-- "1" RoleId : has
+
+    User ..> UserCreatedEvent : emits
+    User ..> UserStatusChangedEvent : emits
+
+    UserRepository ..> User : manages
+    RoleRepository ..> Role : manages
+    UserDomainService ..> User : orchestrates
+    UserDomainService ..> Role : uses
+}
+
+note top of User
+  <b>Aggregate Root</b>
+  Manages user authentication,
+  profile, roles, and status
+end note
+
+note right of Role
+  <b>Entity</b>
+  System roles: ADMIN,
+  LIBRARIAN, STUDENT
+end note
+
+@enduml

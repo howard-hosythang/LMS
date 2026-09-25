@@ -1,0 +1,123 @@
+groups:
+  - name: library74-availability
+    rules:
+      - alert: Library74BackendDown
+        expr: up{job="library74-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Library74 backend metrics endpoint is down"
+          description: "Prometheus cannot scrape backend /actuator/prometheus for more than 1 minute."
+
+      - alert: Library74CadvisorDown
+        expr: up{job="library74-cadvisor"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "cAdvisor is down"
+          description: "Container metrics are unavailable, so CPU/RAM/disk alerts may be incomplete."
+
+  - name: library74-latency-errors
+    rules:
+      - alert: Library74HighHttpP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_server_requests_seconds_bucket{job="library74-backend"}[5m])) by (le)
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend p95 HTTP latency is high"
+          description: "Backend p95 latency has stayed above 3 seconds for 5 minutes."
+
+      - alert: Library74HighHttp5xxRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{job="library74-backend", status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_server_requests_seconds_count{job="library74-backend"}[5m])), 0.001)
+          ) > 0.02
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend 5xx error rate is high"
+          description: "More than 2% of backend HTTP requests are returning 5xx for 3 minutes."
+
+  - name: library74-resources
+    rules:
+      - alert: Library74ContainerMemoryHigh
+        expr: |
+          (
+            container_memory_working_set_bytes{name=~"lms_(backend|ai_api|postgres|rabbitmq|kafka)"}
+            /
+            clamp_min(container_spec_memory_limit_bytes{name=~"lms_(backend|ai_api|postgres|rabbitmq|kafka)"}, 1)
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container memory usage is high"
+          description: "{{ $labels.name }} memory usage is above 85% for 5 minutes."
+
+      - alert: Library74ContainerCpuHigh
+        expr: |
+          sum by (name) (
+            rate(container_cpu_usage_seconds_total{name=~"lms_(backend|ai_api|postgres|rabbitmq|kafka)"}[5m])
+          ) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container CPU usage is high"
+          description: "{{ $labels.name }} CPU usage has stayed above 85% of one core for 10 minutes."
+
+      - alert: Library74ContainerFsHigh
+        expr: |
+          (
+            container_fs_usage_bytes{name=~"lms_(backend|ai_api|postgres|rabbitmq|kafka)"}
+            /
+            clamp_min(container_fs_limit_bytes{name=~"lms_(backend|ai_api|postgres|rabbitmq|kafka)"}, 1)
+          ) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container filesystem usage is high"
+          description: "{{ $labels.name }} filesystem usage is above 85% for 10 minutes."
+
+      - alert: Library74HostDiskNearlyFull
+        expr: |
+          (
+            1 - (
+              node_filesystem_avail_bytes{job="library74-node", fstype!~"tmpfs|overlay|squashfs|aufs|devtmpfs"}
+              /
+              clamp_min(node_filesystem_size_bytes{job="library74-node", fstype!~"tmpfs|overlay|squashfs|aufs|devtmpfs"}, 1)
+            )
+          ) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host disk usage is high"
+          description: "Host filesystem {{ $labels.mountpoint }} is above 85% usage for 10 minutes."
+
+  - name: library74-database
+    rules:
+      - alert: Library74HikariPoolNearExhaustion
+        expr: |
+          (
+            hikaricp_connections_active{job="library74-backend"}
+            /
+            clamp_min(hikaricp_connections_max{job="library74-backend"}, 1)
+          ) > 0.85
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend database connection pool is near exhaustion"
+          description: "Hikari active connections are above 85% of the pool maximum for 3 minutes."

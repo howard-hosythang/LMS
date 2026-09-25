@@ -1,0 +1,51 @@
+\newpage
+\chapter{Kiến thức và công nghệ nền tảng}
+
+Chương này trình bày tổng quan về các kiến thức và các lĩnh vực công nghệ nền tảng được vận dụng để xây dựng "Hệ thống quản lý thư viện trực tuyến tích hợp AI hỗ trợ tìm kiếm và gợi ý sách".
+
+\section{Các Lĩnh vực Công nghệ Chính}
+
+Dự án được định hướng phát triển dựa trên kiến trúc phần mềm hiện đại, trong đó các thành phần chính được phân tách rõ ràng để thuận lợi cho việc bảo trì và mở rộng sau này.
+
+\begin{itemize}
+    \item \textbf{Công nghệ phía Server (Back-End):} Đây là thành phần trung tâm, chịu trách nhiệm xử lý toàn bộ logic nghiệp vụ của hệ thống, cung cấp các giao diện lập trình ứng dụng (API), quản lý dữ liệu mượn-trả, và thực hiện các tác vụ thống kê.
+
+    \item \textbf{Công nghệ phía Client (Front-End):} Thành phần này đảm nhiệm việc xây dựng giao diện người dùng, giúp người dùng cuối (thủ thư, bạn đọc) tương tác với hệ thống một cách trực quan và thân thiện trên nền tảng web.
+
+    \item \textbf{Hệ quản trị Cơ sở dữ liệu:} Hệ thống sử dụng một hệ quản trị cơ sở dữ liệu quan hệ để tổ chức, lưu trữ và truy xuất toàn bộ dữ liệu của thư viện, bao gồm thông tin sách, người dùng, và lịch sử giao dịch.
+
+    \item \textbf{Trí tuệ Nhân tạo (AI) và Học máy (Machine Learning):}
+    \begin{itemize}
+        \item \textbf{Hệ thống gợi ý (Recommendation System):} Trọng tâm của dự án là áp dụng mô hình \textbf{Hybrid}, một phương pháp kết hợp ưu điểm của hai kỹ thuật chính:
+        \begin{enumerate}
+            \item \textbf{Lọc dựa trên nội dung (Content-Based Filtering):} Gợi ý tài liệu dựa trên sự tương đồng về thuộc tính và nội dung của chúng.
+            \item \textbf{Lọc cộng tác (Collaborative Filtering):} Đề xuất tài liệu dựa trên hành vi và sở thích của các nhóm người dùng tương tự nhau.
+        \end{enumerate}
+
+        \item \textbf{Xử lý Ngôn ngữ Tự nhiên (NLP):} Các kỹ thuật NLP được ứng dụng để nâng cao trải nghiệm người dùng, bao gồm: phát triển công cụ \textbf{tìm kiếm ngữ nghĩa} cho tiếng Việt và tích hợp khả năng \textbf{tự động tóm tắt nội dung sách}.
+    \end{itemize}
+\end{itemize}
+
+\section{Nền tảng Kiến thức Khoa học}
+
+Việc triển khai các lĩnh vực công nghệ trên đòi hỏi các nền tảng kiến thức sau:
+
+\begin{itemize}
+    \item \textbf{Kiến trúc và Phát triển Hệ thống:}
+    \begin{itemize}
+        \item Hiểu biết về kiến trúc \textbf{Client-Server} và nguyên lý thiết kế \textbf{RESTful API} để đảm bảo sự giao tiếp hiệu quả giữa Front-End và Back-End.
+        \item Kiến thức về thiết kế và mô hình hóa cơ sở dữ liệu quan hệ (ví dụ: ERD) để xây dựng một cấu trúc lưu trữ tối ưu.
+    \end{itemize}
+
+    \item \textbf{Khoa học Dữ liệu và Trí tuệ Nhân tạo:}
+    \begin{itemize}
+        \item \textbf{Nguyên lý các thuật toán gợi ý:} Nắm vững bản chất, ưu và nhược điểm của các phương pháp Content-Based, Collaborative Filtering, và cách chúng bổ trợ cho nhau trong một mô hình Hybrid.
+        \item \textbf{Các kỹ thuật xử lý ngôn ngữ tự nhiên:} Có kiến thức về các phương pháp tiền xử lý văn bản, mô hình hóa ngôn ngữ (word embedding), và các thuật toán đo lường độ tương đồng ngữ nghĩa (ví dụ: \textbf{cosine similarity}).
+    \end{itemize}
+\end{itemize}
+
+\textbf{Kết chương}
+
+Nội dung chương này đã hệ thống hóa các lĩnh vực công nghệ và nền tảng kiến thức khoa học cần thiết cho dự án. Các thành phần công nghệ chính bao gồm \textbf{Back-End}, \textbf{Front-End}, \textbf{Cơ sở dữ liệu quan hệ} và các module \textbf{Trí tuệ nhân tạo}. Trọng tâm của dự án nằm ở việc áp dụng các kiến thức về \textbf{Hệ thống gợi ý Hybrid} và \textbf{Xử lý Ngôn ngữ Tự nhiên} để tạo ra một sản phẩm thông minh và khác biệt.
+
+Các nền tảng kiến thức đã trình bày bao quát các yêu cầu lý thuyết cần thiết để triển khai dự án, từ việc xây dựng một ứng dụng web hoàn chỉnh đến tích hợp các tính năng AI nâng cao theo đúng mục tiêu đề ra.

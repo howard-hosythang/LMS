@@ -1,0 +1,9 @@
+Controlled production load probe: https://library74.uk/api/v1/publications/search?keyword=machine&page=0&limit=5
+Virtual users: 100
+Duration: 32.03s
+Requests: 1349
+Throughput: 42.11 req/s
+Average latency: 2324.92 ms
+p95 latency: 4191.64 ms
+Error rate: 0.00%
+Status distribution: {200: 1349}

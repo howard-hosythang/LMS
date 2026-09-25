@@ -1,0 +1,74 @@
+Recent publication AI metadata sample
+====================================
+ID: 844248034393457099
+Title: Essentials of Mechatronics
+Audience: KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH
+Tags: Essentials of Mechatronics, Lập Trình, Publication, Science, Thuật Toán
+Summary: Essentials of Mechatronics của John Billingsley là tài liệu thuộc nhóm Science. Nội dung chính tập trung vào Learn how to study, analyze, select, and design a successful mechatronic product This innovative, cutting-edge ...
+---
+ID: 844245619187387378
+Title: Introduction to Mechatronics and Measurement Systems
+Audience: KHOA_DIEN_DIEN_TU
+Tags: Circuit, Electrical, Mechatronics, Technology Engineering
+Summary: Introduction to Mechatronics and Measurement Systems của David G. Alciatore, W. Bolton là tài liệu thuộc nhóm Mechatronics, Technology & Engineering. Nội dung chính tập trung vào INTRODUCTION TO MECHATRONICS AND MEASUREM...
+---
+ID: 844241685135754357
+Title: Digital Design and Computer Architecture
+Audience: KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH
+Tags: Binary, Computers, Digital Design and Computer Architecture, Numbers, Result
+Summary: Digital Design and Computer Architecture của David Money Harris, Sarah L. Harris là tài liệu thuộc nhóm Computers. Nội dung chính tập trung vào Designed for courses that combine digital logic design with computer organiz...
+---
+ID: 843157064459707377
+Title: Machine Learning cơ bản
+Audience: KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH
+Tags: Công Nghệ Thông Tin, Kiến Trúc Phần Mềm, Lập Trình, Machine Learning, Trí Tuệ Nhân Tạo
+Summary: Machine Learning cơ bản của Vũ Khắc Tiệp là tài liệu thuộc nhóm Công Nghệ Thông Tin, Kiến Trúc Phần Mềm, Lập Trình, Trí Tuệ Nhân Tạo. Nội dung chính tập trung vào các chủ đề Công Nghệ Thông Tin, Kiến Trúc Phần Mềm, Lập T...
+---
+ID: 843425780171766896
+Title: aaaaaaaaaaaaaaaa
+Audience: KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH
+Tags: Aaaaaaaaaaaaaaaa, Because, Differential, Java, Two, Variables
+Summary: aaaaaaaaaaaaaaaa của Robert C. Martin là tài liệu. Nội dung chính tập trung vào Hi. Tài liệu phù hợp cho người học cần nắm nền tảng, thuật ngữ và cách tiếp cận thực hành trong lĩnh vực tương ứng. Nội dung đã được hệ thốn...
+---
+ID: 32
+Title: Full Stack Open
+Audience: (missing)
+Tags: Web Development
+Summary: (missing)
+---
+ID: 5
+Title: Lập Trình Java Hướng Đối Tượng
+Audience: KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH
+Tags: Java
+Summary: (missing)
+---
+ID: 2
+Title: Domain-Driven Design
+Audience: (missing)
+Tags: Architecture
+Summary: (missing)
+---
+ID: 4
+Title: Giáo Trình Cơ Sở Dữ Liệu
+Audience: KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH
+Tags: Database
+Summary: (missing)
+---
+ID: 20
+Title: Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow
+Audience: (missing)
+Tags: Neural Networks
+Summary: (missing)
+---
+ID: 9
+Title: How to Think Like a Computer Scientist
+Audience: (missing)
+Tags: Python
+Summary: (missing)
+---
+ID: 12
+Title: Introduction to Theoretical Computer Science
+Audience: (missing)
+Tags: Algorithms
+Summary: (missing)
+---

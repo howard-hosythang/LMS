@@ -1,0 +1,248 @@
+{
+  "k": 5,
+  "live_api_mode": true,
+  "aggregate": {
+    "metadata": {
+      "tag_precision": 1.0,
+      "tag_recall": 1.0,
+      "tag_f1": 1.0,
+      "summary_keyword_coverage": 0.9,
+      "summary_length_ok_rate": 1.0,
+      "summary_hallucination_guard_rate": 1.0,
+      "case_count": 6.0
+    },
+    "search": {
+      "precision@5": 0.6333333333333333,
+      "recall@5": 0.875,
+      "mrr": 1.0,
+      "ndcg@5": 0.9069154022894635,
+      "coverage_rate": 1.0,
+      "case_count": 6.0
+    },
+    "recommendations": {
+      "precision@5": 0.0,
+      "recall@5": 0.0,
+      "mrr": 0.0,
+      "ndcg@5": 0.0,
+      "coverage_rate": 0.0,
+      "case_count": 0.0
+    }
+  },
+  "latency_ms": {
+    "p50": 283.3117500413209,
+    "p95": 540.898339037085,
+    "budget": 3000.0
+  },
+  "reliability_score": 95.46,
+  "cases": {
+    "metadata": [
+      {
+        "id": "current-green-chemistry-001",
+        "publication_id": 846266189232886522,
+        "predicted_tags": [
+          "Đánh giá vòng đời",
+          "Hóa học xanh",
+          "Kỹ thuật xanh",
+          "Sản xuất bền vững",
+          "Tối ưu hóa quy trình"
+        ],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "keyword_coverage": 1.0,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      },
+      {
+        "id": "current-municipal-solid-waste-001",
+        "publication_id": 846295817276250932,
+        "predicted_tags": [
+          "Kỹ thuật môi trường",
+          "Quản lý chất thải",
+          "Tái chế",
+          "Tối Ưu Hóa",
+          "Xử lý chất thải rắn"
+        ],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "keyword_coverage": 0.8,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      },
+      {
+        "id": "current-petroleum-geology-001",
+        "publication_id": 846304113018166047,
+        "predicted_tags": [
+          "Bể trầm tích",
+          "Địa chất dầu khí",
+          "Địa tầng học trình tự",
+          "Thăm dò dầu khí",
+          "Trầm tích học"
+        ],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "keyword_coverage": 1.0,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      },
+      {
+        "id": "current-linear-algebra-001",
+        "publication_id": 846301836018605010,
+        "predicted_tags": [
+          "Đại số tuyến tính",
+          "Ma trận",
+          "Phương trình vi phân",
+          "Thuật Toán",
+          "Trị riêng"
+        ],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "keyword_coverage": 1.0,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      },
+      {
+        "id": "current-probability-001",
+        "publication_id": 846301940163173364,
+        "predicted_tags": [
+          "Biến ngẫu nhiên",
+          "Học Máy",
+          "Kỳ vọng toán học",
+          "Phân phối xác suất",
+          "Xác suất thống kê"
+        ],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "keyword_coverage": 1.0,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      },
+      {
+        "id": "current-polymer-001",
+        "publication_id": 846300289582914556,
+        "predicted_tags": [
+          "Công nghệ vật liệu",
+          "Gia công nhựa",
+          "Khoa học Polymer",
+          "Màng lọc",
+          "Tổng hợp hóa học"
+        ],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "keyword_coverage": 0.6,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      }
+    ],
+    "search": [
+      {
+        "id": "current-search-environment",
+        "returned_publication_ids": [
+          846295817276250932,
+          846293392238728605,
+          846295950093079422,
+          846294687653714868,
+          846296118167229367
+        ],
+        "error": null,
+        "precision@5": 0.6,
+        "recall@5": 0.75,
+        "mrr": 1.0,
+        "ndcg@5": 0.8048099750039491,
+        "non_empty": 1.0
+      },
+      {
+        "id": "current-search-green-chemistry",
+        "returned_publication_ids": [
+          846266189232886522,
+          846292718985827172,
+          846295543774073589,
+          846260479501685699,
+          846273062711481180
+        ],
+        "error": null,
+        "precision@5": 0.6,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 1.0,
+        "non_empty": 1.0
+      },
+      {
+        "id": "current-search-petroleum-geology",
+        "returned_publication_ids": [
+          846303366566269686,
+          846304113018166047,
+          846304277028035574,
+          846304415070968827,
+          846303027037363134
+        ],
+        "error": null,
+        "precision@5": 1.0,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 1.0,
+        "non_empty": 1.0
+      },
+      {
+        "id": "current-search-linear-algebra",
+        "returned_publication_ids": [
+          846302202722409451,
+          846301836018605010,
+          846302320599129073,
+          11,
+          12
+        ],
+        "error": null,
+        "precision@5": 0.6,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 1.0,
+        "non_empty": 1.0
+      },
+      {
+        "id": "current-search-probability",
+        "returned_publication_ids": [
+          846301940163173364,
+          846301159708054453,
+          13,
+          846298729909998577,
+          846260244104762327
+        ],
+        "error": null,
+        "precision@5": 0.6,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 1.0,
+        "non_empty": 1.0
+      },
+      {
+        "id": "current-search-polymer-nano",
+        "returned_publication_ids": [
+          846300289582914556,
+          846261437241646020,
+          846261193909097352,
+          8,
+          7
+        ],
+        "error": null,
+        "precision@5": 0.4,
+        "recall@5": 0.5,
+        "mrr": 1.0,
+        "ndcg@5": 0.6366824387328317,
+        "non_empty": 1.0
+      }
+    ],
+    "recommendations": []
+  }
+}

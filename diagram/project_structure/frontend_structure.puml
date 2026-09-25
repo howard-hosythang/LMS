@@ -1,0 +1,36 @@
+@startuml
+' LMS Frontend source structure - readable report diagram
+!theme plain
+title LMS Frontend - Cấu trúc mã nguồn
+
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam BackgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 24
+skinparam rectangle {
+  FontSize 24
+  FontColor #111827
+  BorderColor #475569
+}
+
+rectangle "LMS_FE" as root #F8FAFC {
+  rectangle "Entry + config\nApp.tsx\nindex.tsx\npackage.json\nvite.config.ts" as entry #DBEAFE
+  rectangle "api/\naxiosInstance.ts\nauthService.ts\npublicationsService.ts\nsemanticSearchService.ts\nrecommendationService.ts" as api #DCFCE7
+  rectangle "pages/\npublic_pages\nuser_pages\nlibrarian_pages\nadmin_pages\nerror_pages" as pages #FEF3C7
+  rectangle "components/\npublic_pages\nuser_pages\nlibrarian_pages\nadmin_pages\nui.tsx" as components #FCE7F3
+  rectangle "contexts/\nAuthContext.tsx\nLanguageContext.tsx\nThemeContext.tsx\nNotificationContext.tsx\nUploadContext.tsx" as contexts #EDE9FE
+  rectangle "utils/\nerrorMessages.ts\nnotificationLocalization.ts\nreservationUtils.ts" as utils #CCFBF1
+  rectangle "public/ + tests/\nassets\nunit/context/service tests" as support #F1F5F9
+}
+
+entry -[hidden]down- api
+entry -[hidden]right- api
+pages -[hidden]right- components
+contexts -[hidden]right- utils
+entry -[hidden]down- pages
+api -[hidden]down- components
+pages -[hidden]down- contexts
+components -[hidden]down- utils
+contexts -[hidden]down- support
+@enduml

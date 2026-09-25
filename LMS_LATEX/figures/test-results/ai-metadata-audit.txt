@@ -1,0 +1,103 @@
+Audited publications: 37
+Findings: 101
+- #1 Clean Code: too few tags
+- #1 Clean Code: low-quality tags: Clean Code
+- #2 Domain-Driven Design: missing ai_summary
+- #2 Domain-Driven Design: missing ai_target_audience
+- #2 Domain-Driven Design: too few tags
+- #3 Refactoring: missing ai_summary
+- #3 Refactoring: missing ai_target_audience
+- #3 Refactoring: too few tags
+- #4 Giáo Trình Cơ Sở Dữ Liệu: missing ai_summary
+- #4 Giáo Trình Cơ Sở Dữ Liệu: too few tags
+- #5 Lập Trình Java Hướng Đối Tượng: missing ai_summary
+- #5 Lập Trình Java Hướng Đối Tượng: too few tags
+- #6 Structure and Interpretation of Computer Programs: missing ai_summary
+- #6 Structure and Interpretation of Computer Programs: missing ai_target_audience
+- #6 Structure and Interpretation of Computer Programs: too few tags
+- #7 Computer Science Illuminated: missing ai_summary
+- #7 Computer Science Illuminated: missing ai_target_audience
+- #7 Computer Science Illuminated: too few tags
+- #8 Computer Science: An Overview: missing ai_summary
+- #8 Computer Science: An Overview: missing ai_target_audience
+- #8 Computer Science: An Overview: too few tags
+- #9 How to Think Like a Computer Scientist: missing ai_summary
+- #9 How to Think Like a Computer Scientist: missing ai_target_audience
+- #9 How to Think Like a Computer Scientist: too few tags
+- #10 Concrete Mathematics: missing ai_summary
+- #10 Concrete Mathematics: missing ai_target_audience
+- #10 Concrete Mathematics: too few tags
+- #11 Quantum Computer Science: missing ai_summary
+- #11 Quantum Computer Science: missing ai_target_audience
+- #11 Quantum Computer Science: too few tags
+- #12 Introduction to Theoretical Computer Science: missing ai_summary
+- #12 Introduction to Theoretical Computer Science: missing ai_target_audience
+- #12 Introduction to Theoretical Computer Science: too few tags
+- #13 Mathematics for Computer Science: missing ai_summary
+- #13 Mathematics for Computer Science: missing ai_target_audience
+- #13 Mathematics for Computer Science: too few tags
+- #14 Introduction to Algorithms: missing ai_summary
+- #14 Introduction to Algorithms: missing ai_target_audience
+- #14 Introduction to Algorithms: too few tags
+- #15 Design Patterns: missing ai_summary
+- #15 Design Patterns: missing ai_target_audience
+- #15 Design Patterns: too few tags
+- #16 Operating System Concepts: missing ai_summary
+- #16 Operating System Concepts: missing ai_target_audience
+- #16 Operating System Concepts: too few tags
+- #17 Computer Networks: missing ai_summary
+- #17 Computer Networks: missing ai_target_audience
+- #17 Computer Networks: too few tags
+- #18 Artificial Intelligence: A Modern Approach: missing ai_summary
+- #18 Artificial Intelligence: A Modern Approach: missing ai_target_audience
+- #18 Artificial Intelligence: A Modern Approach: too few tags
+- #19 Deep Learning: missing ai_summary
+- #19 Deep Learning: missing ai_target_audience
+- #19 Deep Learning: too few tags
+- #20 Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow: missing ai_summary
+- #20 Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow: missing ai_target_audience
+- #20 Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow: too few tags
+- #21 Database System Concepts: missing ai_summary
+- #21 Database System Concepts: missing ai_target_audience
+- #21 Database System Concepts: too few tags
+- #22 Modern Operating Systems: missing ai_summary
+- #22 Modern Operating Systems: missing ai_target_audience
+- #22 Modern Operating Systems: too few tags
+- #23 Compilers: Principles, Techniques, and Tools: missing ai_summary
+- #23 Compilers: Principles, Techniques, and Tools: missing ai_target_audience
+- #23 Compilers: Principles, Techniques, and Tools: too few tags
+- #24 Computer Organization and Design: missing ai_summary
+- #24 Computer Organization and Design: missing ai_target_audience
+- #24 Computer Organization and Design: too few tags
+- #25 Code Complete: missing ai_summary
+- #25 Code Complete: missing ai_target_audience
+- #25 Code Complete: too few tags
+- #26 You Don't Know JS Yet: missing ai_summary
+- #26 You Don't Know JS Yet: missing ai_target_audience
+- #26 You Don't Know JS Yet: too few tags
+- #27 Eloquent JavaScript: missing ai_summary
+- #27 Eloquent JavaScript: missing ai_target_audience
+- #27 Eloquent JavaScript: too few tags
+- #28 Automate the Boring Stuff with Python: missing ai_summary
+- #28 Automate the Boring Stuff with Python: missing ai_target_audience
+- #28 Automate the Boring Stuff with Python: too few tags
+- #29 The Linux Command Line: missing ai_summary
+- #29 The Linux Command Line: missing ai_target_audience
+- #29 The Linux Command Line: too few tags
+- #30 Think Python: missing ai_summary
+- #30 Think Python: missing ai_target_audience
+- #30 Think Python: too few tags
+- #31 Dive Into Deep Learning: missing ai_summary
+- #31 Dive Into Deep Learning: missing ai_target_audience
+- #31 Dive Into Deep Learning: too few tags
+- #32 Full Stack Open: missing ai_summary
+- #32 Full Stack Open: missing ai_target_audience
+- #32 Full Stack Open: too few tags
+- #843157064459707377 Machine Learning cơ bản: summary describes the processing system instead of the book
+- #843425780171766896 aaaaaaaaaaaaaaaa: summary describes the processing system instead of the book
+- #843425780171766896 aaaaaaaaaaaaaaaa: low-quality tags: Aaaaaaaaaaaaaaaa, Because, Two, Variables
+- #844241685135754357 Digital Design and Computer Architecture: summary describes the processing system instead of the book
+- #844241685135754357 Digital Design and Computer Architecture: low-quality tags: Digital Design and Computer Architecture, Numbers, Result
+- #844245619187387378 Introduction to Mechatronics and Measurement Systems: summary describes the processing system instead of the book
+- #844248034393457099 Essentials of Mechatronics: summary describes the processing system instead of the book
+- #844248034393457099 Essentials of Mechatronics: low-quality tags: Essentials of Mechatronics, Publication, Science

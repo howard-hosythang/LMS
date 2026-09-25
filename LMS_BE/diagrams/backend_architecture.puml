@@ -1,0 +1,72 @@
+@startuml modular_monolith_architecture
+!theme plain
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.5
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+
+' Colors definitions
+skinparam rectangle {
+  BorderColor #334155
+  FontColor #0F172A
+}
+skinparam component {
+  BorderColor #334155
+  FontColor #0F172A
+}
+
+actor "Client\n(Web / Mobile Browser)" as Client #EFF6FF
+
+rectangle "library-bootstrap\n(Entrypoint, Config, Security, Routing)" as Bootstrap #DBEAFE
+
+package "Modular Monolith Process (Single Deployable JAR)" as Backend #F8FAFC {
+
+  package "Business Modules (Bounded Contexts)" as Modules #FFFFFF {
+    component "Auth Module\n(library-auth)" as Auth #E0F2FE
+    component "User Module\n(library-user)" as User #EEF2FF
+    component "Catalog Module\n(library-catalog)" as Catalog #F0FDFA
+    component "Circulation Module\n(library-circulation)" as Circulation #FFF7ED
+    component "Recommendation Module\n(library-recommendation)" as Recommendation #FDF2F8
+
+    ' Layout hint to keep modules nicely aligned
+    Auth -[hidden]right-> User
+    User -[hidden]right-> Catalog
+    Circulation -[hidden]right-> Recommendation
+    Auth -[hidden]down-> Circulation
+
+    ' Lightweight inter-module calls (Application Services)
+    Circulation .up.> Catalog : Check availability
+    Circulation .up.> User : Validate roles
+    Recommendation .up.> Catalog : Enrich data
+  }
+
+  rectangle "library-shared\n(Shared Kernel: Core Contracts, Exceptions, Base DTOs)" as Shared #ECFDF5
+
+  ' Modules depend on Shared Kernel
+  Modules -down-> Shared : Implements / Uses
+}
+
+database "PostgreSQL + pgvector\n(Business Data & AI Vectors)" as DB #FEF3C7
+queue "Apache Kafka\n(Event Bus)" as Kafka #E0F2FE
+cloud "External Services\n(AI Python, PayOS, AWS S3, OAuth2, SMTP)" as External #F5F3FF
+
+' Main Flow
+Client -down-> Bootstrap : HTTPS REST / WebSocket
+Bootstrap -down-> Modules : Delegate Requests
+
+' Infrastructure Flow (Grouped from Package Boundary for clean layout)
+Modules -down-> DB : Persistence
+Modules -down-> Kafka : Publish / Consume Events
+Modules -down-> External : API Integrations
+
+' Specific External interaction
+External -down-> DB : AI Service writes vectors
+
+@enduml

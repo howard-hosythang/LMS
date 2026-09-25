@@ -1,0 +1,21 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: local-dashboard
+  group_by:
+    - alertname
+    - severity
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: local-dashboard
+    webhook_configs:
+      - url: http://telegram-alert-webhook:9094/alert
+        send_resolved: true
+
+# Production note:
+# Telegram secrets are injected into the internal webhook service from .env.prod.
+# Alerts also remain visible in the Alertmanager UI.

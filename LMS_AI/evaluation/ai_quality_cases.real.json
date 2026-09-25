@@ -1,0 +1,75 @@
+{
+  "metadata_cases": [
+    {
+      "id": "real-frankenstein-001",
+      "publication_id": 845190199117107187,
+      "title": "Frankenstein",
+      "expected_tags": ["Văn học Gothic", "Kinh Dị Gothic", "Tiểu thuyết kinh điển", "Đạo đức khoa học", "Trách nhiệm sáng tạo"],
+      "source_keywords": ["Victor Frankenstein", "sinh vật", "Gothic", "trách nhiệm", "cô độc"],
+      "forbidden_terms": ["SQL", "học máy", "mạch điện", "thiết kế số"]
+    },
+    {
+      "id": "real-pride-001",
+      "publication_id": 845171750834816252,
+      "title": "Pride and Prejudice",
+      "expected_tags": ["Văn Học Anh", "Tiểu Thuyết", "Lãng Mạn", "Châm Biếm Xã Hội", "Quan Hệ Gia Đình"],
+      "source_keywords": ["hôn nhân", "gia đình", "địa vị xã hội", "định kiến", "Elizabeth"],
+      "forbidden_terms": ["SQL", "học máy", "động cơ", "mạch điện"]
+    },
+    {
+      "id": "real-time-machine-001",
+      "publication_id": 845201019001979986,
+      "title": "The Time Machine",
+      "expected_tags": ["Khoa Học Viễn Tưởng", "Du Hành Thời Gian", "Tiểu Thuyết Kinh Điển", "Phân Tầng Xã Hội", "Tương Lai Nhân Loại"],
+      "source_keywords": ["du hành thời gian", "tương lai", "Eloi", "Morlock", "xã hội"],
+      "forbidden_terms": ["SQL", "chuẩn hóa dữ liệu", "thiết kế cơ khí", "mạch điện"]
+    },
+    {
+      "id": "real-taocp-001",
+      "publication_id": 845204060031763569,
+      "title": "The Art of Computer Programming",
+      "expected_tags": ["Thuật Toán", "Lập Trình", "Phân Tích Thuật Toán", "Cấu Trúc Dữ Liệu", "Khoa Học Máy Tính"],
+      "source_keywords": ["thuật toán", "chương trình", "máy tính", "phân tích", "dữ liệu"],
+      "forbidden_terms": ["hôn nhân", "Gothic", "bệnh nhân", "cơ điện tử"]
+    },
+    {
+      "id": "real-how-to-win-001",
+      "publication_id": 844859229496992988,
+      "title": "How to Win Friends and Influence People",
+      "expected_tags": ["Giao Tiếp", "Phát Triển Bản Thân", "Ảnh Hưởng Xã Hội", "Kỹ Năng Quan Hệ", "Lãnh Đạo"],
+      "source_keywords": ["giao tiếp", "ứng xử", "con người", "ảnh hưởng", "quan hệ"],
+      "forbidden_terms": ["SQL", "Gothic", "mạch điện", "du hành thời gian"]
+    },
+    {
+      "id": "real-digital-design-001",
+      "publication_id": 844241685135754357,
+      "title": "Digital Design and Computer Architecture",
+      "expected_tags": ["Thiết Kế Số", "Kiến Trúc Máy Tính", "Mạch Logic", "Hệ Nhị Phân", "Vi Xử Lý"],
+      "source_keywords": ["logic", "nhị phân", "mạch", "bộ nhớ", "kiến trúc máy tính"],
+      "forbidden_terms": ["hôn nhân", "Gothic", "bệnh nhân", "giao tiếp xã hội"]
+    }
+  ],
+  "search_cases": [
+    {
+      "id": "real-search-gothic",
+      "query": "tiểu thuyết gothic về trách nhiệm của nhà khoa học khi tạo ra sự sống",
+      "relevant_publication_ids": [845190199117107187]
+    },
+    {
+      "id": "real-search-romance",
+      "query": "tiểu thuyết Anh về hôn nhân gia đình định kiến và địa vị xã hội",
+      "relevant_publication_ids": [845171750834816252]
+    },
+    {
+      "id": "real-search-algorithm",
+      "query": "sách thuật toán lập trình phân tích chương trình máy tính",
+      "relevant_publication_ids": [845204060031763569]
+    },
+    {
+      "id": "real-search-digital-design",
+      "query": "thiết kế số mạch logic hệ nhị phân kiến trúc máy tính",
+      "relevant_publication_ids": [844241685135754357]
+    }
+  ],
+  "recommendation_cases": []
+}

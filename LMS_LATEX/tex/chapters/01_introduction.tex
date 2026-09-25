@@ -1,0 +1,160 @@
+% File: I.Introduction_project.tex
+% Nội dung Chương 1: Giới thiệu
+
+\chapter{Giới thiệu}
+\label{chap:GioiThieu}
+
+Chương này trình bày tổng quan về đề tài, bao gồm lý do lựa chọn, mục tiêu cần
+đạt được, phạm vi nghiên cứu và phát triển, ý nghĩa khoa học--thực tiễn của dự
+án, đồng thời giới thiệu cấu trúc tổng thể của báo cáo.
+% ------------------------------------
+\section{Động cơ của đề tài}
+\label{sec:DongCo}
+
+Trong bối cảnh chuyển đổi số giáo dục đang diễn ra mạnh mẽ, việc hiện đại hóa
+các hệ thống thư viện tại trường đại học là một yêu cầu cấp thiết. Các hệ thống
+thư viện hiện tại, như Koha hay OPAC-HCMUT, dù đáp ứng được nhu cầu quản lý cơ
+bản nhưng vẫn còn nhiều hạn chế. Cụ thể, các hệ thống này chủ yếu dựa trên tìm
+kiếm từ khóa đơn giản, chưa khai thác tốt nội dung số của tài liệu PDF, chưa có
+cơ chế gợi ý dựa trên hành vi người dùng, và giao diện chưa thật sự tối ưu cho
+trải nghiệm sử dụng trên nhiều thiết bị. Thêm vào đó, các nghiệp vụ như đặt
+trước, nhắc hạn trả, thông báo thời gian thực, theo dõi phí phạt và thống kê xu
+hướng đọc thường còn rời rạc, gây tốn nhiều thời gian cho thủ thư.
+
+Từ thực tiễn đó, có một nhu cầu rõ rệt từ các bên liên quan:
+\begin{itemize}
+    \item \textbf{Sinh viên và giảng viên:} Cần một công cụ tìm kiếm tài liệu
+    nhanh chóng, chính xác, hỗ trợ cả truy vấn tiếng Việt/tiếng Anh và gợi ý tài
+    liệu liên quan để phục vụ học tập, nghiên cứu.
+    \item \textbf{Thủ thư và nhà quản lý:} Mong muốn có một hệ thống tự động hóa
+    các công việc lặp lại như quản lý ấn phẩm, bản sao, mượn--trả, đặt trước,
+    phí phạt, thông báo và báo cáo thống kê.
+    \item \textbf{Nhà trường:} Hướng tới việc thúc đẩy văn hóa đọc và năng lực
+    số của sinh viên thông qua một nền tảng thư viện hiện đại, có khả năng mở
+    rộng và tích hợp với các dịch vụ số khác.
+\end{itemize}
+
+Vì vậy, việc phát triển một \textbf{Hệ thống quản lý thư viện trực tuyến tích
+hợp AI hỗ trợ tìm kiếm và gợi ý sách} là cần thiết, không chỉ để giải quyết các
+hạn chế của hệ thống cũ mà còn để thử nghiệm cách kết hợp phần mềm quản lý thư
+viện truyền thống với AI service xử lý nội dung tài liệu.
+
+\section{Mục tiêu}
+\label{sec:MucTieu}
+
+Đề tài đặt ra mục tiêu tổng quát là xây dựng một hệ thống quản lý thư viện trực
+tuyến thông minh, vừa đảm bảo các chức năng quản lý cốt lõi, vừa tích hợp AI/NLP
+để nâng cao trải nghiệm tìm kiếm, khám phá và đọc tài liệu của người dùng.
+
+Các mục tiêu cụ thể bao gồm:
+\begin{itemize}
+    \item \textbf{Xây dựng hệ thống quản lý thư viện trực tuyến:} Cung cấp các
+    chức năng chính như quản lý ấn phẩm, bản sao, tác giả, nhà xuất bản, danh
+    mục, tag, người dùng, mượn--trả, đặt trước, phí phạt và thông báo.
+    \item \textbf{Ứng dụng AI/NLP để nâng cao trải nghiệm:}
+    \begin{itemize}
+        \item Phát triển công cụ tìm kiếm kết hợp lexical search và semantic
+        search, hỗ trợ truy vấn tiếng Việt/tiếng Anh thông qua tag canonical và
+        alias dịch.
+        \item Xây dựng hệ thống gợi ý sách dựa trên hành vi người dùng, kết hợp
+        content-based recommendation, collaborative filtering và fallback theo
+        xu hướng.
+        \item Tích hợp pipeline xử lý PDF để sinh tóm tắt nội dung, audience và
+        đúng 5 tag học thuật phục vụ tìm kiếm, gợi ý và hiển thị chi tiết sách.
+    \end{itemize}
+    \item \textbf{Hỗ trợ công tác quản lý:} Tự động hóa thống kê, dashboard,
+    nhắc hạn trả, xử lý quá hạn, hàng chờ đặt trước và thanh toán phí phạt, giúp
+    thủ thư dễ dàng theo dõi vận hành thư viện.
+    \item \textbf{Đảm bảo khả năng triển khai và mở rộng:} Xây dựng backend theo
+    mô hình modular monolith, frontend SPA tách biệt và AI service độc lập để
+    thuận tiện triển khai, kiểm thử và tách module trong tương lai.
+\end{itemize}
+
+\section{Phạm vi}
+\label{sec:PhamVi}
+
+Đề tài sẽ tập trung vào các phạm vi nghiên cứu và phát triển như sau:
+\begin{itemize}
+    \item \textbf{Về chức năng quản lý:} Hệ thống thực hiện các chức năng cốt
+    lõi bao gồm quản lý ấn phẩm, bản sao, tác giả, nhà xuất bản, danh mục, tag,
+    người dùng, vai trò, mượn--trả, đặt trước, hàng chờ, hạn trả, phí phạt,
+    thanh toán, thông báo và dashboard thống kê.
+
+    \item \textbf{Về ứng dụng AI:}
+    \begin{itemize}
+        \item Xây dựng hệ thống tìm kiếm kết hợp từ khóa, tag/category alias và
+        vector semantic search; ưu tiên lexical search với truy vấn ngắn để giữ
+        tính chính xác và dùng semantic search để mở rộng khả năng khám phá.
+        \item Tích hợp hệ thống gợi ý cá nhân hóa dựa trên lịch sử xem, wishlist,
+        mượn sách, đánh giá và dữ liệu vector nội dung.
+        \item Phát triển mô-đun AI ETL xử lý PDF, làm sạch văn bản, chia chunk,
+        sinh embedding, tóm tắt nội dung, audience và tag.
+    \end{itemize}
+
+    \item \textbf{Về nền tảng công nghệ:} Hệ thống gồm frontend React/Vite,
+    backend Spring Boot modular monolith, PostgreSQL/Flyway, Kafka/WebSocket,
+    S3-compatible storage, PayOS và AI service Python/FastAPI/Celery dùng
+    embedding model kết hợp Gemini ở bước reduce metadata.
+
+    \item \textbf{Về phạm vi triển khai:} Sản phẩm của đề tài là hệ thống web thật sự
+    hoàn chỉnh, được kiểm chứng bằng dữ liệu và kịch bản
+    nghiệp vụ phù hợp với quy mô thư viện cấp trường; một số tích hợp
+    ngoài như PayOS, S3 và Gemini phụ thuộc cấu hình môi trường triển khai.
+\end{itemize}
+
+\section{Ý nghĩa}
+\label{sec:YNghia}
+
+\subsection{Ý nghĩa thực tiễn}
+\label{subsec:YNghiaThucTien}
+\begin{itemize}
+    \item \textbf{Nâng cao trải nghiệm người dùng:} Giúp sinh viên và giảng viên
+    tìm kiếm tài liệu nhanh hơn, xem được tag/tóm tắt nội dung, nhận gợi ý tài
+    liệu liên quan và theo dõi trạng thái mượn--trả/đặt trước trực tuyến.
+    \item \textbf{Tối ưu hóa công tác quản lý:} Giảm tải công việc thủ công cho
+    thủ thư thông qua dashboard, scheduler, notification, quản lý phí phạt,
+    thanh toán và các công cụ tra cứu nghiệp vụ.
+    \item \textbf{Thúc đẩy chuyển đổi số:} Góp phần xây dựng mô hình thư viện số
+    hiện đại, phù hợp với chủ trương chuyển đổi số trong giáo dục và phát triển
+    năng lực số cho sinh viên.
+\end{itemize}
+
+\subsection{Ý nghĩa khoa học}
+\label{subsec:YNghiaKhoaHoc}
+\begin{itemize}
+    \item \textbf{Ứng dụng AI/NLP vào bài toán thực tế:} Đề tài áp dụng xử lý
+    văn bản PDF, embedding, semantic search và hệ thống gợi ý vào bài toán tìm
+    kiếm tài liệu trong thư viện đại học.
+    \item \textbf{Kết hợp mô hình và hệ thống:} Dự án là cầu nối giữa kỹ thuật
+    AI và hệ thống phần mềm hoàn chỉnh: AI service không đứng riêng lẻ mà được
+    nối với catalog, search, recommendation, notification và giao diện người
+    dùng.
+    \item \textbf{Đề xuất giải pháp khả thi:} Hệ thống áp dụng hướng hybrid
+    search và hybrid recommendation ở mức phù hợp với dữ liệu và quy mô thư viện theo hướng tối ưu nhất giữa độ chính xác và khả năng khám phá.
+\end{itemize}
+
+\section{Cấu trúc báo cáo}
+\label{sec:CauTruc}
+
+Ngoài các phần đầu mục như Tóm tắt, Mục lục, Danh mục hình ảnh và bảng biểu, nội dung chính của báo cáo được cấu trúc thành 10 chương như sau:
+\begin{itemize}
+    \item \textbf{Chương 1 - Giới thiệu:} Trình bày tổng quan về động cơ, mục tiêu, phạm vi và ý nghĩa của đề tài, đồng thời giới thiệu cấu trúc tổng thể của báo cáo.
+
+    \item \textbf{Chương 2 - Kiến thức và công nghệ nền tảng:} Trình bày các cơ sở lý thuyết, kiến thức chuyên ngành và các công nghệ cốt lõi được sử dụng để phát triển dự án.
+
+    \item \textbf{Chương 3 - Công trình liên quan:} Phân tích, so sánh các nghiên cứu và hệ thống tương tự để xác định khoảng trống nghiên cứu mà đề tài giải quyết.
+
+    \item \textbf{Chương 4 - Hệ thống đề xuất:} Mô tả tổng quan hệ thống được đề xuất, bao gồm đối tượng người dùng, yêu cầu chức năng, phi chức năng, yêu cầu dữ liệu và các luồng nghiệp vụ chính.
+
+    \item \textbf{Chương 5 - Phân tích và Thiết kế:} Trình bày chi tiết quá trình phân tích và thiết kế hệ thống, bao gồm kiến trúc phần mềm, thiết kế cơ sở dữ liệu, thiết kế AI Service và thiết kế giao diện.
+
+    \item \textbf{Chương 6 - Hiện thực hệ thống:} Mô tả quá trình hiện thực frontend, backend và AI service, bao gồm giao diện cho Độc giả/Thủ thư, API nghiệp vụ, pipeline xử lý dữ liệu AI và các tích hợp hạ tầng.
+
+    \item \textbf{Chương 7 - Kiểm thử:} Trình bày chiến lược kiểm thử phân tầng cho frontend, backend và AI service, bao gồm unit/context test, controller/integration test, SQL contract test, AI metadata quality test và live Gemini artifact.
+
+    \item \textbf{Chương 8 - Triển khai hệ thống:} Mô tả quá trình đóng gói Docker, cấu hình NGINX, CI/CD và triển khai lên môi trường VPS thực tế.
+
+    \item \textbf{Chương 9 - Tổng kết:} Tóm tắt kết quả đạt được, nhận xét ưu điểm và hạn chế còn tồn tại của hệ thống.
+
+    \item \textbf{Chương 10 - Tài nguyên và Mã nguồn:} Cung cấp các đường dẫn đến mã nguồn (GitHub) và bản thiết kế giao diện (Figma) của dự án.
+\end{itemize}

@@ -1,0 +1,3 @@
+-- V31 reserved for an earlier demo seed draft.
+-- Kept intentionally as a no-op so environments that have not seen V31 can migrate
+-- cleanly before the richer production-safe V32 seed.

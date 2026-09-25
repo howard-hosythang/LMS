@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+title Luồng truy cập Library74
+
+skinparam nodesep 50
+skinparam ranksep 45
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 6
+
+skinparam rectangle {
+    BackgroundColor #FAFAFA
+    BorderColor #475569
+    FontColor #1E293B
+}
+skinparam cloud {
+    BackgroundColor #F0FDF4
+    BorderColor #16A34A
+}
+skinparam database {
+    BackgroundColor #EFF6FF
+    BorderColor #2563EB
+}
+
+actor "Người dùng" as User
+
+cloud "DNS" {
+    rectangle "library74.uk" as Domain
+}
+
+node "Google Cloud VPS" {
+    rectangle "Caddy\nHTTPS / Routing" as Caddy
+    rectangle "Frontend\nReact" as FE
+    rectangle "Backend\nSpring Boot" as BE
+
+    database "PostgreSQL" as DB
+    queue "Kafka" as Kafka
+
+    package "AI Service" {
+        rectangle "FastAPI" as AI_GW
+        queue "RabbitMQ" as MQ
+        rectangle "Celery Worker" as Worker
+    }
+}
+
+cloud "Dịch vụ ngoài" {
+    rectangle "S3" as S3
+    rectangle "PayOS" as PayOS
+    rectangle "Gmail / OAuth2" as GoogleSvc
+    rectangle "Gemini API" as Gemini
+}
+
+User -> Domain
+Domain -> Caddy
+
+Caddy -down-> FE
+Caddy -down-> BE
+FE .r.> BE
+
+BE -down-> DB
+BE -down-> Kafka
+
+BE -r-> AI_GW
+AI_GW -> MQ
+MQ -> Worker
+Worker -up-> DB
+Worker .l.> BE
+
+BE --r--> S3
+BE --r--> PayOS
+BE --r--> GoogleSvc
+Worker --r--> Gemini
+@enduml

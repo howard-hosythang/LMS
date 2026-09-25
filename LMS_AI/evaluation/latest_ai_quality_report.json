@@ -1,0 +1,132 @@
+{
+  "k": 5,
+  "live_api_mode": false,
+  "aggregate": {
+    "metadata": {
+      "tag_precision": 0.8666666666666667,
+      "tag_recall": 0.8666666666666667,
+      "tag_f1": 0.8666666666666668,
+      "summary_keyword_coverage": 1.0,
+      "summary_length_ok_rate": 1.0,
+      "summary_hallucination_guard_rate": 1.0
+    },
+    "search": {
+      "precision@5": 0.4,
+      "recall@5": 1.0,
+      "mrr": 1.0,
+      "ndcg@5": 0.9598603945740938,
+      "coverage_rate": 1.0
+    },
+    "recommendations": {
+      "precision@5": 0.5,
+      "recall@5": 0.8333333333333333,
+      "mrr": 1.0,
+      "ndcg@5": 0.8254102592800545,
+      "coverage_rate": 1.0
+    }
+  },
+  "latency_ms": {
+    "p50": 0.0,
+    "p95": 0.0,
+    "budget": 200.0
+  },
+  "reliability_score": 93.25,
+  "cases": {
+    "metadata": [
+      {
+        "id": "metadata-db-001",
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002,
+        "keyword_coverage": 1.0,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      },
+      {
+        "id": "metadata-ml-001",
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002,
+        "keyword_coverage": 1.0,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      },
+      {
+        "id": "metadata-lit-001",
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "keyword_coverage": 1.0,
+        "length_ok": 1.0,
+        "forbidden_hit_count": 0.0,
+        "hallucination_guard": 1.0
+      }
+    ],
+    "search": [
+      {
+        "id": "search-db-001",
+        "returned_publication_ids": [
+          101,
+          201,
+          102,
+          301,
+          401
+        ],
+        "precision@5": 0.4,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 0.9197207891481876,
+        "non_empty": 1.0
+      },
+      {
+        "id": "search-ml-001",
+        "returned_publication_ids": [
+          201,
+          202,
+          101,
+          303,
+          404
+        ],
+        "precision@5": 0.4,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 1.0,
+        "non_empty": 1.0
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "rec-user-ai-001",
+        "returned_publication_ids": [
+          202,
+          101,
+          203,
+          301,
+          201
+        ],
+        "precision@5": 0.6,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 0.8854598815714874,
+        "non_empty": 1.0
+      },
+      {
+        "id": "rec-user-db-001",
+        "returned_publication_ids": [
+          101,
+          102,
+          301,
+          302,
+          401
+        ],
+        "precision@5": 0.4,
+        "recall@5": 0.6666666666666666,
+        "mrr": 1.0,
+        "ndcg@5": 0.7653606369886217,
+        "non_empty": 1.0
+      }
+    ]
+  }
+}

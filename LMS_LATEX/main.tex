@@ -1,0 +1,347 @@
+\documentclass[a4paper,12pt]{report}
+
+% ===================================================
+% 1. CẤU HÌNH CƠ BẢN VÀ TIẾNG VIỆT
+% ===================================================
+\usepackage[utf8]{inputenc}
+\usepackage{vntex} % Hỗ trợ tiếng Việt chuẩn
+\usepackage{mathptmx} % Times-compatible font, có hỗ trợ encoding T5 qua vntex
+\usepackage[a4paper, left=3cm, right=2cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{indentfirst} % Thụt đầu dòng đoạn văn đầu tiên
+\usepackage{setspace} % Cãn giãn dòng
+\usepackage{parskip} % Xử lý khoảng cách giữa các đoạn
+\usepackage{hyperref} % Tạo link (nên gọi sớm để cấu hình)
+\usepackage{xurl} % Hỗ trợ ngắt dòng link dài
+\usepackage{pdfpages} % Nối các phiếu scan/PDF bắt buộc vào báo cáo hoàn chỉnh
+
+% ===================================================
+% 2. TOÁN HỌC, KHOA HỌC VÀ ĐỒ HỌA
+% ===================================================
+\usepackage{amsmath, amssymb, amsfonts, latexsym, mathtools}
+\usepackage[overload]{empheq}
+\usepackage[thinc]{esdiff}
+\usepackage{systeme}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{placeins}
+
+% Cấu hình vẽ hình (TikZ) - Đã gộp thư viện gọn gàng
+\usepackage{tikz}
+\usetikzlibrary{arrows, arrows.meta, snakes, backgrounds, calc, shapes, shapes.geometric, positioning, fit, shadows, matrix}
+
+% ===================================================
+% 3. BẢNG BIỂU VÀ KHUNG VĂN BẢN
+% ===================================================
+\usepackage{array, tabularx, caption}
+\usepackage{ltablex, multirow, multicol}
+\usepackage{hhline, booktabs}
+\usepackage[table]{xcolor} % Khai báo xcolor cùng option table 1 lần duy nhất
+\usepackage{longtable}
+\usepackage{mdframed}
+\usepackage{tcolorbox}
+\usepackage{longfbox}
+
+% ===================================================
+% 4. ĐỊNH DẠNG CODE (LISTINGS & ALGORITHM)
+% ===================================================
+\usepackage[lined,boxed,commentsnumbered]{algorithm2e}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage{fancyvrb}
+
+% Định nghĩa màu sắc cho Code
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+% Cấu hình hiển thị Code tổng quát
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  backgroundcolor=\color{gray!10},
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  numberstyle=\tiny\color{gray},
+  numbers=none,
+  showstringspaces=false,
+  columns=flexible,
+  tabsize=3
+}
+
+% ===================================================
+% 5. ĐỊNH DẠNG GIAO DIỆN CHUNG (LAYOUT & SPACING)
+% ===================================================
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{tocloft}
+
+% Khoảng cách đoạn và dòng
+\setlength{\parskip}{6pt}
+\renewcommand{\baselinestretch}{1.2}
+
+% Float Spacing (giảm khoảng trắng thừa quanh ảnh/bảng)
+\setlength{\textfloatsep}{10pt plus 2pt minus 4pt}
+\setlength{\floatsep}{8pt plus 2pt minus 4pt}
+\setlength{\intextsep}{8pt plus 2pt minus 4pt}
+\setlength{\dbltextfloatsep}{10pt plus 2pt minus 4pt}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.70}
+\renewcommand{\textfraction}{0.10}
+\renewcommand{\floatpagefraction}{0.80}
+
+% Lệnh tiện ích: Click nhảy đến hình
+\newcommand{\figref}[1]{\hyperref[#1]{Hình~\ref*{#1}}}
+
+% Cấu hình Hyperref (Màu link đen chuẩn báo cáo in ấn)
+\hypersetup{
+    urlcolor=black,
+    linkcolor=black,
+    citecolor=black,
+    colorlinks=true
+}
+
+% Định dạng tiêu đề Chương
+\titlespacing*{\chapter}{0pt}{0pt}{40pt}
+\titleformat{\chapter}[hang]
+  {\normalfont\Large\bfseries}
+  {Chương \thechapter:}
+  {1em}
+  {}
+
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{2}
+
+% Định dạng Paragraph
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+% Cấu hình Mục lục
+\renewcommand{\cfttoctitlefont}{\Huge\bfseries}
+\renewcommand{\cftaftertoctitle}{}
+\renewcommand{\contentsname}{Mục lục}
+\renewcommand{\listfigurename}{Danh mục hình ảnh}
+\renewcommand{\listtablename}{Danh mục bảng biểu}
+
+% ===================================================
+% 6. HEADER & FOOTER SETUP
+% ===================================================
+\setlength{\headheight}{40pt}
+\setlength{\footskip}{16pt}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[L]{
+ \begin{tabular}{rl}
+    \begin{picture}(25,15)(0,0)
+    \put(0,-8){\includegraphics[width=8mm, height=8mm]{figures/common/hcmut.jpg}}
+    \end{picture}&
+    \begin{tabular}{l}
+        \textbf{\bf \ttfamily  TRƯỜNG ĐẠI HỌC BÁCH KHOA - ĐHQG-HCM}\\
+        \textbf{\bf \ttfamily  KHOA KHOA HỌC VÀ KỸ THUẬT MÁY TÍNH }
+    \end{tabular}
+ \end{tabular}
+}
+\fancyhead[R]{}
+\fancyfoot{}
+\fancyfoot[L]{\scriptsize \ttfamily HK252-DATN-330}
+% Chỉ in footer Trang X/Y trên các trang có style 'fancy'
+\fancyfoot[R]{\scriptsize \ttfamily Trang {\thepage}/\pageref{LastContentPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% Áp dụng header/footer cho cả trang đầu chương
+\makeatletter
+\let\ps@plain\ps@fancy
+\makeatother
+
+% ===================================================
+% 7. THÔNG TIN BÌA VÀ CÁC TRANG BẮT BUỘC
+% ===================================================
+\newcommand{\reportCode}{HK252-DATN-330}
+\newcommand{\reportTitle}{XÂY DỰNG HỆ THỐNG QUẢN LÝ THƯ VIỆN\\TRỰC TUYẾN TÍCH HỢP AI HỖ TRỢ\\TÌM KIẾM VÀ GỢI Ý SÁCH}
+\newcommand{\reportMajor}{Khoa học Máy tính}
+\newcommand{\advisorOne}{TS. Trương Tuấn Anh}
+\newcommand{\advisorTwo}{CN. Dương Huỳnh Anh Đức}
+\newcommand{\reviewerName}{ThS. Trần Thị Quế Nguyệt}
+\newcommand{\studentOne}{Hồ Sỹ Thắng - 2213188}
+\newcommand{\defenseDate}{TP. HỒ CHÍ MINH, 05/2026}
+
+% Bật/tắt file PDF scan gồm phiếu nhiệm vụ, phiếu chấm hướng dẫn và phiếu chấm phản biện.
+% Dùng \includeSignedFormstrue cho bản nộp đủ phiếu, \includeSignedFormsfalse cho bản không kèm phiếu.
+\newif\ifincludeSignedForms
+\includeSignedFormsfalse
+
+\newcommand{\makecoverpage}[1][]{%
+\newgeometry{left=3cm,right=2cm,top=2cm,bottom=2cm}
+\begin{titlepage}
+    \thispagestyle{empty}
+    \begin{tikzpicture}[remember picture,overlay,inner sep=0,outer sep=0]
+         \draw[line width=3pt] ([xshift=-2cm,yshift=-2cm]current page.north east) coordinate (A)--([xshift=3cm,yshift=-2cm]current page.north west) coordinate(B)--([xshift=3cm,yshift=2cm]current page.south west) coordinate (C)--([xshift=-2cm,yshift=2cm]current page.south east) coordinate(D)--cycle;
+         \draw[line width=0.8pt] ([xshift=-2.15cm,yshift=-2.15cm]current page.north east)--([xshift=3.15cm,yshift=-2.15cm]current page.north west)--([xshift=3.15cm,yshift=2.15cm]current page.south west)--([xshift=-2.15cm,yshift=2.15cm]current page.south east)--cycle;
+    \end{tikzpicture}
+
+    \begin{center}
+        {\fontsize{15}{18}\selectfont\bfseries
+        ĐẠI HỌC QUỐC GIA TP.HCM\\
+        TRƯỜNG ĐẠI HỌC BÁCH KHOA\\
+        KHOA KHOA HỌC VÀ KỸ THUẬT MÁY TÍNH}
+
+        \vspace{0.35cm}
+        \includegraphics[width=2.8cm]{figures/common/hcmut.jpg}
+
+        \vspace{0.35cm}
+        {\fontsize{15}{18}\selectfont\bfseries
+        BÁO CÁO\\
+        ĐỒ ÁN TỐT NGHIỆP}
+
+        \vspace{0.75cm}
+        {\fontsize{15}{19}\selectfont\bfseries
+        \begin{minipage}{0.92\textwidth}
+            \centering
+            \reportTitle
+        \end{minipage}}
+
+        \vspace{0.45cm}
+        {\fontsize{15}{18}\selectfont
+        Ngành: \reportMajor}
+    \end{center}
+
+    \vspace{0.75cm}
+    \begin{center}
+    {\fontsize{15}{18}\selectfont\bfseries
+    \begin{tabular}{rl}
+        MÃ ĐỀ TÀI: & \reportCode\\
+        HỘI ĐỒNG: & 11L Khoa học Máy tính\\
+        GVHD: & \advisorOne\\
+              & \advisorTwo\\
+        GVPB: & \reviewerName\\
+        \multicolumn{2}{c}{--o0o--}\\
+        SVTH: & \studentOne\\
+    \end{tabular}}
+    \end{center}
+
+    #1
+
+    \vfill
+    \begin{center}
+        {\fontsize{15}{18}\selectfont\bfseries \defenseDate}
+    \end{center}
+    \vspace*{0.75cm}
+\end{titlepage}
+\restoregeometry
+}
+
+\newcommand{\includeRequiredPdf}[3][-]{%
+    \IfFileExists{#3}{%
+        \includepdf[pages=#1,pagecommand={\thispagestyle{empty}}]{#3}%
+    }{%
+        \clearpage
+        \thispagestyle{empty}
+        \begin{center}
+            \vspace*{6cm}
+            {\fontsize{15}{18}\selectfont\bfseries #1}\\[1cm]
+            \begin{minipage}{0.78\textwidth}
+                \centering
+                Chưa tìm thấy file scan/PDF bắt buộc tại
+                \texttt{\detokenize{#3}}.\\
+                Khi có bản chính đã ký, đặt file đúng tên này để báo cáo tự nối vào bản mềm hoàn chỉnh.
+            \end{minipage}
+        \end{center}
+    }%
+    \clearpage
+}
+
+% ===================================================
+% BẮT ĐẦU NỘI DUNG DOCUMENT
+% ===================================================
+\begin{document}
+\hypersetup{pageanchor=false}
+
+% --- TRANG BÌA (KHÔNG SỐ TRANG) ---
+\pagenumbering{roman}
+% Chỉ giữ một trang bìa.
+\makecoverpage
+
+% --- PHẦN MỞ ĐẦU (KHÔNG HIỂN THỊ SỐ TRANG) ---
+\newpage
+\hypersetup{pageanchor=true}
+% Tắt hoàn toàn Header/Footer cho các trang trước nội dung chính.
+\pagestyle{empty}
+\makeatletter
+\let\ps@plain\ps@empty
+\makeatother
+
+% File này đã gồm đủ phiếu nhiệm vụ, phiếu chấm hướng dẫn và phiếu chấm phản biện.
+\ifincludeSignedForms
+    \includeRequiredPdf[1-3]{PHIẾU NHIỆM VỤ, PHIẾU CHẤM HƯỚNG DẪN VÀ PHIẾU CHẤM PHẢN BIỆN}{forms/phieu_nhiem_vu.pdf}
+\fi
+
+\clearpage
+\input{tex/frontmatter/00_declaration}
+\newpage
+\input{tex/frontmatter/01_acknowledgements}
+\newpage
+\input{tex/frontmatter/02_abstract}
+\newpage
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+\thispagestyle{empty}
+\phantomsection
+\addcontentsline{toc}{chapter}{Danh mục hình ảnh}
+\listoffigures
+\newpage
+\thispagestyle{empty}
+\phantomsection
+\addcontentsline{toc}{chapter}{Danh mục bảng biểu}
+\listoftables
+\newpage
+
+% --- NỘI DUNG CHÍNH (ĐÁNH SỐ Ả RẬP 1, 2, 3... VÀ CÓ TRANG X/Y) ---
+\cleardoublepage
+\makeatletter
+\let\ps@plain\ps@fancy
+\makeatother
+\pagestyle{fancy}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{tex/chapters/01_introduction}
+\input{tex/chapters/02_background}
+\input{tex/chapters/03_related_work}
+\input{tex/chapters/04_system_proposal}
+\input{tex/chapters/05_analysis_design}
+\input{tex/chapters/06_implementation}
+\input{tex/chapters/07_testing}
+\input{tex/chapters/08_deployment}
+\input{tex/chapters/09_conclusion}
+
+% Đặt mốc kết thúc đếm tổng số trang nội dung chính tại đây.
+\label{LastContentPage}
+
+% --- PHẦN TÀI LIỆU THAM KHẢO ---
+\pagestyle{empty}
+\makeatletter
+\let\ps@plain\ps@empty
+\makeatother
+\clearpage
+\phantomsection
+\makeatletter
+\addtocontents{toc}{\protect\contentsline{chapter}{Tài liệu tham khảo}{}{\@currentHref}\protected@file@percent}
+\makeatother
+\renewcommand{\bibname}{Tài liệu tham khảo}
+\bibliographystyle{IEEEtran}
+\nocite{*}
+\bibliography{references}
+
+% --- PHẦN PHỤ LỤC ---
+\appendix
+\input{tex/appendices/01_project_resources}
+
+\end{document}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Library74 là hệ thống thư viện số hỗ trợ tìm kiếm sách, mượn sách, đặt trước và khám phá nội dung bằng AI." />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:site_name" content="Library74" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Library74" />
+    <meta property="og:description" content="Tìm kiếm, mượn sách, đặt trước và khám phá tri thức bằng AI tại Library74." />
+    <meta property="og:image" content="/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Library74" />
+    <meta name="twitter:description" content="Tìm kiếm, mượn sách, đặt trước và khám phá tri thức bằng AI tại Library74." />
+    <meta name="twitter:image" content="/logo.png" />
+    <title>Library74</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            animation: {
+              'highlight-pulse': 'highlight-pulse 1.2s ease-in-out 3',
+            },
+            keyframes: {
+              'highlight-pulse': {
+                '0%, 100%': { backgroundColor: 'transparent' },
+                '50%': { backgroundColor: '#fef9c3' },
+              },
+            },
+            colors: {
+              primary: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+                900: '#1e3a8a',
+              },
+              ai: {
+                light: '#f3e8ff',
+                DEFAULT: '#8b5cf6',
+                dark: '#581c87',
+              },
+              secondary: '#4F46E5',
+              sidebar: '#FFFFFF',
+              background: '#F8FAFC',
+            },
+          },
+        },
+      };
+    </script>
+    <script>
+      (() => {
+        const savedTheme = localStorage.getItem('library74.theme') || 'system';
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const resolvedTheme = savedTheme === 'dark' || (savedTheme === 'system' && prefersDark) ? 'dark' : 'light';
+        document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
+        document.documentElement.dataset.theme = resolvedTheme;
+        document.documentElement.style.colorScheme = resolvedTheme;
+      })();
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc;
+      }
+      /* Custom scrollbar for aesthetic consistency */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@^19.2.3",
+          "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+          "react/": "https://esm.sh/react@^19.2.3/",
+          "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+          "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="/index.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

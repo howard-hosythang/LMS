@@ -1,0 +1,31 @@
+Library 74 LMS - Backend Maven/Testcontainers Result
+Generated at: 2026-05-19 18:39:56
+Command: DOCKER_HOST=unix:///Users/hosythang/.docker/run/docker.sock mvn test -q
+Status: PASS
+
+Test classes: 23
+Test cases: 79
+Failures: 0
+Errors: 0
+Skipped: 0
+Surefire accumulated time: 13.023s
+
+Module breakdown:
+- library-auth-module: 1 class, 3 tests, passed
+- library-user-module: 3 classes, 10 tests, passed
+- library-catalog-module: 5 classes, 12 tests, passed
+- library-circulation-module: 5 classes, 24 tests, passed
+- library-recommendation-module: 7 classes, 24 tests, passed
+- library-bootstrap: 2 integration classes, 6 tests, passed
+
+Integration environment:
+- Testcontainers: 1.21.4
+- Docker host: unix:///Users/hosythang/.docker/run/docker.sock
+- Database container: postgres:15-alpine
+
+Important integration coverage:
+- Borrow flow: borrow available item, return borrowed book, block borrow with unpaid fine.
+- Reservation native SQL: pending reservation queue position, block available item, block nonexistent branch.
+- Controller contracts: borrow/lookup/return/report issue, fine listing, cash payment, PayOS create/sync/webhook.
+- Public search SQL contract: tag/category base names and translation aliases are matched.
+- Database cleanup: Flyway V22 applied, duplicate AI tag/cache tables removed, catalogue and circulation indexes added.

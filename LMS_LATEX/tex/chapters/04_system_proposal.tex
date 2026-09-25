@@ -1,0 +1,105 @@
+\chapter{Hệ thống đề xuất}
+\label{chap:HeThongDeXuat}
+
+\section{Mô tả hệ thống}
+\label{sec:MoTaHeThong}
+
+Hệ thống được đề xuất là một \textbf{hệ thống quản lý thư viện trực tuyến tích hợp AI hỗ trợ tìm kiếm, gợi ý và khai thác nội dung tài liệu PDF}. Mục tiêu là xây dựng một nền tảng có đủ nghiệp vụ thư viện: quản lý ấn phẩm, bản sao, người dùng, mượn--trả, đặt trước, phí phạt, thông báo và dashboard vận hành. Trên nền nghiệp vụ đó, AI được dùng ở những điểm thật sự có giá trị như làm giàu metadata từ PDF, tìm kiếm ngữ nghĩa và gợi ý tài liệu theo hành vi người dùng.
+
+Hệ thống được thiết kế để phục vụ hai nhóm người dùng chính, mỗi nhóm có vai trò và nhu cầu riêng biệt:
+\begin{itemize}
+    \item \textbf{Bạn đọc (Sinh viên, Giảng viên, Nghiên cứu viên):} Là nhóm người dùng trực tiếp khai thác tài nguyên thư viện. Họ cần tìm kiếm tài liệu nhanh, xem tình trạng bản sao, đọc tóm tắt AI, thêm sách vào wishlist, đánh giá sách, gửi yêu cầu mượn, theo dõi sách đang mượn, đặt trước sách, xem phí phạt và nhận thông báo kịp thời.
+
+    \item \textbf{Thủ thư (Người quản lý thư viện):} Là nhóm người dùng vận hành hệ thống. Thủ thư quản lý ấn phẩm, tác giả, nhà xuất bản, danh mục, tag, bản sao vật lý, upload bìa và PDF, xử lý mượn--trả tại quầy, xác nhận nhận sách, quản lý đặt trước, ghi nhận sách hư/mất, xử lý phí phạt bằng tiền mặt hoặc PayOS và theo dõi dashboard thống kê.
+\end{itemize}
+
+\section{Hướng tiếp cận thiết kế}
+\label{subsec:DesignApproach}
+
+Hệ thống Quản lý Thư viện được thiết kế theo phương pháp ``từ dưới lên''. Backend được tổ chức theo modular monolith, frontend là React SPA, còn AI service là một service riêng xử lý PDF, semantic search và recommendation.
+
+Quá trình thiết kế được thực hiện theo các bước sau:
+\begin{enumerate}
+    \item Xác định các module cốt lõi của hệ thống như auth, user, catalog, circulation, recommendation và AI service.
+    \item Xây dựng và kiểm thử từng module theo trách nhiệm riêng: xác thực, quản lý ấn phẩm, quản lý bản sao, giao dịch mượn--trả, thông báo, wishlist, rating, tìm kiếm và gợi ý.
+    \item Tích hợp các module thành các luồng nghiệp vụ đầy đủ, ví dụ: tạo ấn phẩm, upload PDF, AI xử lý metadata, người dùng tìm kiếm, gửi yêu cầu mượn, thủ thư xác nhận và hệ thống gửi thông báo.
+    \item Lặp lại quy trình này để hoàn thiện frontend, backend, AI service và các tích hợp ngoài như S3-compatible storage, Kafka/WebSocket và PayOS.
+\end{enumerate}
+\newpage
+\section{Yêu cầu}
+\label{sec:YeuCau}
+
+\subsection{Yêu cầu chức năng}
+\label{subsec:YeuCauChucNang}
+Các yêu cầu chức năng của hệ thống được đặc tả chi tiết trong bảng dưới đây, phân loại theo từng nhóm chức năng và người dùng tương tác.
+
+\begin{longtable}{|p{0.1\textwidth}|p{0.22\textwidth}|p{0.13\textwidth}|p{0.45\textwidth}|}
+\caption{Bảng đặc tả yêu cầu hệ thống} \label{tab:YeuCauHeThong} \\
+\hline
+\textbf{ID} & \textbf{Tên yêu cầu} & \textbf{Loại} & \textbf{Mô tả chi tiết} \\
+\hline
+\endfirsthead
+\multicolumn{4}{c}%
+{{\bfseries \tablename\ \thetable{} -- tiếp theo}} \\
+\hline
+\textbf{ID} & \textbf{Tên yêu cầu} & \textbf{Loại} & \textbf{Mô tả chi tiết} \\
+\hline
+\endhead
+\hline
+\endfoot
+%-- Yêu cầu về Dữ liệu --%
+\textbf{R1} & Quản lý thực thể dữ liệu & Dữ liệu & Hệ thống phải lưu trữ và quản lý các nhóm dữ liệu cốt lõi: \textbf{ấn phẩm}, \textbf{bản sao}, \textbf{người dùng}, \textbf{giao dịch mượn--trả}, \textbf{đặt trước}, \textbf{phí phạt}, \textbf{đánh giá}, \textbf{wishlist}, \textbf{thông báo} và dữ liệu phục vụ AI. \\
+\hline
+\textbf{R2} & Phân biệt Ấn phẩm và Bản sao & Dữ liệu & Hệ thống phải phân biệt giữa \textbf{ấn phẩm} và \textbf{bản sao vật lý}. Mỗi bản sao có barcode riêng, trạng thái riêng, tình trạng sách và vị trí kệ để thủ thư có thể quản lý lưu thông chính xác. \\
+\hline
+\textbf{R3} & Thuộc tính Ấn phẩm & Dữ liệu & Mỗi ấn phẩm phải có metadata cơ bản như ISBN, tiêu đề, tác giả, nhà xuất bản, danh mục, tag, ngôn ngữ, năm xuất bản, mô tả, ảnh bìa và file PDF nếu có. Hệ thống cũng lưu summary, nhóm độc giả mục tiêu và tag do AI sinh ra sau khi xử lý tài liệu. \\
+\hline
+%-- Yêu cầu về Người dùng và Nghiệp vụ --%
+\textbf{R4} & Quản lý vai trò người dùng & Chức năng & Hệ thống phải hỗ trợ xác thực và phân quyền theo vai trò, tối thiểu gồm \textbf{Bạn đọc} và \textbf{Thủ thư}. Bạn đọc được đăng ký, đăng nhập, quản lý hồ sơ cá nhân; thủ thư được truy cập các màn hình quản lý nghiệp vụ. \\
+\hline
+\textbf{R5} & Nghiệp vụ mượn--trả và phí phạt & Nghiệp vụ & Hệ thống phải hỗ trợ bạn đọc gửi yêu cầu mượn, thủ thư cho mượn trực tiếp hoặc xác nhận nhận sách, trả sách bằng barcode, ghi nhận sách hư/mất, tự tính phí quá hạn hoặc phí sự cố và xử lý thanh toán bằng tiền mặt hoặc PayOS. \\
+\hline
+%-- Yêu cầu về Chức năng --%
+\textbf{R6} & Tìm kiếm hybrid & Chức năng & Hệ thống phải cung cấp tìm kiếm catalog theo keyword, tác giả, danh mục, tag, ngôn ngữ, năm xuất bản, chi nhánh và tình trạng bản sao; đồng thời hỗ trợ \textbf{tìm kiếm ngữ nghĩa} trên nội dung PDF thông qua AI service và pgvector. \\
+\hline
+\textbf{R7} & Chức năng Đặt trước & Chức năng & Bạn đọc phải có khả năng \textbf{đặt trước} sách khi cần. Hệ thống lưu hàng chờ đặt trước, cho phép bạn đọc hủy đặt trước, thủ thư tra cứu yêu cầu và xác nhận nhận sách khi bản sao sẵn sàng. \\
+\hline
+\textbf{R8} & Gợi ý, wishlist và đánh giá & Chức năng & Hệ thống phải hỗ trợ gợi ý sách cá nhân hóa dựa trên hành vi người dùng, có fallback khi dữ liệu còn ít; đồng thời cho phép bạn đọc thêm sách vào wishlist, đánh giá, bình luận và tương tác với review. \\
+\hline
+\textbf{R9} & Hệ thống thông báo tự động & Chức năng & Hệ thống phải gửi thông báo cho người dùng về các sự kiện quan trọng như yêu cầu mượn, xác nhận nhận sách, sách sắp đến hạn, sách quá hạn, phí phạt, đặt trước và phản hồi review. Thông báo được lưu trong hệ thống và đẩy realtime qua WebSocket. \\
+\hline
+\end{longtable}
+
+\subsection{Yêu cầu phi chức năng}
+\label{subsec:YeuCauPhiChucNang}
+Hệ thống cần đảm bảo các yêu cầu phi chức năng trọng yếu sau:
+\begin{itemize}
+    \item \textbf{Tính khả dụng (Usability):} Giao diện người dùng phải nhất quán, trực quan và dễ học cho cả bạn đọc và thủ thư. Frontend cần hỗ trợ các luồng chính như tìm kiếm, xem chi tiết sách, đặt trước, theo dõi sách đang mượn, phí phạt, thông báo, quản lý ấn phẩm và xử lý mượn--trả trên các kích thước màn hình phổ biến.
+
+    \item \textbf{Hiệu năng (Performance):} Các chức năng tương tác phải có thời gian phản hồi nhanh trong điều kiện tải thông thường. Các truy vấn catalog cần được phân trang; semantic search và recommendation cần giới hạn số lượng kết quả, dùng connection pool và timeout để tránh ảnh hưởng đến backend chính.
+
+    \item \textbf{Độ tin cậy (Reliability):} Hệ thống phải hoạt động ổn định ngay cả khi một dịch vụ phụ trợ gặp lỗi. Khi AI service hoặc Gemini lỗi, hệ thống cần ghi nhận trạng thái xử lý, có fallback cho metadata/gợi ý và không làm nghẽn các nghiệp vụ chính như tra cứu, mượn--trả hoặc thanh toán.
+
+    \item \textbf{Bảo mật (Security):} Hệ thống cần có cơ chế xác thực và phân quyền rõ ràng bằng JWT và kiểm tra vai trò ở backend. Các API quản trị chỉ dành cho thủ thư; callback từ AI service và webhook thanh toán cần được kiểm tra chữ ký hoặc cơ chế xác thực tương ứng; upload file phải đi qua đường dẫn có kiểm soát như presigned URL.
+
+    \item \textbf{Khả năng bảo trì và mở rộng (Maintainability \& Scalability):} Mã nguồn phải được tổ chức rõ ràng theo frontend, backend và AI service. Backend theo modular monolith giúp tách ranh giới nghiệp vụ; AI service tách riêng giúp mở rộng pipeline PDF, semantic search và recommendation mà không làm phức tạp phần nghiệp vụ thư viện.
+\end{itemize}
+
+\subsection{Yêu cầu dữ liệu}
+\label{subsec:YeuCauDuLieu}
+Hệ thống yêu cầu và quản lý các nhóm dữ liệu chính sau:
+\begin{itemize}
+    \item \textbf{Dữ liệu lõi (Core Data):} Bao gồm thông tin ấn phẩm, bản sao, barcode, tác giả, nhà xuất bản, danh mục, tag, file bìa, file PDF và thông tin tài khoản người dùng.
+
+    \item \textbf{Dữ liệu nghiệp vụ (Transactional Data):} Gồm các bản ghi yêu cầu mượn, xác nhận nhận sách, trả sách, đặt trước, phí phạt, thanh toán tiền mặt, thanh toán PayOS, trạng thái bản sao và thông báo.
+
+    \item \textbf{Dữ liệu hành vi và AI (Behavioral/AI Data):} Gồm lịch sử tìm kiếm, lượt xem chi tiết sách, wishlist, rating, lịch sử mượn, vector embedding của chunk PDF, summary AI, audience, tag AI và trạng thái ETL. Đây là nguồn dữ liệu phục vụ semantic search và recommendation.
+\end{itemize}
+
+\textbf{Kết chương}
+
+Chương này đã trình bày tổng quan hệ thống quản lý thư viện trực tuyến tích hợp AI. Hệ thống được định hướng như một sản phẩm hoàn chỉnh, trong đó nghiệp vụ thư viện vẫn là phần lõi, còn AI được dùng để làm giàu dữ liệu, hỗ trợ tìm kiếm ngữ nghĩa và gợi ý tài liệu.
+
+Phần trọng tâm của chương đã đặc tả các yêu cầu cốt lõi của hệ thống, từ quản lý ấn phẩm, bản sao, người dùng, mượn--trả, đặt trước, phí phạt và thông báo cho đến các chức năng thông minh như semantic search, recommendation, wishlist và rating. Đồng thời, các \textbf{yêu cầu phi chức năng} như tính khả dụng, hiệu năng, độ tin cậy, bảo mật và khả năng bảo trì cũng được xác định theo đúng kiến trúc frontend--backend--AI service hiện tại.
+
+Những yêu cầu này tạo thành một nền tảng vững chắc, là cơ sở để tiến hành quá trình phân tích và thiết kế chi tiết hệ thống sẽ được trình bày ở Chương 5.

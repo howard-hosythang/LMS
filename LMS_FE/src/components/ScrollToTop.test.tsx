@@ -1,0 +1,54 @@
+import React from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { ScrollToTop } from '../../components/ScrollToTop';
+
+const RoutedContent = () => (
+  <>
+    <ScrollToTop />
+    <nav>
+      <Link to="/publicpage/search">Search</Link>
+    </nav>
+    <main data-route-scroll-container data-testid="scroll-container">
+      <Routes>
+        <Route path="/publicpage" element={<div style={{ height: 2000 }}>Home</div>} />
+        <Route path="/publicpage/search" element={<div style={{ height: 2000 }}>Search</div>} />
+      </Routes>
+    </main>
+  </>
+);
+
+describe('ScrollToTop', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    window.scrollTo = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  it('resets the active app scroll container after a route change', () => {
+    render(
+      <MemoryRouter initialEntries={['/publicpage']}>
+        <RoutedContent />
+      </MemoryRouter>
+    );
+
+    const container = screen.getByTestId('scroll-container');
+    container.scrollTop = 1200;
+
+    fireEvent.click(screen.getByText('Search'));
+
+    expect(container.scrollTop).toBe(0);
+
+    container.scrollTop = 900;
+    act(() => {
+      jest.advanceTimersByTime(700);
+    });
+
+    expect(container.scrollTop).toBe(0);
+  });
+});

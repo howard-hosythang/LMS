@@ -1,0 +1,153 @@
+@startuml
+' ============================================================
+' LMS - Use Case Overview
+' Overview diagram: high-level functions only.
+' Detailed use cases are split into diagram/usecase/modules/.
+' ============================================================
+
+!theme plain
+title LMS - Use Case Diagram Tổng Quát
+
+left to right direction
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam ArrowMessageAlignment center
+skinparam packageStyle rectangle
+skinparam nodesep 34
+skinparam ranksep 38
+
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #1F2937
+  FontColor #111827
+}
+
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #334155
+  FontColor #111827
+}
+
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #94A3B8
+}
+
+actor "Khách" as Guest
+actor "Người dùng\nđã xác thực" as AuthUser
+actor "Bạn đọc" as Reader
+actor "Thủ thư" as Librarian
+actor "Quản trị viên" as Admin
+
+actor "Google OAuth" as Google
+actor "PayOS" as PayOS
+actor "Dịch vụ Email" as EmailService
+actor "Gemini API" as Gemini
+
+AuthUser <|-- Reader
+AuthUser <|-- Librarian
+AuthUser <|-- Admin
+
+rectangle "Hệ thống LMS" as LMS {
+  package "Xác thực và tài khoản" as P_Auth #EEF2FF {
+    usecase "Đăng ký\nvà xác thực" as UC_RegisterVerify
+    usecase "Đăng nhập\nvà đăng xuất" as UC_LoginLogout
+    usecase "Quản lý\nhồ sơ cá nhân" as UC_Profile
+    usecase "Xem và đọc\nthông báo" as UC_Notification
+  }
+
+  package "Tra cứu và khám phá tài liệu" as P_Discovery #ECFDF5 {
+    usecase "Tìm kiếm\ntài liệu" as UC_Search
+    usecase "Xem chi tiết\ntài liệu" as UC_ViewBook
+    usecase "Xem thống kê\nthư viện công khai" as UC_PublicStats
+  }
+
+  package "Chức năng bạn đọc" as P_Reader #FDF2F8 {
+    usecase "Mượn và đặt trước\nsách" as UC_BorrowReserve
+    usecase "Theo dõi mượn trả\nvà phí phạt" as UC_TrackLoansFines
+    usecase "Thanh toán\nphí phạt" as UC_PayFine
+    usecase "Đánh giá, yêu thích\nvà nhận gợi ý" as UC_Engagement
+  }
+
+  package "Chức năng thủ thư" as P_Librarian #FFF7ED {
+    usecase "Quản lý\nấn phẩm và bản sao" as UC_ManageCatalog
+    usecase "Xử lý mượn,\ntrả và đặt trước" as UC_HandleCirculation
+    usecase "Quản lý giao dịch\nvà dashboard" as UC_ManageTransactions
+  }
+
+  package "Chức năng quản trị" as P_Admin #EFF6FF {
+    usecase "Quản lý\nthủ thư" as UC_ManageLibrarians
+    usecase "Quản lý\nngười dùng" as UC_ManageUsers
+    usecase "Cập nhật chính sách\nvà cấu hình" as UC_AdminSettings
+    usecase "Xem nhật ký\nhệ thống" as UC_AuditLogs
+  }
+
+  package "AI và xử lý tự động" as P_AI #F0FDFA {
+    usecase "Tìm kiếm và gợi ý\nbằng AI" as UC_AISearchRecommend
+    usecase "Xử lý PDF\nbằng AI" as UC_ProcessPdfAI
+    usecase "Gửi thông báo\nrealtime/email" as UC_SendNotification
+  }
+}
+
+Guest --> UC_RegisterVerify
+Guest --> UC_LoginLogout
+Guest --> UC_Search
+Guest --> UC_ViewBook
+Guest --> UC_PublicStats
+
+AuthUser --> UC_Profile
+AuthUser --> UC_Notification
+
+Reader --> UC_BorrowReserve
+Reader --> UC_TrackLoansFines
+Reader --> UC_PayFine
+Reader --> UC_Engagement
+Reader --> UC_Search
+Reader --> UC_ViewBook
+
+Librarian --> UC_ManageCatalog
+Librarian --> UC_HandleCirculation
+Librarian --> UC_ManageTransactions
+Librarian --> UC_Search
+Librarian --> UC_ViewBook
+
+Admin --> UC_ManageLibrarians
+Admin --> UC_ManageUsers
+Admin --> UC_AdminSettings
+Admin --> UC_AuditLogs
+
+Google --> UC_LoginLogout
+PayOS --> UC_PayFine
+EmailService --> UC_RegisterVerify
+EmailService --> UC_SendNotification
+Gemini --> UC_ProcessPdfAI
+
+UC_RegisterVerify ..> UC_LoginLogout : <back:#FFFFFF><<extend>></back>
+UC_BorrowReserve ..> UC_Search : <back:#FFFFFF><<include>></back>
+UC_TrackLoansFines ..> UC_Notification : <back:#FFFFFF><<include>></back>
+UC_PayFine ..> UC_TrackLoansFines : <back:#FFFFFF><<extend>></back>
+UC_Engagement ..> UC_AISearchRecommend : <back:#FFFFFF><<include>></back>
+UC_ManageCatalog ..> UC_ProcessPdfAI : <back:#FFFFFF><<include>></back>
+UC_HandleCirculation ..> UC_SendNotification : <back:#FFFFFF><<include>></back>
+UC_AISearchRecommend ..> UC_Search : <back:#FFFFFF><<extend>></back>
+
+' Layout hints only
+Guest -[hidden]down- AuthUser
+AuthUser -[hidden]down- Reader
+Reader -[hidden]down- Librarian
+Librarian -[hidden]down- Admin
+
+Google -[hidden]down- PayOS
+PayOS -[hidden]down- EmailService
+EmailService -[hidden]down- Gemini
+
+P_Auth -[hidden]right- P_Discovery
+P_Discovery -[hidden]right- P_Reader
+P_Librarian -[hidden]right- P_Admin
+P_Admin -[hidden]right- P_AI
+P_Auth -[hidden]down- P_Librarian
+P_Discovery -[hidden]down- P_Admin
+P_Reader -[hidden]down- P_AI
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+' LMS Backend source structure - readable report diagram
+!theme plain
+title LMS Backend - Cấu trúc mã nguồn
+
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam BackgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 24
+skinparam rectangle {
+  FontSize 24
+  FontColor #111827
+  BorderColor #475569
+}
+
+rectangle "LMS_BE" as root #F8FAFC {
+  rectangle "library-bootstrap/\nSpring Boot entrypoint\nconfig/\ndb/migration/\napplication.yml" as boot #E0F2FE
+  rectangle "library-auth-module/\napplication/\ndomain/\ninfrastructure/security/\npresentation/AuthController.java" as auth #DBEAFE
+  rectangle "library-user-module/\napplication/usecase/\ndomain/\ninfrastructure/\npresentation/controller/" as user #DCFCE7
+  rectangle "library-catalog-module/\napplication/\ndomain/\ninfrastructure/persistence/\npresentation/controller/" as catalog #FEF3C7
+  rectangle "library-circulation-module/\ntransaction/\nreservation/\nfine/\npolicy/" as circulation #FFEDD5
+  rectangle "library-recommendation-module/\nwishlist/\nrating/\nAI gateway\nAI callback" as rec #FCE7F3
+  rectangle "library-shared/\ndto/\nexception/\nkafka/event/\nstorage/\nutil/" as shared #EDE9FE
+  rectangle "Build + test\npom.xml\nDockerfile\nmodule tests" as build #F1F5F9
+}
+
+boot -[hidden]down- auth
+boot -[hidden]right- auth
+user -[hidden]right- catalog
+circulation -[hidden]right- rec
+shared -[hidden]right- build
+boot -[hidden]down- user
+auth -[hidden]down- catalog
+user -[hidden]down- circulation
+catalog -[hidden]down- rec
+circulation -[hidden]down- shared
+rec -[hidden]down- build
+@enduml

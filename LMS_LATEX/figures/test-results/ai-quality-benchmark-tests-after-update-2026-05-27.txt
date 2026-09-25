@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.6.0
+rootdir: /Users/hosythang/Desktop/Rốt lập trình/LMS/LMS_AI
+configfile: pytest.ini
+plugins: anyio-4.13.0
+collected 5 items
+
+tests/test_ai_quality_benchmark.py .....                                 [100%]
+
+============================== 5 passed in 0.14s ===============================

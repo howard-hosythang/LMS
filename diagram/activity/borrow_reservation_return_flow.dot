@@ -1,0 +1,93 @@
+digraph BorrowReservationReturnFlow {
+  graph [
+    rankdir=LR,
+    bgcolor="white",
+    pad="0.35",
+    nodesep="0.55",
+    ranksep="0.75",
+    splines=ortho,
+    outputorder=edgesfirst
+  ];
+
+  node [
+    shape=rect,
+    style="rounded,filled",
+    fontname="Arial",
+    fontsize=18,
+    margin="0.18,0.12",
+    penwidth=2,
+    color="#172554",
+    fillcolor="#F8FAFC",
+    fontcolor="#0F172A"
+  ];
+
+  edge [
+    color="#1E3A8A",
+    penwidth=2.4,
+    arrowsize=0.9,
+    fontname="Arial",
+    fontsize=14,
+    fontcolor="#334155"
+  ];
+
+  start [
+    label="Bạn đọc\n tìm sách",
+    fillcolor="#DBEAFE"
+  ];
+
+  copy_status [
+    label="Xem trạng thái\nbản sao",
+    fillcolor="#E0F2FE"
+  ];
+
+  request [
+    label="Gửi yêu cầu\nmượn hoặc đặt trước",
+    fillcolor="#DCFCE7"
+  ];
+
+  backend_check [
+    label="Backend kiểm tra\npolicy và trạng thái item",
+    fillcolor="#FEF3C7"
+  ];
+
+  librarian_confirm [
+    label="Thủ thư duyệt /\nxác nhận nhận sách",
+    fillcolor="#FFEDD5"
+  ];
+
+  update_system [
+    label="Cập nhật transaction,\nitem status, notification",
+    fillcolor="#F3E8FF"
+  ];
+
+  return_book [
+    label="Khi trả sách:\ntính quá hạn / hư / mất",
+    fillcolor="#FFE4E6"
+  ];
+
+  fine [
+    label="Tạo fine\nnếu phát sinh",
+    fillcolor="#FEE2E2"
+  ];
+
+  payment [
+    label="Thanh toán\ntiền mặt hoặc PayOS",
+    fillcolor="#CCFBF1"
+  ];
+
+  end [
+    label="Hoàn tất luồng\nmượn - trả",
+    fillcolor="#DCFCE7"
+  ];
+
+  start -> copy_status;
+  copy_status -> request;
+  request -> backend_check;
+  backend_check -> librarian_confirm;
+  librarian_confirm -> update_system;
+  update_system -> return_book;
+  return_book -> fine [label="có phí"];
+  fine -> payment;
+  payment -> end;
+  return_book -> end [label="không phát sinh phí", color="#16A34A", fontcolor="#166534"];
+}

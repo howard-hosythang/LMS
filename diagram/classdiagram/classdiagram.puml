@@ -1,0 +1,745 @@
+@startuml
+' ============================================================
+' LMS - Class Diagram
+' Conventional UML class diagram for report usage.
+' Focus: domain classes, attributes, methods and relationships.
+' ============================================================
+
+!theme plain
+title LMS - Class Diagram
+
+left to right direction
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 42
+skinparam ranksep 32
+hide circle
+hide methods
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #2F3A4A
+  ArrowColor #2F3A4A
+  FontColor #111827
+  HeaderBackgroundColor #EAF2FF
+}
+
+skinparam package {
+  BackgroundColor #F8FAFC
+  BorderColor #CBD5E1
+}
+
+' =========================
+' User and Authentication
+' =========================
+package "User and Authentication" as P_User #EEF2FF {
+  class User {
+    - id: Long
+    - email: String
+    - passwordHash: String
+    - profile: UserProfile
+    - status: UserStatus
+    - isVerified: boolean
+    - provider: String
+    - providerId: String
+    - lastLoginAt: LocalDateTime
+    - creditScore: int
+    - contributionScore: int
+    + registerUser(): User
+    + createByOauth2(): User
+    + completeOnboardingProfile(studentId: String, phone: String, faculty: Faculty): void
+    + assignRole(role: Role): void
+    + activeAccount(): void
+    + validateStatus(): void
+    + changePassword(oldPassword: String, newPassword: String): void
+    + resetPassword(newPassword: String): void
+  }
+
+  class UserProfile {
+    - fullName: String
+    - dateOfBirth: LocalDate
+    - phoneNumber: String
+    - address: String
+    - profilePictureUrl: String
+    - studentId: String
+    - faculty: Faculty
+    + create(fullName: String, studentId: String, faculty: Faculty): UserProfile
+    + createByOauth2(fullName: String, avatarUrl: String): UserProfile
+  }
+
+  class Role {
+    - id: Long
+    - roleName: String
+    - description: String
+    + create(roleName: String, description: String): Role
+    + updateDetails(roleName: String, description: String): void
+    + isSystemRole(): boolean
+  }
+
+  class Notification {
+    - id: Long
+    - type: NotificationType
+    - title: String
+    - message: String
+    - link: String
+    - referenceId: Long
+    - createdAt: Instant
+    + create(type: NotificationType, title: String, message: String): Notification
+  }
+
+  class UserNotification {
+    - id: Long
+    - isRead: boolean
+    - receivedAt: Instant
+    + create(user: User, notification: Notification): UserNotification
+    + markAsRead(): void
+  }
+
+  class RefreshToken {
+    - id: String
+    - deviceId: String
+    - expiryDate: Instant
+    - revoked: boolean
+    + isExpiredOrRevoked(): boolean
+    + revoke(): void
+  }
+
+  class PasswordResetToken {
+    - token: String
+    - expiresAt: Instant
+    + isExpired(): boolean
+  }
+
+  enum UserStatus {
+    ACTIVE
+    INACTIVE
+    LOCKED
+    BANNED
+  }
+
+  enum NotificationType {
+    BOOK_RESERVED
+    BOOK_AVAILABLE
+    BORROW_SUCCESS
+    BORROW_CANCELLED_EXPIRED
+    OVERDUE_WARNING
+    FINE_ISSUED
+    SYSTEM_MAINTENANCE
+    RETURN_REMINDER
+    PICKUP_CONFIRMED
+    RETURN_CONFIRMED
+    FINE_PAID
+    REVIEW_REPLY
+    CONTACT_TICKET_UPDATED
+  }
+
+  enum Faculty {
+    KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH
+    KHOA_DIEN_DIEN_TU
+    KHOA_CO_KHI
+    KHOA_KY_THUAT_HOA_HOC
+    KHOA_KY_THUAT_XAY_DUNG
+    KHOA_QUAN_LY_CONG_NGHIEP
+  }
+}
+
+
+User "1" o-- "1..*" Role
+User "1" *-- "1" UserProfile
+User "1" *-- "0..*" RefreshToken
+User "1" *-- "0..*" PasswordResetToken
+User "1" -- "0..*" UserNotification
+Notification "1" -- "0..*" UserNotification
+
+' =========================
+' Catalog
+' =========================
+package "Catalog" as P_Catalog #ECFDF5 {
+  class Publication {
+    - id: Long
+    - isbn: String
+    - metadata: PublicationMetadata
+    - callNumber: String
+    - publisherId: Long
+    - createdByLibrarianId: Long
+    - updatedByLibrarianId: Long
+    + create(isbn: String, title: String): Publication
+    + updateMetadata(): void
+    + attachCover(url: String): void
+    + attachDocument(url: String): void
+    + updateAiMetadata(summary: String, audience: String): void
+  }
+
+  class PublicationMetadata {
+    - title: String
+    - subtitle: String
+    - description: String
+    - language: String
+    - numberOfPages: Integer
+    - publicationYear: Integer
+    - edition: Integer
+    - coverImageUrl: String
+    - fileUrl: String
+    - tableOfContents: String
+    - size: String
+    - weight: Double
+    - aiSummary: String
+    - aiTargetAudience: Faculty
+    + updateBibliographicData(): PublicationMetadata
+    + updateAiMetadata(summary: String, audience: Faculty): PublicationMetadata
+  }
+
+  class Item {
+    - id: Long
+    - barcode: String
+    - status: ItemStatus
+    - shelf: String
+    - room: String
+    - branch: String
+    - condition: ConditionItem
+    + create(publication: Publication, barcode: String): Item
+    + markBorrowed(): void
+    + markAvailable(): void
+    + markReserved(): void
+    + markLost(): void
+  }
+
+  class Publisher {
+    - id: Long
+    - name: String
+    - address: String
+    + create(name: String, address: String): Publisher
+    + updateInfo(name: String, address: String): void
+  }
+
+  class Author {
+    - id: Long
+    - name: String
+    - bio: String
+    - dateOfBirth: LocalDate
+    - dateOfDeath: LocalDate
+    + create(name: String): Author
+    + updateName(name: String): void
+    + updateBiography(bio: String): void
+    + markAsAlive(): void
+  }
+
+  class Category {
+    - id: Long
+    - name: String
+    - bio: String
+    + createRoot(name: String): Category
+    + createChild(name: String, parent: Category): Category
+  }
+
+  class Tag {
+    - id: Long
+    - name: String
+    + create(name: String): Tag
+  }
+
+  class PublicationAuthor {
+    - id: Long
+    + create(publication: Publication, author: Author): PublicationAuthor
+  }
+
+  class PublicationCategory {
+    - id: Long
+    + create(publication: Publication, category: Category): PublicationCategory
+  }
+
+  class PublicationTag {
+    - id: Long
+    + create(publication: Publication, tag: Tag): PublicationTag
+  }
+
+  class PublicationTranslation {
+    - id: Long
+    - languageCode: String
+    - title: String
+    - subtitle: String
+    - description: String
+    - aiSummary: String
+    - tableOfContents: String
+    + upsertLocalizedMetadata(): PublicationTranslation
+  }
+
+  class CategoryTranslation {
+    - id: Long
+    - languageCode: String
+    - name: String
+    - bio: String
+    + upsertLocalizedMetadata(): CategoryTranslation
+  }
+
+  class TagTranslation {
+    - id: Long
+    - languageCode: String
+    - name: String
+    + upsertLocalizedName(): TagTranslation
+  }
+
+  class SystemReview {
+    - id: Long
+    - rating: int
+    - comment: String
+    - reviewerName: String
+    - reviewerRole: String
+    - profilePictureUrl: String
+    - isPublished: boolean
+    + upsertForUser(user: User, rating: int, comment: String): SystemReview
+    + publish(): void
+    + hide(): void
+  }
+
+  enum ItemStatus {
+    AVAILABLE
+    BORROWED
+    RESERVED
+    IN_MAINTENANCE
+    LOST
+  }
+
+  enum ConditionItem {
+    NEW
+    OLD
+  }
+}
+
+Publisher "1" <-left- "0..*" Publication
+Publication "1" *-- "1" PublicationMetadata
+Publication "1" *-right- "0..*" Item
+Publication "1" -up- "0..*" PublicationAuthor
+Author "1" -right- "0..*" PublicationAuthor
+Publication "1" -left- "0..*" PublicationCategory
+Category "1" -right- "0..*" PublicationCategory
+Publication "1" -down- "0..*" PublicationTag
+Tag "1" -right- "0..*" PublicationTag
+Publication "1" *-right- "0..*" PublicationTranslation
+Category "1" *-right- "0..*" CategoryTranslation
+Tag "1" *-right- "0..*" TagTranslation
+User "0..1" -down- "0..*" SystemReview
+Category "0..1" <-- "0..*" Category
+Item --> ItemStatus
+Item --> ConditionItem
+PublicationMetadata --> Faculty
+
+' =========================
+' Circulation
+' =========================
+package "Circulation" as P_Circulation #FFF7ED {
+  class BorrowingTransaction {
+    - id: Long
+    - borrowedDate: Instant
+    - dueDate: LocalDate
+    - returnedDate: Instant
+    - pickedUpDeadline: Instant
+    - status: TransactionStatus
+    - renewalCount: int
+    + createBorrowRequest(user: User, item: Item): BorrowingTransaction
+    + createDirectBorrow(user: User, item: Item, librarian: User): BorrowingTransaction
+    + confirmPickup(librarian: User, dueDate: LocalDate): void
+    + cancel(): void
+    + processReturn(librarian: User, returnedAt: Instant): void
+    + isOverdue(today: LocalDate): boolean
+  }
+
+  class TransactionNote {
+    - id: Long
+    - important: boolean
+    - note: String
+    - createdAt: Instant
+    - updatedAt: Instant
+    + add(transaction: BorrowingTransaction, librarian: User, note: String): TransactionNote
+    + update(important: boolean, note: String): void
+    + deleteByOwner(librarian: User): void
+  }
+
+  class Reservation {
+    - id: Long
+    - reservationDate: Instant
+    - status: ReservationStatus
+    - queuePosition: int
+    - holdExpirationTime: Instant
+    - preferredBranch: String
+    + create(user: User, publication: Publication, branch: String): Reservation
+    + assign(item: Item, holdExpTime: Instant): void
+    + cancel(): void
+    + complete(): void
+  }
+
+  class Fine {
+    - id: Long
+    - fineAmount: BigDecimal
+    - createdAt: Instant
+    - paidDate: Instant
+    - status: PaymentStatus
+    - type: ViolationType
+    - paidByLibrarianId: Long
+    + create(transaction: BorrowingTransaction, amount: BigDecimal): Fine
+    + markPaid(): void
+    + isPaid(): boolean
+  }
+
+  class FinePaymentOrder {
+    - id: Long
+    - studentId: String
+    - orderCode: Long
+    - amount: BigDecimal
+    - fineCount: int
+    - provider: PaymentProvider
+    - status: PaymentOrderStatus
+    - paymentLinkId: String
+    - checkoutUrl: String
+    - qrCode: String
+    - paidAt: Instant
+    + createForFines(user: User, fines: List<Fine>): FinePaymentOrder
+    + markPaid(reference: String): void
+    + expire(): void
+    + cancel(): void
+  }
+
+  class FinePaymentOrderFine {
+    - orderId: Long
+    - fineId: Long
+    + link(order: FinePaymentOrder, fine: Fine): FinePaymentOrderFine
+  }
+
+  class CirculationPolicy {
+    - id: Long
+    - maxActiveBorrows: int
+    - maxActiveReservations: int
+    - defaultLoanDays: int
+    - pickupDeadlineHours: int
+    - overdueFinePerDay: BigDecimal
+    - blockBorrowWhenUnpaidFines: boolean
+    - updatedByAdminId: Long
+    - updatedAt: Instant
+    + calculateDueDate(borrowedDate: Instant): LocalDate
+    + calculateOverdueFine(days: int): BigDecimal
+    + updateByAdmin(admin: User): void
+  }
+
+  enum TransactionStatus {
+    WAITING_FOR_PICKUP
+    BORROWING
+    RETURNED
+    OVERDUE
+    CANCELLED
+  }
+
+  enum ReservationStatus {
+    PENDING
+    READY_FOR_PICKUP
+    CANCELLED
+    EXPIRED
+    COMPLETED
+  }
+
+  enum PaymentStatus {
+    UNPAID
+    PAID
+  }
+
+  enum PaymentProvider {
+    PAYOS
+  }
+
+  enum PaymentOrderStatus {
+    PENDING
+    PAID
+    CANCELLED
+    EXPIRED
+    FAILED
+  }
+
+  enum ViolationType {
+    DAMAGED_BOOK
+    OVERDUE_RETURN
+    LOST_BOOK
+  }
+}
+
+User "1" -- "0..*" BorrowingTransaction
+User "0..1" -- "0..*" BorrowingTransaction
+Item "1" -- "0..*" BorrowingTransaction
+BorrowingTransaction "1" *-- "0..*" TransactionNote
+User "1" -- "0..*" TransactionNote
+BorrowingTransaction "1" *-- "0..*" Fine
+User "0..1" -- "0..*" Fine
+User "1" -- "0..*" FinePaymentOrder
+User "0..1" -- "0..*" FinePaymentOrder
+FinePaymentOrder "1" *-- "1..*" FinePaymentOrderFine
+Fine "1" -- "0..*" FinePaymentOrderFine
+User "1" -- "0..*" Reservation
+Publication "1" -down- "0..*" Reservation
+Reservation "0..1" --> "0..1" Item
+BorrowingTransaction --> TransactionStatus
+Reservation --> ReservationStatus
+Fine --> PaymentStatus
+FinePaymentOrder --> PaymentProvider
+FinePaymentOrder --> PaymentOrderStatus
+Fine --> ViolationType
+BorrowingTransaction ..down> CirculationPolicy
+Reservation ..right> CirculationPolicy
+Fine ..right> CirculationPolicy
+' =========================
+' Review, Wishlist and Recommendation Data
+' =========================
+package "Review and Recommendation Data" as P_Review #FDF2F8 {
+  class Rating {
+    - id: Long
+    - ratingValue: int
+    - reviewText: String
+    - helpfulCount: Integer
+    - verifiedBorrow: Boolean
+    - transactionId: Long
+    - itemBarcode: String
+    - createdAt: Instant
+    + create(user: User, publication: Publication, ratingValue: int): Rating
+    + markAsHelpful(): void
+  }
+
+  class RatingReply {
+    - id: Long
+    - content: String
+    - createdAt: Instant
+    - updatedAt: Instant
+    + create(rating: Rating, librarian: User, content: String): RatingReply
+    + update(content: String): void
+  }
+
+  class RatingHelpfulVote {
+    - id: Long
+    - createdAt: Instant
+    + create(rating: Rating, user: User): RatingHelpfulVote
+  }
+
+  class WishList {
+    - id: Long
+    + create(user: User): WishList
+    + addItem(publication: Publication): void
+    + removeItem(publication: Publication): void
+    + clear(): void
+  }
+
+  class WishListItem {
+    - id: Long
+    - addedAt: Instant
+    + create(publication: Publication): WishListItem
+  }
+
+  class SearchHistory {
+    - id: Long
+    - searchQuery: String
+    - createdAt: Instant
+    + create(user: User, query: String): SearchHistory
+  }
+
+  class UserInteraction {
+    - id: Long
+    - interactionType: InteractionType
+    - createdAt: Instant
+    + create(user: User, publication: Publication, type: InteractionType): UserInteraction
+  }
+
+  enum InteractionType {
+    WATCH
+    WISHLIST
+    BORROWED
+  }
+}
+
+User "1" -- "0..*" Rating
+Publication "1" -down- "0..*" Rating
+BorrowingTransaction "0..1" -- "0..1" Rating
+Rating "1" *-- "0..*" RatingReply
+User "1" -- "0..*" RatingReply
+Rating "1" *-- "0..*" RatingHelpfulVote
+User "1" -- "0..*" RatingHelpfulVote
+User "1" *-- "0..1" WishList
+WishList "1" *-- "0..*" WishListItem
+Publication "1" -down- "0..*" WishListItem
+User "1" -- "0..*" SearchHistory
+User "1" -- "0..*" UserInteraction
+Publication "1" -right- "0..*" UserInteraction
+UserInteraction --> InteractionType
+
+' Spread review-related classes horizontally to reduce overlapping routes.
+Rating -[hidden]right- UserInteraction
+UserInteraction -[hidden]right- SearchHistory
+SearchHistory -[hidden]right- WishList
+WishList -[hidden]right- WishListItem
+
+' =========================
+' AI Processing
+' =========================
+package "AI Processing" as P_AI #F0FDFA {
+  class AiGatewayService {
+    - baseUrl: String
+    - connectTimeoutMs: int
+    - readTimeoutMs: int
+    + semanticSearch(queryText: String, limit: int): List<Publication>
+    + getRecommendations(user: User, limit: int): List<Publication>
+    + getSimilarPublications(publication: Publication, limit: int): List<Publication>
+    + processPublication(publication: Publication, pdfUrl: String): void
+  }
+
+  class AiProcessingJob {
+    - id: Long
+    - status: AiProcessingStatus
+    - pdfUrl: String
+    - fileHash: String
+    - chunksCount: int
+    - vectorsCount: int
+    - errorMessage: String
+    - createdAt: Instant
+    - updatedAt: Instant
+    + markQueued(): void
+    + markSuccess(chunks: int, vectors: int): void
+    + markFailed(errorMessage: String): void
+  }
+
+  enum AiProcessingStatus {
+    QUEUED
+    SUCCESS
+    FAILED
+  }
+}
+
+Publication "1" *-down- "0..*" AiProcessingJob
+AiProcessingJob --> AiProcessingStatus
+AiGatewayService ..up> Publication
+AiGatewayService ..> AiProcessingJob
+
+' =========================
+' Support and Governance
+' =========================
+package "Support and Governance" as P_Support #F5F3FF {
+  class ContactMessage {
+    - id: Long
+    - ticketCode: String
+    - senderName: String
+    - senderEmail: String
+    - category: ContactCategory
+    - subject: String
+    - message: String
+    - status: ContactStatus
+    - internalNote: String
+    - replyMessage: String
+    - repliedAt: LocalDateTime
+    - closedAt: LocalDateTime
+    - satisfactionRating: Integer
+    - feedbackNote: String
+    - reopenedAt: LocalDateTime
+    + submit(user: User, subject: String, message: String): ContactMessage
+    + assignTo(librarian: User): void
+    + reply(librarian: User, message: String): void
+    + close(): void
+    + reopen(): void
+    + submitFeedback(rating: int, note: String): void
+  }
+
+  class ContactMessageComment {
+    - id: Long
+    - authorName: String
+    - authorEmail: String
+    - authorRole: String
+    - body: String
+    - createdAt: LocalDateTime
+    + add(message: ContactMessage, author: User, body: String): ContactMessageComment
+  }
+
+  class ContactInternalNote {
+    - id: Long
+    - body: String
+    - createdAt: LocalDateTime
+    - updatedAt: LocalDateTime
+    + upsert(message: ContactMessage, author: User, body: String): ContactInternalNote
+  }
+
+  class AuditLog {
+    - id: Long
+    - actorUserId: Long
+    - actorRole: String
+    - action: String
+    - entityType: String
+    - entityId: String
+    - summary: String
+    - details: Json
+    - createdAt: Instant
+    + record(actor: User, action: String, entityType: String): AuditLog
+  }
+
+  enum ContactCategory {
+    GENERAL
+    SYSTEM_ERROR
+    CIRCULATION
+    BOOK_SUGGESTION
+    ACCOUNT
+    OTHER
+  }
+
+  enum ContactStatus {
+    NEW
+    IN_PROGRESS
+    RESOLVED
+    CLOSED
+  }
+}
+
+User "0..1" -- "0..*" ContactMessage
+User "0..1" -- "0..*" ContactMessage
+ContactMessage "1" *-- "0..*" ContactMessageComment
+ContactMessage "1" *-- "0..*" ContactInternalNote
+User "0..1" -- "0..*" ContactMessageComment
+User "1" -- "0..*" ContactInternalNote
+User "0..1" -- "0..*" AuditLog
+ContactMessage --> ContactCategory
+ContactMessage --> ContactStatus
+
+' Layout hints for report-friendly aspect ratio.
+' These hidden links do not add semantic meaning; they only guide PlantUML.
+User -[hidden]right- UserProfile
+UserProfile -[hidden]right- Role
+Role -[hidden]right- Notification
+Notification -[hidden]right- UserNotification
+UserNotification -[hidden]right- RefreshToken
+RefreshToken -[hidden]right- PasswordResetToken
+
+Publisher -[hidden]right- Publication
+Publication -[hidden]right- PublicationMetadata
+Publication -[hidden]up- PublicationAuthor
+Publication -[hidden]left- PublicationCategory
+Publication -[hidden]down- PublicationTag
+Publication -[hidden]right- Item
+Author -[hidden]right- Category
+Category -[hidden]right- Tag
+PublicationTranslation -[hidden]right- CategoryTranslation
+CategoryTranslation -[hidden]right- TagTranslation
+
+BorrowingTransaction -[hidden]right- TransactionNote
+TransactionNote -[hidden]right- Reservation
+Reservation -[hidden]right- Fine
+Fine -[hidden]right- FinePaymentOrder
+FinePaymentOrder -[hidden]right- FinePaymentOrderFine
+FinePaymentOrderFine -[hidden]right- CirculationPolicy
+
+User -[hidden]right- Publication
+Publication -[hidden]right- BorrowingTransaction
+Item -[hidden]right- BorrowingTransaction
+Rating -[hidden]right- AiGatewayService
+WishList -[hidden]right- AiProcessingJob
+ContactMessage -[hidden]right- ContactMessageComment
+ContactMessageComment -[hidden]right- ContactInternalNote
+ContactInternalNote -[hidden]right- AuditLog
+P_User -[hidden]right- P_Catalog
+P_Catalog -[hidden]right- P_Circulation
+P_Circulation -[hidden]right- P_Review
+P_Review -[hidden]right- P_AI
+P_AI -[hidden]right- P_Support
+
+@enduml

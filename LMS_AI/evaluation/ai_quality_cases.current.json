@@ -1,0 +1,85 @@
+{
+  "metadata_cases": [
+    {
+      "id": "current-green-chemistry-001",
+      "publication_id": 846266189232886522,
+      "title": "Green Chemistry and Engineering",
+      "expected_tags": ["Hóa học xanh", "Kỹ thuật xanh", "Đánh giá vòng đời", "Sản xuất bền vững", "Tối ưu hóa quy trình"],
+      "source_keywords": ["hóa học xanh", "kỹ thuật xanh", "sản xuất bền vững", "đánh giá vòng đời", "quy trình"],
+      "forbidden_terms": ["địa chất dầu khí", "ma trận", "hôn nhân", "truyện gothic"]
+    },
+    {
+      "id": "current-municipal-solid-waste-001",
+      "publication_id": 846295817276250932,
+      "title": "Municipal Solid Wastes",
+      "expected_tags": ["Kỹ thuật môi trường", "Quản lý chất thải", "Xử lý chất thải rắn", "Tái chế", "Tối Ưu Hóa"],
+      "source_keywords": ["chất thải rắn", "quản lý chất thải", "tái chế", "kỹ thuật môi trường", "đô thị"],
+      "forbidden_terms": ["đại số tuyến tính", "dầu khí", "mạch logic", "du hành thời gian"]
+    },
+    {
+      "id": "current-petroleum-geology-001",
+      "publication_id": 846304113018166047,
+      "title": "Petroleum Geology of the North Sea",
+      "expected_tags": ["Địa chất dầu khí", "Bể trầm tích", "Địa tầng học trình tự", "Thăm dò dầu khí", "Trầm tích học"],
+      "source_keywords": ["địa chất dầu khí", "Biển Bắc", "bể trầm tích", "hydrocarbon", "thăm dò"],
+      "forbidden_terms": ["hôn nhân", "ma trận", "vật liệu bền vững", "xác suất thống kê"]
+    },
+    {
+      "id": "current-linear-algebra-001",
+      "publication_id": 846301836018605010,
+      "title": "Introduction to Linear Algebra",
+      "expected_tags": ["Đại số tuyến tính", "Ma trận", "Trị riêng", "Thuật Toán", "Phương trình vi phân"],
+      "source_keywords": ["đại số tuyến tính", "ma trận", "không gian vectơ", "trị riêng", "hệ phương trình"],
+      "forbidden_terms": ["ô nhiễm không khí", "dầu khí", "polymer", "chất thải rắn"]
+    },
+    {
+      "id": "current-probability-001",
+      "publication_id": 846301940163173364,
+      "title": "Introduction to Probability",
+      "expected_tags": ["Xác suất thống kê", "Biến ngẫu nhiên", "Phân phối xác suất", "Kỳ vọng toán học", "Học Máy"],
+      "source_keywords": ["xác suất", "biến ngẫu nhiên", "phân phối", "kỳ vọng", "thống kê"],
+      "forbidden_terms": ["hóa học xanh", "địa chất dầu khí", "vật liệu xây dựng", "xử lý khí thải"]
+    },
+    {
+      "id": "current-polymer-001",
+      "publication_id": 846300289582914556,
+      "title": "Polymer Science and Technology",
+      "expected_tags": ["Khoa học Polymer", "Công nghệ vật liệu", "Tổng hợp hóa học", "Gia công nhựa", "Màng lọc"],
+      "source_keywords": ["polymer", "tổng hợp hóa học", "gia công nhựa", "công nghệ vật liệu", "màng lọc"],
+      "forbidden_terms": ["đại số tuyến tính", "dầu khí", "chất thải rắn", "xác suất"]
+    }
+  ],
+  "search_cases": [
+    {
+      "id": "current-search-environment",
+      "query": "tôi muốn học về môi trường và xử lý chất thải rắn đô thị",
+      "relevant_publication_ids": [846295817276250932, 846293392238728605, 846294687653714868, 846292718985827172]
+    },
+    {
+      "id": "current-search-green-chemistry",
+      "query": "sách về hóa học xanh kỹ thuật xanh và sản xuất bền vững",
+      "relevant_publication_ids": [846266189232886522, 846292718985827172, 846295543774073589]
+    },
+    {
+      "id": "current-search-petroleum-geology",
+      "query": "sách về kỹ thuật dầu khí địa chất dầu khí đá chứa và thăm dò hydrocarbon",
+      "relevant_publication_ids": [846304113018166047, 846303366566269686, 846303027037363134, 846304415070968827, 846304277028035574]
+    },
+    {
+      "id": "current-search-linear-algebra",
+      "query": "sách về đại số tuyến tính ma trận không gian vectơ và trị riêng",
+      "relevant_publication_ids": [846301836018605010, 846302202722409451, 846302320599129073]
+    },
+    {
+      "id": "current-search-probability",
+      "query": "sách về xác suất thống kê biến ngẫu nhiên phân phối và kỳ vọng",
+      "relevant_publication_ids": [846301940163173364, 846301159708054453, 13]
+    },
+    {
+      "id": "current-search-polymer-nano",
+      "query": "sách về khoa học polymer công nghệ nano và vật liệu kỹ thuật",
+      "relevant_publication_ids": [846300289582914556, 846300147605724054, 846296943459455933, 846261437241646020]
+    }
+  ],
+  "recommendation_cases": []
+}

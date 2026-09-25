@@ -1,0 +1,61 @@
+@startuml
+!theme plain
+title Use Case - Tra cứu và khám phá tài liệu
+
+left to right direction
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam ArrowMessageAlignment center
+skinparam packageStyle rectangle
+skinparam nodesep 34
+skinparam ranksep 38
+
+actor "Khách" as Guest
+actor "Bạn đọc" as Reader
+actor "Thủ thư" as Librarian
+
+rectangle "Hệ thống LMS - Tra cứu và khám phá tài liệu" {
+  usecase "Xem\ntrang chủ" as UC_Home
+  usecase "Tìm kiếm\ntài liệu" as UC_Search
+  usecase "Tìm kiếm\nngữ nghĩa" as UC_SemanticSearch
+  usecase "Lọc theo\ndanh mục/tag" as UC_Filter
+  usecase "Xem danh mục" as UC_ViewCategories
+  usecase "Xem chi tiết\ntài liệu" as UC_ViewBook
+  usecase "Xem tình trạng\nbản sao" as UC_ViewItems
+  usecase "Xem sách\ntương tự" as UC_SimilarBooks
+  usecase "Xem đánh giá\nsách" as UC_ViewRatings
+  usecase "Xem thống kê\nthư viện công khai" as UC_PublicStats
+  usecase "Ghi nhận lượt xem\ntài liệu" as UC_RecordView
+  usecase "Lưu lịch sử\ntìm kiếm" as UC_SaveSearchHistory
+}
+
+Guest --> UC_Home
+Guest --> UC_Search
+Guest --> UC_ViewCategories
+Guest --> UC_ViewBook
+Guest --> UC_PublicStats
+
+Reader --> UC_Search
+Reader --> UC_ViewBook
+Reader --> UC_SaveSearchHistory
+
+Librarian --> UC_Search
+Librarian --> UC_ViewBook
+Librarian --> UC_ViewItems
+
+UC_Search ..> UC_Filter : <back:#FFFFFF><<include>></back>
+UC_SemanticSearch ..> UC_Search : <back:#FFFFFF><<extend>></back>
+UC_SaveSearchHistory ..> UC_Search : <back:#FFFFFF><<extend>></back>
+UC_ViewBook ..> UC_ViewItems : <back:#FFFFFF><<include>></back>
+UC_ViewBook ..> UC_ViewRatings : <back:#FFFFFF><<include>></back>
+UC_ViewBook ..> UC_SimilarBooks : <back:#FFFFFF><<include>></back>
+UC_ViewBook ..> UC_RecordView : <back:#FFFFFF><<include>></back>
+
+Guest -[hidden]down- Reader
+Reader -[hidden]down- Librarian
+UC_Home -[hidden]right- UC_Search
+UC_Search -[hidden]right- UC_ViewBook
+UC_ViewBook -[hidden]right- UC_PublicStats
+
+@enduml

@@ -1,0 +1,28 @@
+{
+  "source_pdf": "test_pdfs/gemini_live_sample.pdf",
+  "model": "gemini-2.5-flash-lite",
+  "processing_seconds": 8.354,
+  "extracted_chars": 1363,
+  "chunks": 1,
+  "reduce_inputs": 1,
+  "master_summary": "Tài liệu này giới thiệu ứng dụng học máy để cải thiện tìm kiếm sách, gợi ý cá nhân hóa, embedding ngữ nghĩa, collaborative filtering và đánh giá hệ thống khuyến nghị trong thư viện đại học. Nội dung có liên quan trực tiếp đến Học Máy, Chuẩn Hóa Dữ Liệu, Học Có Giám Sát, Trí Tuệ Nhân Tạo, giúp người đọc xây dựng nền tảng, nắm phương pháp thực hành và định hướng ứng dụng kiến thức vào học tập hoặc dự án kỹ thuật.",
+  "audience": "KHOA_KHOA_HOC_VA_KY_THUAT_MAY_TINH",
+  "tags": [
+    "Học Máy",
+    "Chuẩn Hóa Dữ Liệu",
+    "Học Có Giám Sát",
+    "Trí Tuệ Nhân Tạo",
+    "Cơ Sở Dữ Liệu"
+  ],
+  "tags_en": [
+    "Machine Learning",
+    "Database Normalization",
+    "Supervised Learning",
+    "Artificial Intelligence",
+    "Database"
+  ],
+  "status": "PASSED_WITH_FALLBACK",
+  "live_status": "FAILED",
+  "fallback_used": true,
+  "live_error": "Reduce failed on all model routes: LLM API failed after 2 attempts: 429 Client Error: Too Many Requests for url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=<redacted>"
+}

@@ -1,0 +1,65 @@
+✅ Connected to database
+
+📚 Total Books: 37
+   ├─ Books with AI summary: 6 (16%)
+   ├─ Books with vectors: 37 (100%)
+   └─ Total vectors stored: 31980
+
+🏷️  Total Tags: 73
+   User Interactions by Type:
+   ├─ BORROWED: 8
+   ├─ WATCH: 153
+   ├─ WISHLIST: 9
+
+⭐ Recently Processed Books:
+
+id                 | title                                                | status    | updated_at
+  -------------------+------------------------------------------------------+-----------+---------------------------------
+  844248034393457099 | Essentials of Mechatronics                           | ✅ DONE    | 2026-05-18 16:21:17.928032+00:00
+  844245619187387378 | Introduction to Mechatronics and Measurement Systems | ✅ DONE    | 2026-05-18 16:13:49.647094+00:00
+  844241685135754357 | Digital Design and Computer Architecture             | ✅ DONE    | 2026-05-18 15:59:40.781309+00:00
+  843425780171766896 | aaaaaaaaaaaaaaaa                                     | ✅ DONE    | 2026-05-16 09:59:53.645693+00:00
+  17                 | Computer Networks                                    | ⏳ PENDING | 2026-05-16 08:11:37.247834+00:00
+  32                 | Full Stack Open                                      | ⏳ PENDING | 2026-05-16 08:11:37.247834+00:00
+  2                  | Domain-Driven Design                                 | ⏳ PENDING | 2026-05-16 08:11:37.247834+00:00
+  4                  | Giáo Trình Cơ Sở Dữ Liệu                             | ⏳ PENDING | 2026-05-16 08:11:37.247834+00:00
+  5                  | Lập Trình Java Hướng Đối Tượng                       | ⏳ PENDING | 2026-05-16 08:11:37.247834+00:00
+  843157064459707377 | Machine Learning cơ bản                              | ✅ DONE    | 2026-05-15 17:30:21.894843+00:00
+
+⏳ Books Pending AI Processing:
+
+id | title                                             | available_copies
+  ---+---------------------------------------------------+-----------------
+  29 | The Linux Command Line                            | 2
+  4  | Giáo Trình Cơ Sở Dữ Liệu                          | 3
+  32 | Full Stack Open                                   | 2
+  10 | Concrete Mathematics                              | 2
+  9  | How to Think Like a Computer Scientist            | 2
+  7  | Computer Science Illuminated                      | 2
+  15 | Design Patterns                                   | 2
+  6  | Structure and Interpretation of Computer Programs | 2
+  26 | You Don't Know JS Yet                             | 2
+  12 | Introduction to Theoretical Computer Science      | 2
+
+📊 Sample Data (First 3 Books with Vectors):
+   Book 1: 630 vectors
+      Sample: 000)); 234 assertFalse(isLeapYear(2001)); 235 assertFalse(isLeapYear(2100)); 236 } 238 public void t...
+   Book 2: 1 vectors
+      Sample: Publication ID: 2
+Title: Domain-Driven Design
+Language: English
+Publication year: 2003
+Authors: Eric...
+   Book 3: 459 vectors
+      Sample: = 0.98; return basePrice * discountFactor; } private int basePrice() { return _quantity * _itemPrice...
+
+🗄️  Database Statistics:
+   ai_engine: 4 tables
+      Tables: search_logs, publication_vectors, recommendation_cache, publication_etl_runs
+   public: 34 tables
+      Tables: items, publication_categories, categories, fines, flyway_schema_history, user_interactions, roles, password_reset_tokens, refresh_tokens, authors, reservations, search_history, notifications, publication_authors, ai_recommendations, publication_tags, tags, publishers, user_notifications, user_roles, publications, ratings, wish_lists_item, wish_lists, borrowing_transactions, system_reviews, transaction_notes, users, publication_translations, category_translations, tag_translations, fine_payment_orders, rating_helpful_votes, rating_replies
+
+⚙️  Extensions:
+   ✅ pgvector: installed
+
+✅ Check complete!

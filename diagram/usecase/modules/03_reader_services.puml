@@ -1,0 +1,67 @@
+@startuml
+!theme plain
+title Use Case - Chức năng bạn đọc
+
+left to right direction
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam ArrowMessageAlignment center
+skinparam packageStyle rectangle
+skinparam nodesep 34
+skinparam ranksep 38
+
+actor "Bạn đọc" as Reader
+actor "PayOS" as PayOS
+actor "Dịch vụ Email" as EmailService
+
+rectangle "Hệ thống LMS - Chức năng bạn đọc" {
+  usecase "Xem dashboard\nbạn đọc" as UC_Dashboard
+  usecase "Gửi yêu cầu\nmượn sách" as UC_BorrowRequest
+  usecase "Kiểm tra điều kiện\nmượn sách" as UC_CheckBorrowPolicy
+  usecase "Đặt trước\nsách" as UC_CreateReservation
+  usecase "Hủy đặt trước" as UC_CancelReservation
+  usecase "Theo dõi sách\nđang mượn" as UC_MyBooks
+  usecase "Xem lịch sử\nmượn trả" as UC_MyTransactions
+  usecase "Xem phí phạt" as UC_ViewFines
+  usecase "Thanh toán\nphí phạt" as UC_PayFine
+  usecase "Thanh toán\nqua PayOS" as UC_PayOSPayment
+  usecase "Quản lý\ndanh sách yêu thích" as UC_Wishlist
+  usecase "Đánh giá\nsách" as UC_RateBook
+  usecase "Đánh dấu\nđánh giá hữu ích" as UC_HelpfulRating
+  usecase "Xem gợi ý\ncá nhân hóa" as UC_Recommendations
+  usecase "Ghi nhận tương tác\nngười dùng" as UC_RecordInteraction
+  usecase "Nhận thông báo\nmượn/trả" as UC_ReceiveNotification
+}
+
+Reader --> UC_Dashboard
+Reader --> UC_BorrowRequest
+Reader --> UC_CreateReservation
+Reader --> UC_CancelReservation
+Reader --> UC_MyBooks
+Reader --> UC_MyTransactions
+Reader --> UC_ViewFines
+Reader --> UC_PayFine
+Reader --> UC_Wishlist
+Reader --> UC_RateBook
+Reader --> UC_HelpfulRating
+Reader --> UC_Recommendations
+
+PayOS --> UC_PayOSPayment
+EmailService --> UC_ReceiveNotification
+
+UC_BorrowRequest ..> UC_CheckBorrowPolicy : <back:#FFFFFF><<include>></back>
+UC_CreateReservation ..> UC_CheckBorrowPolicy : <back:#FFFFFF><<include>></back>
+UC_BorrowRequest ..> UC_ReceiveNotification : <back:#FFFFFF><<include>></back>
+UC_CreateReservation ..> UC_ReceiveNotification : <back:#FFFFFF><<include>></back>
+UC_PayOSPayment ..> UC_PayFine : <back:#FFFFFF><<extend>></back>
+UC_Wishlist ..> UC_RecordInteraction : <back:#FFFFFF><<include>></back>
+UC_RateBook ..> UC_RecordInteraction : <back:#FFFFFF><<include>></back>
+UC_Recommendations ..> UC_RecordInteraction : <back:#FFFFFF><<include>></back>
+
+UC_Dashboard -[hidden]right- UC_BorrowRequest
+UC_BorrowRequest -[hidden]right- UC_CreateReservation
+UC_CreateReservation -[hidden]right- UC_PayFine
+UC_PayFine -[hidden]right- UC_Recommendations
+
+@enduml

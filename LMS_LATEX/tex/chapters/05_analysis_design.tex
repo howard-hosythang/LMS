@@ -1,0 +1,743 @@
+% ======= NỘI DUNG =======
+\chapter{Phân tích và Thiết kế}
+\label{chap:PhanTichVaThietKe}
+
+\section{Phân tích}
+\label{sec:PhanTich}
+
+% ======= NỘI DUNG PHẦN PHÂN TÍCH USE CASE =======
+\subsection{Mô hình hóa tương tác (Use-case Diagram)}
+\label{subsec:BieuDoCaSuDung}
+
+Phần phân tích use case được xây dựng theo phạm vi hệ thống đã hiện thực. Hệ
+thống có các tác nhân chính gồm \textbf{Khách}, \textbf{Bạn đọc},
+\textbf{Thủ thư} và \textbf{Quản trị viên}; ngoài ra còn có các hệ thống phụ
+trợ như \textbf{Google OAuth}, \textbf{PayOS}, \textbf{Dịch vụ Email} và
+\textbf{Gemini API}. Để giữ báo cáo trong giới hạn số trang, phần này trình bày
+use case dưới dạng bảng đối chiếu thay cho các sơ đồ module chi tiết. Ranh giới
+chức năng chính của hệ thống gồm nhóm xác thực/tài khoản, nhóm tra cứu tài liệu,
+nhóm nghiệp vụ bạn đọc, nhóm nghiệp vụ thủ thư, nhóm quản trị và nhóm AI tự
+động. Các quan hệ nghiệp vụ chính gồm: đăng ký bao gồm xác thực email; tìm kiếm
+có thể mở rộng sang semantic search; mượn/đặt trước bao gồm kiểm tra điều kiện
+mượn; upload PDF bao gồm xử lý AI; trả sách và báo hư/mất bao gồm tính phí và
+gửi thông báo.
+
+\begin{table}[H]
+\centering
+\caption{Đối chiếu nhóm Use Case với hiện thực hệ thống}
+\label{tab:usecase_mapping_reality}
+\begin{tabularx}{\linewidth}{|p{0.22\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Nhóm} & \textbf{Use case chính} & \textbf{Hiện thực tương ứng} \\
+\hline
+Xác thực và tài khoản & Đăng ký, xác thực email, đăng nhập thường, đăng nhập Google, refresh token, quên/đặt lại mật khẩu, hồ sơ, avatar, đổi mật khẩu, thông báo & Auth/User modules, OAuth2 Google, JWT/refresh token, email verification/reset password, profile API và notification API. \\
+\hline
+Tra cứu và khám phá tài liệu & Trang chủ, tìm kiếm catalog, semantic search, lọc danh mục/tag, chi tiết tài liệu, bản sao, đánh giá, sách tương tự, thống kê công khai & Public pages và catalog/recommendation API: \texttt{/api/v1/publications/search}, \texttt{/api/v1/ai/semantic-search}, \texttt{/api/v1/publications/\{id\}}, \texttt{/items}, \texttt{/ratings}, \texttt{/similar}. \\
+\hline
+Chức năng bạn đọc & Mượn, đặt trước, hủy đặt trước, theo dõi sách đang mượn, lịch sử mượn trả, phí phạt, PayOS, wishlist, rating, gợi ý cá nhân hóa & Reader pages, circulation/reservation/fine APIs, PayOS payment, wishlist/rating APIs và recommendation API. \\
+\hline
+Chức năng thủ thư & Quản lý ấn phẩm, bản sao, upload bìa/PDF, AI ETL, xử lý yêu cầu mượn, mượn trực tiếp, trả sách, báo hư/mất, ghi chú giao dịch, thu tiền mặt & Librarian pages, catalog/item APIs, presigned upload, backend AI gateway, circulation transaction APIs, fine cash payment và notification/email events. \\
+\hline
+Chức năng quản trị & Quản lý thủ thư, quản lý người dùng, khóa/mở khóa, xác minh tài khoản, chính sách mượn trả, nhật ký hệ thống & Admin pages và admin APIs: librarian/user management, circulation policy, audit log và account verification. \\
+\hline
+AI và xử lý tự động & Semantic search, recommendation, sách tương tự, xử lý PDF, trích xuất text, embedding, sinh summary/tag/audience, ghi nhận tương tác, realtime/email notification & AI service FastAPI/Celery, RabbitMQ, Gemini API, PostgreSQL pgvector, interaction tracking, Kafka/email/WebSocket notification. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Mô hình hóa luồng xử lý (Activity Diagram)}
+\label{subsec:activity-diagram}
+
+Activity Diagram được dùng để mô tả các luồng xử lý chính sau khi đã xác định
+use case. Phần mô hình hóa tập trung vào các nghiệp vụ có nhiều bước và có tương tác giữa
+người dùng, giao diện, backend và dịch vụ phụ trợ: xác thực, tra cứu, mượn--trả,
+quản lý sách, đánh giá, xử lý hàng chờ và gợi ý sách.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/sign_up.png}
+        \caption{Đăng ký tài khoản}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/login.png}
+        \caption{Đăng nhập}
+    \end{subfigure}
+    \caption{Activity Diagram cho xác thực người dùng}
+    \label{fig:activity_auth}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/search_book.png}
+        \caption{Tìm kiếm sách}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/suggest_book.png}
+        \caption{Gợi ý sách}
+    \end{subfigure}
+    \caption{Activity Diagram cho tra cứu và gợi ý tài liệu}
+    \label{fig:activity_search_suggest}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/borrow_book.png}
+        \caption{Mượn sách}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/return_book.png}
+        \caption{Trả sách}
+    \end{subfigure}
+    \caption{Activity Diagram cho nghiệp vụ mượn--trả}
+    \label{fig:activity_borrow_return}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/process_queue.png}
+        \caption{Xử lý hàng chờ đặt trước}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]{figures/ch05/activity/review_and_comment.png}
+        \caption{Đánh giá và bình luận}
+    \end{subfigure}
+    \caption{Activity Diagram cho đặt trước và tương tác sau mượn}
+    \label{fig:activity_queue_review}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.72\linewidth, height=0.55\textheight, keepaspectratio]{figures/ch05/activity/add_book.png}
+    \caption{Activity Diagram cho nghiệp vụ thêm sách}
+    \label{fig:activity_add_book}
+\end{figure}
+\subsection{Mô hình lớp (Class diagram)}
+\label{subsec:ClassDiagram}
+
+Class diagram trong Hình~\ref{fig:class_diagram_lms} mô tả các lớp domain
+chính của hệ thống theo hai cụm lớn: Core Domain và Extended Services. Trong đó,
+Core Domain bao gồm User, Catalog và Circulation; Extended Services bao gồm
+Reader Data, AI và Support. Sơ đồ tập trung vào entity, thuộc tính nghiệp vụ
+quan trọng và quan hệ giữa các lớp, giúp liên kết phần
+phân tích use case với thiết kế dữ liệu và cấu trúc backend.
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width=\linewidth,height=0.9\textheight,keepaspectratio]{figures/ch05/class/classdiagram.png}
+ \caption{Class diagram tổng quát của hệ thống}
+ \label{fig:class_diagram_lms}
+\end{figure}
+\subsection{Công nghệ được sử dụng}
+\label{subsec:technologies-used}
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{|p{2.2cm}|p{4.1cm}|X|}
+\hline
+\textbf{Phần} & \textbf{Công nghệ} & \textbf{Vai trò trong hệ thống} \\
+\hline
+\textbf{Frontend} & React, TypeScript, Vite & Xây dựng SPA, chia trang theo vai trò và phát triển giao diện có kiểm soát kiểu dữ liệu. \\
+\hline
+\textbf{Frontend} & Tailwind CSS, lucide-react, sonner & Thiết kế giao diện, icon, toast notification và trạng thái tương tác. \\
+\hline
+\textbf{Frontend} & React Router/HashRouter & Điều hướng public/user/librarian/admin page và bảo vệ route theo vai trò. \\
+\hline
+\textbf{Frontend} & Context API & Quản lý trạng thái dùng chung như đăng nhập, ngôn ngữ, theme, notification và upload. \\
+\hline
+\textbf{Frontend} & Axios, STOMP/SockJS & Gọi REST API, gắn JWT/refresh token và nhận thông báo realtime qua WebSocket. \\
+\hline
+\textbf{Frontend} & Jest, Testing Library, Nginx & Kiểm thử frontend và phục vụ bản build static trong container production. \\
+\hline
+\textbf{Backend} & Java 21, Spring Boot & Hiện thực API nghiệp vụ theo mô hình modular monolith. \\
+\hline
+\textbf{Backend} & Spring Security, JWT, OAuth2 & Xác thực, phân quyền, refresh token và đăng nhập Google. \\
+\hline
+\textbf{Backend} & Spring Data JPA, Flyway & Truy cập dữ liệu, quản lý entity và migration cơ sở dữ liệu. \\
+\hline
+\textbf{Backend} & PostgreSQL, pgvector & Lưu dữ liệu nghiệp vụ, metadata AI và vector phục vụ semantic search. \\
+\hline
+\textbf{Backend} & Kafka, WebSocket & Phát sự kiện và đẩy thông báo realtime đến người dùng. \\
+\hline
+\textbf{Backend} & RabbitMQ, S3-compatible Storage & Gửi job xử lý AI và lưu trữ ảnh bìa/PDF thông qua presigned URL. \\
+\hline
+\textbf{Backend} & PayOS, Gmail SMTP, OpenAPI/Swagger & Thanh toán phí phạt, gửi email và tài liệu hóa API. \\
+\hline
+\textbf{Backend} & JUnit, Mockito, Testcontainers & Kiểm thử unit/controller và integration với PostgreSQL thật. \\
+\hline
+\textbf{Backend} & Docker, Docker Compose & Đóng gói backend và triển khai cùng các dịch vụ phụ trợ. \\
+\hline
+\textbf{AI Service} & Python, FastAPI & Xây dựng API cho semantic search, similar books, recommendation và health check. \\
+\hline
+\textbf{AI Service} & Celery, RabbitMQ & Xử lý job AI bất đồng bộ sau khi thủ thư upload PDF. \\
+\hline
+\textbf{AI Service} & PyMuPDF & Trích xuất văn bản từ PDF trước khi làm sạch và chia chunk. \\
+\hline
+\textbf{AI Service} & SentenceTransformer/SBERT & Sinh embedding tiếng Việt cho chunk tài liệu và truy vấn tìm kiếm. \\
+\hline
+\textbf{AI Service} & Gemini API & Sinh summary, audience và tag học thuật ở bước metadata enrichment. \\
+\hline
+\textbf{AI Service} & PostgreSQL, pgvector & Lưu vector, ETL run, search log và dữ liệu phục vụ truy vấn nearest-neighbor. \\
+\hline
+\textbf{AI Service} & ALS implicit feedback, content-based, trending fallback & Tạo gợi ý sách cá nhân hóa và fallback khi dữ liệu tương tác còn ít. \\
+\hline
+\textbf{AI Service} & pytest, Docker & Kiểm thử AI Service và đóng gói FastAPI/Celery Worker để chạy tách biệt trong production. \\
+\hline
+\end{tabularx}
+\caption{Công nghệ được sử dụng trong hệ thống}
+\label{tab:technologies_used}
+\end{table}
+Các công nghệ trong hệ thống được chọn theo đúng phạm vi hiện thực: frontend
+phục vụ trải nghiệm người dùng, backend xử lý nghiệp vụ thư viện và AI Service
+xử lý các tác vụ tìm kiếm/gợi ý thông minh. Bảng dưới đây gom các công nghệ
+chính đã sử dụng trong toàn hệ thống.
+
+\section{Ứng dụng AI vào hệ thống}
+% =========================================================================================
+Trong hệ thống LMS, AI không được đặt vào như một chức năng phụ để ``làm đẹp'' sản phẩm. AI được thiết kế như một \textbf{lớp năng lực hỗ trợ khám phá tri thức}: đọc nội dung PDF, hiểu ý định tìm kiếm của bạn đọc và đề xuất tài liệu phù hợp với hành vi sử dụng thật.
+
+Điểm quan trọng nhất trong thiết kế là \textbf{AI không thay thế nghiệp vụ thư viện}. Các nghiệp vụ như mượn--trả, đặt trước, quản lý bản sao, phí phạt, thanh toán và phân quyền vẫn do backend Spring Boot kiểm soát. AI Service chỉ xử lý các bài toán phù hợp với ML/NLP, sau đó trả về \textbf{metadata bổ trợ}, \textbf{danh sách \texttt{publication\_id}} hoặc \textbf{chiến lược gợi ý}; backend luôn là nơi lấy dữ liệu cuối cùng trước khi trả về frontend.
+
+\begin{itemize}
+    \item \textbf{Module 1 -- Xử lý PDF file:} biến file PDF do thủ thư upload thành dữ liệu có thể tìm kiếm và gợi ý.
+    \item \textbf{Module 2 -- Hỗ trợ tìm kiếm ngữ nghĩa:} giúp bạn đọc tìm theo ý định, không chỉ theo từ khóa chính xác.
+    \item \textbf{Module 3 -- Gợi ý cá nhân hoá:} kết hợp nội dung sách, hành vi người dùng và fallback nghiệp vụ để đề xuất sách có thể mượn.
+\end{itemize}
+
+Dự án chọn mô hình \textbf{AI Satellite Service}: backend Java giữ nghiệp vụ và giao dịch; AI Service Python/FastAPI xử lý workload nặng như đọc PDF, sinh embedding, truy vấn pgvector và recommendation. Cách tách này giúp hệ thống vừa \textbf{giữ lõi nghiệp vụ ổn định}, vừa \textbf{tận dụng hệ sinh thái AI của Python}.
+
+Về mặt giá trị sử dụng, AI giải quyết ba điểm yếu thường gặp của hệ thống thư
+viện truyền thống. Thứ nhất, nhiều tài liệu chỉ được mô tả bằng tiêu đề và vài
+trường metadata, trong khi nội dung thật nằm sâu trong PDF; pipeline AI giúp
+biến phần nội dung đó thành dữ liệu có thể tìm kiếm. Thứ hai, người đọc thường
+tìm bằng nhu cầu học tập thay vì từ khóa chính xác; semantic search giúp hệ
+thống hiểu gần đúng ý định truy vấn. Thứ ba, danh mục thư viện càng lớn thì
+người dùng càng khó chọn sách phù hợp; recommendation dùng hành vi đọc, wishlist,
+mượn và rating để rút ngắn quá trình khám phá tài liệu.
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.16}
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.24\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Vấn đề} & \textbf{Thiết kế AI trong hệ thống} & \textbf{Giá trị đạt được} \\
+\hline
+Tài liệu PDF khó khai thác & Trích xuất nội dung, làm sạch, chia chunk, sinh embedding và summary/tag. & Sách không chỉ được tìm bằng metadata nhập tay mà còn bằng nội dung thật. \\
+\hline
+Truy vấn người dùng không chính xác & Mã hóa query thành vector và so khớp với vector chunk trong pgvector. & Người đọc có thể tìm theo ý định như ``sách nhập môn dễ hiểu'' hoặc ``tài liệu về chuẩn hóa dữ liệu''. \\
+\hline
+Khó chọn sách phù hợp & Kết hợp content-based, ALS implicit feedback và trending fallback. & Gợi ý vẫn hoạt động khi người dùng mới, sách mới hoặc dữ liệu tương tác còn ít. \\
+\hline
+AI có thể lỗi hoặc hết quota & Backend giữ nghiệp vụ chính; AI có timeout, retry, fallback và trạng thái xử lý rõ ràng. & Lỗi AI không làm hỏng catalog, mượn--trả, đặt trước hoặc thanh toán. \\
+\hline
+\end{tabularx}
+\caption{Giá trị thiết kế của lớp AI trong hệ thống}
+\label{tab:ai_design_value}
+\end{table}
+
+Một nguyên tắc quan trọng là \textbf{AI chỉ làm giàu dữ liệu, không tự quyết định
+nghiệp vụ}. Ví dụ, semantic search có thể trả danh sách \texttt{publication\_id}
+phù hợp, nhưng backend vẫn kiểm tra sách còn bản sao hay không, người dùng có
+quyền mượn hay không và dữ liệu nào được phép hiển thị. Tương tự, recommendation
+chỉ đề xuất ứng viên; trạng thái cuối cùng của sách, phí phạt, đặt trước và phân
+quyền vẫn nằm trong các module nghiệp vụ của backend. Nhờ vậy, hệ thống tận dụng
+được AI nhưng không đánh đổi tính nhất quán dữ liệu.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    % Sử dụng positioning giúp quản lý khoảng cách các khối linh hoạt và rộng rãi hơn
+    node distance=1.5cm and 2.5cm,
+    every node/.style={font=\small\sffamily},
+    box/.style={rectangle, draw=blue!65!black, fill=blue!5, thick, rounded corners=3pt, minimum width=3.5cm, minimum height=1.2cm, align=center},
+    ai/.style={rectangle, draw=green!55!black, fill=green!6, thick, rounded corners=3pt, minimum width=3.5cm, minimum height=1.2cm, align=center},
+    db/.style={cylinder, draw=orange!80!black, fill=orange!7, shape border rotate=90, aspect=0.22, minimum width=2.5cm, minimum height=1.5cm, align=center},
+    arrow/.style={thick, ->, >=stealth},
+    label text/.style={font=\small, midway}
+]
+    % --- Định nghĩa các khối hệ thống (Nodes) ---
+    \node[box] (fe) {Frontend\\React/Vite};
+    \node[box, right=of fe] (be) {Backend\\Spring Boot};
+    \node[ai, right=of be] (ai) {AI Service\\FastAPI};
+
+    \node[db, below=of be] (pg) {PostgreSQL\\Catalog};
+    \node[db, below=of ai] (vec) {pgvector\\AI schema};
+
+    % --- Định nghĩa đường nối luồng dữ liệu (Arrows) ---
+    \draw[arrow] (fe) -- node[label text, above] {REST API} (be);
+    \draw[arrow] (be) -- node[label text, above] {AI Gateway} (ai);
+    \draw[arrow] (be) -- node[label text, left] {nghiệp vụ} (pg);
+    \draw[arrow] (ai) -- node[label text, right] {vectors / ETL / cache} (vec);
+    \draw[arrow] (vec) -- node[label text, above] {publication ids} (pg);
+\end{tikzpicture}
+\caption{Trách nhiệm giữa frontend, backend và AI service}
+\label{fig:ai_integration_boundary}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.23\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Thành phần} & \textbf{Trách nhiệm chính} & \textbf{Điểm nhấn thiết kế} \\
+\hline
+Frontend & Upload tài liệu, gửi truy vấn, hiển thị trạng thái AI và kết quả đã chuẩn hóa. & \textbf{Không gọi trực tiếp model AI}; mọi request đi qua backend. \\
+\hline
+Backend & Xác thực, phân quyền, lưu catalog, quản lý bản sao/giao dịch và lấy metadata cuối cùng. & \textbf{Là nguồn sự thật nghiệp vụ}; AI không được quyết định trạng thái mượn--trả. \\
+\hline
+AI Service & Xử lý PDF, sinh embedding, tìm kiếm ngữ nghĩa, tạo metadata AI và recommendation. & \textbf{Chỉ trả kết quả suy luận}; backend quyết định dữ liệu hiển thị cuối cùng. \\
+\hline
+\end{tabularx}
+\caption{Ranh giới trách nhiệm khi tích hợp AI}
+\label{tab:ai_responsibility_boundary}
+\end{table}
+
+\subsection{Cơ sở thiết kế dữ liệu AI}
+
+Trước khi hiện thực, thiết kế xác định rõ AI cần ba nhóm dữ liệu đầu vào. Cách
+thiết kế này giúp tránh tình trạng ``có model trước rồi mới tìm dữ liệu'', đồng
+thời bảo đảm mỗi thuật toán đều có nguồn tín hiệu khả thi trong hệ thống thư
+viện.
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.2\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Nhóm dữ liệu} & \textbf{Nguồn trong hệ thống} & \textbf{Dùng cho bài toán AI} \\
+\hline
+Nội dung tài liệu & PDF, tiêu đề, phụ đề, mô tả, mục lục, tác giả, danh mục, tag. & Embedding, semantic search, sách tương tự, content-based recommendation. \\
+\hline
+Hành vi người dùng & Lượt xem, wishlist, mượn sách, rating, lịch sử tìm kiếm. & Collaborative filtering, ALS implicit feedback, trending fallback. \\
+\hline
+Trạng thái nghiệp vụ & Sách còn bản sao hay không, chi nhánh, trạng thái bản sao, quyền truy cập. & Lọc kết quả cuối cùng để gợi ý/tìm kiếm có giá trị sử dụng thật. \\
+\hline
+\end{tabularx}
+\caption{Nguồn dữ liệu dùng cho thiết kế AI}
+\label{tab:ai_data_sources_design}
+\end{table}
+
+Về mặt lưu trữ, thiết kế chọn hướng \textbf{vector theo chunk} thay vì một vector
+duy nhất cho cả sách. Một sách có thể bao gồm nhiều chủ đề; nếu chỉ dùng một
+vector trung bình cho toàn bộ tài liệu, các chương nhỏ nhưng quan trọng dễ bị
+loãng. Vì vậy, mỗi chunk có một embedding riêng và liên kết về
+\texttt{publication\_id}.
+
+\begin{lstlisting}[language=SQL, caption={Thiết kế bảng vector phục vụ semantic search}, label={lst:ai_vector_schema_design}]
+CREATE TABLE ai_engine.publication_vectors (
+    id BIGSERIAL PRIMARY KEY,
+    publication_id BIGINT NOT NULL,
+    chunk_index INT NOT NULL,
+    chunk_text TEXT NOT NULL,
+    embedding VECTOR(768) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_publication_vectors_embedding
+ON ai_engine.publication_vectors
+USING hnsw (embedding vector_cosine_ops);
+\end{lstlisting}
+
+\FloatBarrier
+
+\subsection{Module 1: Xử lý PDF file}
+
+\textbf{Mục tiêu của module này} là biến một file PDF thô thành dữ liệu có giá trị cho hệ thống: \textbf{summary}, \textbf{audience}, \textbf{tag}, \textbf{vector embedding} và \textbf{trạng thái xử lý AI}. Đây là module nền tảng: nếu PDF không được xử lý tốt, semantic search và recommendation phía sau sẽ không có đủ dữ liệu để hoạt động.
+
+Luồng xử lý được thiết kế theo hướng \textbf{không chặn thao tác của thủ thư}. Thủ thư chỉ cần upload tài liệu; backend lưu URL tài liệu và kích hoạt AI xử lý ở phía sau.
+
+Phần xử lý PDF được chia thành hai nhánh rõ ràng: \textbf{ETL cục bộ} và
+\textbf{LLM reduce}. ETL cục bộ chịu trách nhiệm đọc file, làm sạch văn bản,
+chia chunk và sinh embedding. LLM chỉ được dùng ở bước tổng hợp metadata cuối
+cùng, không tham gia vào mọi truy vấn tìm kiếm. Cách thiết kế này giúp hệ thống
+giảm chi phí gọi LLM, tránh phụ thuộc quá mạnh vào quota Gemini và vẫn giữ được
+dữ liệu vector ổn định để phục vụ semantic search.
+
+Với một tài liệu sau khi trích xuất được chuỗi văn bản $D$, hệ thống chia tài
+liệu thành các chunk $c_i$ theo cửa sổ trượt:
+
+\[
+C = \{c_1, c_2, ..., c_n\}, \quad |c_i| \leq L,\quad overlap(c_i,c_{i+1}) = O
+\]
+
+Trong đó $L$ là kích thước chunk tối đa và $O$ là phần chồng lắp giữa hai chunk
+liền kề. Overlap giúp giảm rủi ro một ý quan trọng bị cắt giữa hai đoạn. Mỗi
+chunk được mã hóa thành vector:
+
+\[
+v_i = Encoder(c_i), \quad v_i \in \mathbb{R}^{768}
+\]
+
+Các vector này được lưu trong PostgreSQL/pgvector cùng với \texttt{publication\_id}
+và \texttt{chunk\_index}. Nhờ vậy, hệ thống có thể truy vấn theo nội dung thật
+của sách thay vì chỉ tìm trên tiêu đề, tác giả hoặc mô tả ngắn.
+
+\begin{figure}[H]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    flowstep/.style={rectangle, draw=blue!70!black, fill=blue!5, thick, rounded corners, minimum width=3.05cm, minimum height=1.0cm, align=center},
+    store/.style={cylinder, draw=orange!80!black, fill=orange!8, shape border rotate=90, aspect=0.25, minimum width=2.3cm, minimum height=1.35cm, align=center},
+    resultnode/.style={rectangle, draw=green!55!black, fill=green!6, thick, rounded corners, minimum width=3.2cm, minimum height=1.0cm, align=center},
+    arrow/.style={thick, ->, >=stealth}
+]
+    \node[flowstep] (fe) at (0,0) {1. Thủ thư\\chọn PDF};
+    \node[flowstep] (url) at (3.8,0) {2. Backend cấp\\upload URL};
+    \node[store] (s3) at (7.2,0) {Object\\Storage};
+    \node[flowstep] (save) at (10.8,0) {3. Lưu\\\texttt{file\_url}};
+    \node[resultnode] (ai) at (10.8,-2.0) {4. Gọi AI\\process PDF};
+    \node[resultnode] (etl) at (7.2,-2.0) {5. Clean\\chunk\\embed};
+    \node[resultnode] (meta) at (3.8,-2.0) {6. Gemini\\reduce metadata};
+    \node[store] (db) at (0,-2.0) {DB\\AI outputs};
+
+    \draw[arrow] (fe) -- (url);
+    \draw[arrow] (url) -- (s3);
+    \draw[arrow] (s3) -- (save);
+    \draw[arrow] (save) -- (ai);
+    \draw[arrow] (ai) -- (etl);
+    \draw[arrow] (etl) -- (meta);
+    \draw[arrow] (meta) -- (db);
+\end{tikzpicture}
+}
+\caption{Module 1 -- Luồng xử lý PDF file sau khi thủ thư upload}
+\label{fig:ai_pdf_processing_flow}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.23\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Thành phần} & \textbf{Cách sử dụng trong hệ thống} & \textbf{Lý do thiết kế} \\
+\hline
+PyMuPDF & Đọc PDF, trích xuất text theo trang, bỏ qua ảnh bìa hoặc phần không có text. & Nhẹ, chạy được trong AI container và phù hợp với tài liệu thư viện dạng PDF. \\
+\hline
+Text cleaning & Chuẩn hóa khoảng trắng, bỏ số trang/header/footer lặp, giới hạn đoạn quá ngắn. & Giảm nhiễu trước khi sinh embedding và trước khi gửi dữ liệu cho LLM. \\
+\hline
+Sliding window chunking & Chia văn bản thành các chunk có overlap để giữ ngữ cảnh liên tục. & Tăng khả năng tìm trúng đoạn liên quan khi truy vấn theo ý nghĩa. \\
+\hline
+SentenceTransformer/SBERT & Sinh embedding 768 chiều cho từng chunk và query. & Phù hợp mô hình bi-encoder, vector được tính trước nên tìm kiếm nhanh. \\
+\hline
+Gemini reduce & Nhận một phần nội dung đại diện, sinh summary, audience và tag theo JSON. & LLM chỉ dùng để làm giàu metadata, không nằm trên đường tìm kiếm chính. \\
+\hline
+Fallback metadata & Nếu Gemini lỗi/quota hết, dùng title, author, category và tag sẵn có để tạo metadata tối thiểu. & AI lỗi không làm hỏng catalog và không chặn thủ thư tiếp tục vận hành. \\
+\hline
+\end{tabularx}
+\caption{Các thành phần kỹ thuật trong Module 1}
+\label{tab:ai_pdf_components}
+\end{table}
+
+\begin{lstlisting}[language={}, caption={Prompt rút gọn metadata bằng LLM}, label={lst:ai_llm_prompt}]
+You are an assistant for a Vietnamese library management system.
+Read the book content excerpts and return ONLY valid JSON.
+
+Required JSON schema:
+{
+  "summary": "3-5 concise Vietnamese sentences",
+  "audience": "target readers, e.g. beginner/intermediate/advanced",
+  "tags_vi": ["3-8 Vietnamese subject tags"],
+  "tags_en": ["English aliases for search expansion"]
+}
+
+Rules:
+- Do not invent authors, publisher, ISBN or facts not present in the input.
+- Prefer academic/library subject terms.
+- Keep tags short, reusable and searchable.
+- If the content is insufficient, infer only from title/category.
+\end{lstlisting}
+
+Prompt trên được thiết kế có ràng buộc đầu ra JSON để backend và AI Service dễ
+parse kết quả. Các trường \texttt{tags\_vi} và \texttt{tags\_en} được giữ song
+song nhằm hỗ trợ tìm kiếm song ngữ: người dùng có thể nhập từ khóa tiếng Việt
+hoặc tiếng Anh nhưng vẫn tìm được cùng một nhóm tài liệu.
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.22\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Giai đoạn} & \textbf{Thiết kế} & \textbf{Điểm nhấn báo cáo} \\
+\hline
+Upload và lưu file & Frontend xin \textbf{presigned upload URL}; file PDF được đẩy lên object storage; backend lưu lại \texttt{file\_url}/\texttt{s3Key} cho publication. & \textbf{File được lưu trước, AI xử lý sau}; thao tác tạo/cập nhật sách không bị khóa bởi pipeline AI. \\
+\hline
+ETL nội dung & AI Service dùng \textbf{PyMuPDF} để trích xuất text, làm sạch header/footer/số trang, sau đó chia chunk bằng sliding window. & \textbf{Index nội dung thật của PDF}, không chỉ index tiêu đề hay mô tả thủ công. \\
+\hline
+Embedding và metadata & Chunk được vector hóa và lưu vào \texttt{ai\_engine.publication\_vectors}; Gemini chỉ được gọi ở bước reduce để tạo summary, audience và tag. & \textbf{Không gọi LLM trong mỗi lần tìm kiếm}; giảm độ trễ, giảm quota và tăng độ ổn định. \\
+\hline
+Theo dõi trạng thái & Kết quả xử lý được lưu với trạng thái \texttt{RUNNING}, \texttt{SUCCESS}, \texttt{FAILED}; nếu lỗi, catalog vẫn giữ ấn phẩm. & \textbf{AI lỗi không làm hỏng nghiệp vụ thư viện}. \\
+\hline
+\end{tabularx}
+\caption{Thiết kế Module 1 -- Xử lý PDF file}
+\label{tab:ai_module_pdf}
+\end{table}
+
+\subsection{Module 2: Hỗ trợ tìm kiếm ngữ nghĩa (Semantic Search)}
+
+\textbf{Mục tiêu của module này} là giúp bạn đọc tìm được tài liệu theo \textbf{ý định học tập}, không bị phụ thuộc hoàn toàn vào việc nhớ đúng tên sách, tác giả hoặc tag. Ví dụ, truy vấn ``sách nhập môn cơ sở dữ liệu dễ hiểu'' vẫn có thể tìm đến các tài liệu liên quan, dù cụm từ đó không xuất hiện nguyên văn trong tiêu đề.
+
+Về mặt thiết kế, hệ thống dùng hướng \textbf{Bi-Encoder} của Sentence-BERT \cite{Reimers2019SentenceBERT}: vector của chunk PDF được tính trước trong Module 1, còn vector của query được tính tại thời điểm tìm kiếm. Việc so khớp vector được thực hiện bằng \textbf{PostgreSQL + pgvector} \cite{pgvector_docs}.
+
+Khi người dùng nhập truy vấn $q$, AI Service sinh vector truy vấn:
+
+\[
+v_q = Encoder(q)
+\]
+
+Độ phù hợp giữa truy vấn và một chunk được tính bằng cosine similarity:
+
+\[
+sim(q,c_i) = \frac{v_q \cdot v_i}{\|v_q\| \|v_i\|}
+\]
+
+Vì mỗi sách có nhiều chunk, điểm semantic của một ấn phẩm không lấy trung bình
+toàn bộ chunk mà lấy điểm tốt nhất trong các chunk liên quan:
+
+\[
+S_{semantic}(q,p) = \max_{c_i \in p} sim(q,c_i)
+\]
+
+Điểm cuối cùng được chuẩn hóa và kết hợp thêm tín hiệu keyword để tránh trường
+hợp truy vấn rất rõ ràng như tên sách hoặc tên tác giả bị semantic search làm
+lệch kết quả:
+
+\[
+S_{search}(q,p) =
+0.70 \times S_{semantic}(q,p)
++ 0.20 \times S_{keyword}(q,p)
++ 0.10 \times S_{freshness}(p)
+\]
+
+Trong đó $S_{keyword}$ đến từ tiêu đề, tác giả, category, tag; còn
+$S_{freshness}$ là điểm ưu tiên nhẹ cho tài liệu mới hoặc vừa được cập nhật.
+Trọng số này được chọn theo hướng ưu tiên ý nghĩa nội dung nhưng vẫn giữ kết quả
+ổn định với các truy vấn định danh.
+
+\begin{figure}[H]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    box/.style={rectangle, draw=blue!70!black, fill=blue!5, thick, rounded corners, minimum width=3.0cm, minimum height=1.0cm, align=center},
+    ai/.style={rectangle, draw=green!55!black, fill=green!6, thick, rounded corners, minimum width=3.1cm, minimum height=1.0cm, align=center},
+    db/.style={cylinder, draw=orange!80!black, fill=orange!8, shape border rotate=90, aspect=0.25, minimum width=2.2cm, minimum height=1.35cm, align=center},
+    arrow/.style={thick, ->, >=stealth}
+]
+    \node[box] (fe) at (0,0) {Frontend\\query};
+    \node[box] (be) at (3.8,0) {Backend\\AI Search API};
+    \node[ai] (ai) at (7.6,0) {AI Service\\encode + rank};
+    \node[db] (vec) at (11.0,0) {pgvector\\chunks};
+    \node[box] (catalog) at (5.7,-2.0) {Catalog\\metadata + copies};
+    \node[box] (result) at (0,-2.0) {Frontend\\book cards};
+
+    \draw[arrow] (fe) -- (be);
+    \draw[arrow] (be) -- (ai);
+    \draw[arrow] (ai) -- (vec);
+    \draw[arrow] (vec.south) |- node[pos=0.25, right] {\texttt{publication\_ids}} (catalog.east);
+    \draw[arrow] (catalog) -- node[below] {books} (result);
+\end{tikzpicture}
+}
+\caption{Module 2 -- Luồng thực thi semantic search}
+\label{fig:search_flow}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.23\linewidth}|>{\raggedright\arraybackslash}p{0.22\linewidth}|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Tín hiệu} & \textbf{Trọng số} & \textbf{Ý nghĩa} \\
+\hline
+Semantic score & $0.70$ & Tín hiệu chính, đo mức gần nghĩa giữa câu hỏi của người dùng và nội dung PDF. \\
+\hline
+Keyword score & $0.20$ & Giữ độ chính xác với truy vấn có tên sách, tác giả, ISBN, category hoặc tag rõ ràng. \\
+\hline
+Freshness/availability & $0.10$ & Ưu tiên nhẹ cho tài liệu mới/còn khả dụng, tránh đề xuất kết quả đúng nghĩa nhưng kém hữu ích. \\
+\hline
+\end{tabularx}
+\caption{Trọng số xếp hạng trong Module 2}
+\label{tab:semantic_search_weights}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.24\linewidth}|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Điểm thiết kế} & \textbf{Ý nghĩa} \\
+\hline
+\textbf{Query đi qua backend} & Backend giữ format response, phân quyền và thống nhất cách trả dữ liệu cho frontend. \\
+\hline
+\textbf{AI chỉ trả ID} & AI Service không tự trả toàn bộ thông tin sách; backend lấy lại metadata, rating và tình trạng bản sao từ catalog. \\
+\hline
+\textbf{Kết hợp keyword fallback} & Với truy vấn ngắn như tên sách/tác giả, hệ thống vẫn ưu tiên keyword để tránh semantic search làm lệch kết quả rõ ràng. \\
+\hline
+\textbf{Tìm trên nội dung thật} & Vector được sinh từ chunk PDF, nên hệ thống có thể tìm theo nội dung bên trong sách, không chỉ theo metadata nhập tay. \\
+\hline
+\end{tabularx}
+\caption{Thiết kế Module 2 -- Hỗ trợ tìm kiếm ngữ nghĩa}
+\label{tab:ai_module_semantic_search}
+\end{table}
+
+\subsection{Module 3: Gợi ý cá nhân hoá (Recommendation)}
+
+\textbf{Mục tiêu của module này} là biến dữ liệu tương tác rời rạc thành danh sách sách gợi ý có ý nghĩa. Trong bối cảnh thư viện, dữ liệu thường không dày như các nền tảng thương mại: có người dùng mới, sách mới, ít rating và hành vi không đều. Vì vậy, hệ thống chọn hướng \textbf{hybrid recommendation} \cite{Burke2002Hybrid}, kết hợp nhiều nguồn tín hiệu thay vì phụ thuộc vào một thuật toán duy nhất.
+
+Hệ thống xem mỗi hành vi của bạn đọc là một tín hiệu quan tâm ngầm
+(\textit{implicit feedback}). Các hành vi không có cùng mức độ quan trọng nên
+được quy đổi thành trọng số:
+
+\[
+r_{u,p} =
+1.0 \times view
++ 2.0 \times wishlist
++ 3.0 \times borrow
++ 2.5 \times rating
++ 1.5 \times searchClick
+\]
+
+Trong đó $u$ là người dùng và $p$ là ấn phẩm. Trọng số mượn sách cao nhất vì đây
+là tín hiệu mạnh nhất cho thấy người dùng thật sự quan tâm. Wishlist và rating
+được xem là tín hiệu trung bình-cao; lượt xem chỉ là tín hiệu yếu vì người dùng
+có thể mở trang chi tiết nhưng không có nhu cầu mượn.
+
+Điểm gợi ý cuối cùng được kết hợp từ ba nhóm tín hiệu:
+
+\[
+S_{rec}(u,p) =
+0.45 \times S_{content}(u,p)
++ 0.35 \times S_{als}(u,p)
++ 0.20 \times S_{trending}(p)
+\]
+
+\textbf{Content-based} dùng vector của các sách người dùng từng tương tác để tạo
+hồ sơ sở thích. \textbf{ALS implicit} học mẫu tương tác giữa nhiều người dùng.
+\textbf{Trending fallback} bảo đảm vẫn có gợi ý khi tài khoản mới, sách mới hoặc
+dữ liệu hành vi còn ít.
+
+Hồ sơ nội dung của người dùng được tính bằng trung bình có trọng số các vector
+sách đã tương tác:
+
+\[
+profile(u) = \frac{\sum_{p \in I_u} r_{u,p} \times v_p}{\sum_{p \in I_u} r_{u,p}}
+\]
+
+Sau đó điểm content-based giữa người dùng và sách ứng viên được tính bằng:
+
+\[
+S_{content}(u,p) = cos(profile(u), v_p)
+\]
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.24\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}p{0.25\linewidth}|}
+\hline
+\textbf{Nguồn gợi ý} & \textbf{Cách hoạt động} & \textbf{Vai trò} \\
+\hline
+\textbf{Content-based} & Tạo hồ sơ nội dung từ vector của các sách người dùng đã xem, wishlist hoặc mượn. & Phản ứng nhanh với hành vi mới. \\
+\hline
+\textbf{ALS implicit feedback} & Học quan hệ người dùng--sách từ \texttt{WATCH}, \texttt{WISHLIST}, \texttt{BORROWED} \cite{Hu2008ImplicitCF}. & Khai thác mẫu hành vi tập thể. \\
+\hline
+\textbf{Trending fallback} & Xếp hạng theo tương tác, lượt mượn, rating và thời gian tạo sách. & Chống cold-start và lỗi AI. \\
+\hline
+\end{tabularx}
+\caption{Ba nguồn tín hiệu trong Module 3 -- Recommendation}
+\label{tab:ai_recommendation_sources}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{|>{\bfseries}p{0.24\linewidth}|>{\raggedright\arraybackslash}p{0.18\linewidth}|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Nguồn điểm} & \textbf{Trọng số} & \textbf{Vai trò trong hệ thống} \\
+\hline
+Content-based & $0.45$ & Bám sát nội dung sách người dùng từng quan tâm, hoạt động tốt ngay cả khi dữ liệu cộng đồng còn ít. \\
+\hline
+ALS implicit feedback & $0.35$ & Khai thác mẫu hành vi giữa nhiều độc giả, giúp phát hiện sách liên quan nhưng không quá giống về metadata. \\
+\hline
+Trending fallback & $0.20$ & Bảo đảm luôn có gợi ý hợp lý cho người dùng mới, sách mới hoặc khi pipeline AI chưa đủ dữ liệu. \\
+\hline
+\end{tabularx}
+\caption{Trọng số hybrid recommendation trong Module 3}
+\label{tab:recommendation_weights}
+\end{table}
+
+Để tránh gợi ý không phù hợp trong bối cảnh thư viện, danh sách ứng viên còn được
+lọc qua các ràng buộc nghiệp vụ: sách đang bị ẩn không được đề xuất, bản sao mất
+hoặc hư không được ưu tiên, sách người dùng đang mượn không lặp lại trong danh
+sách gợi ý, và các ấn phẩm không còn khả dụng sẽ bị giảm điểm. Nhờ vậy kết quả
+recommendation không chỉ ``đúng về mặt thuật toán'' mà còn dùng được trong vận
+hành thực tế.
+
+\section{Thiết kế cơ sở dữ liệu}
+Thiết kế cơ sở dữ liệu là quá trình chuyển đổi từ mô hình phân tích yêu cầu và các thực thể đã được đặc tả ở các phần trước thành một cấu trúc lưu trữ logic và vật lý. Mục tiêu là xây dựng một nền tảng dữ liệu nhất quán, toàn vẹn, hiệu quả và có khả năng mở rộng để hỗ trợ toàn bộ nghiệp vụ của hệ thống, từ các giao dịch mượn trả cơ bản đến các tính năng AI phức tạp.
+
+\subsubsection{Lựa chọn Hệ Quản trị Cơ sở dữ liệu (HQTCSDL)}
+Dựa trên bản chất quan hệ chặt chẽ của dữ liệu (người dùng, sách, lượt mượn), hệ thống lựa chọn \textbf{PostgreSQL} làm HQTCSDL chính.
+\begin{itemize}
+ \item \textbf{Tính tin cậy và toàn vẹn dữ liệu:} PostgreSQL nổi tiếng với sự tuân thủ nghiêm ngặt các tiêu chuẩn ACID (Atomicity, Consistency, Isolation, Durability), đảm bảo các giao dịch nghiệp vụ quan trọng như mượn, trả, và tính phí phạt luôn được thực hiện một cách an toàn.
+ \item \textbf{Hỗ trợ các kiểu dữ liệu nâng cao:} PostgreSQL hỗ trợ các kiểu dữ liệu phức tạp như JSONB, rất hữu ích để lưu trữ các metadata linh hoạt. Đặc biệt, thông qua các extension như \texttt{pgvector}, nó có khả năng lưu trữ và truy vấn các vector embedding hiệu quả, phục vụ trực tiếp cho tính năng tìm kiếm ngữ nghĩa.
+ \item \textbf{Khả năng mở rộng:} Đây là một hệ quản trị CSDL mã nguồn mở mạnh mẽ, đã được chứng minh về hiệu năng trong các hệ thống quy mô lớn.
+\end{itemize}
+
+\subsubsection{Mô hình Quan hệ Thực thể (ERD)}
+Bên dưới là sơ đồ ERD tổng quan của toàn bộ hệ thống. Mô hình dữ liệu được
+thiết kế xoay quanh thực thể trung tâm là \textbf{Publication} và
+\textbf{User}. \textbf{Publication} biểu diễn đầu sách hoặc tài liệu thư viện,
+liên kết với tác giả, nhà xuất bản, danh mục, thẻ chủ đề, bản sao vật lý
+(\textbf{Item}) và dữ liệu vector phục vụ tìm kiếm ngữ nghĩa. \textbf{User}
+liên kết với vai trò, lịch sử tìm kiếm, wishlist, đánh giá, tương tác, thông
+báo và các nghiệp vụ mượn/đặt trước.
+
+Các quan hệ nghiệp vụ chính được thể hiện qua \textbf{borrowing\_transactions},
+\textbf{reservations} và \textbf{fines}. Một người dùng có thể tạo nhiều phiếu
+mượn hoặc đặt trước; mỗi phiếu mượn gắn với một bản sao sách cụ thể và có thể
+phát sinh phí phạt nếu quá hạn, mất sách hoặc hư hỏng. Các bảng AI như
+\textbf{PublicationVector}, \textbf{Ai\_Recommendation} và
+\textbf{user\_interactions} được tách ra nhưng vẫn liên kết với dữ liệu lõi để
+hỗ trợ gợi ý cá nhân hóa, tìm kiếm ngữ nghĩa và phân tích hành vi đọc.
+
+\begin{figure}[htbp]
+ \centering
+\includegraphics[width=1\linewidth]{figures/ch05/database/erd.png}
+ \caption{Sơ đồ Quan hệ Thực thể (ERD) tổng thể của hệ thống}
+ \label{fig:erd}
+\end{figure}
+\FloatBarrier

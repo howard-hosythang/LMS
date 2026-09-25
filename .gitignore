@@ -1,0 +1,62 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Git metadata from component repositories
+**/.git
+**/.git/
+**/.git.component-backup/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.envrc
+.coverage
+htmlcov/
+
+# Java / Maven
+**/target/
+
+# Node / frontend
+**/node_modules/
+**/dist/
+**/dist-ssr/
+*.local
+
+# LaTeX build output
+LMS_LATEX/build/
+LMS_LATEX/*.aux
+LMS_LATEX/*.bbl
+LMS_LATEX/*.blg
+LMS_LATEX/*.fdb_latexmk
+LMS_LATEX/*.fls
+LMS_LATEX/*.lof
+LMS_LATEX/*.log
+LMS_LATEX/*.lot
+LMS_LATEX/*.out
+LMS_LATEX/*.synctex.gz
+LMS_LATEX/*.toc
+LMS_LATEX/*.bak
+
+# Large local data and model artifacts
+LMS_AI/models/
+LMS_AI/hf_cache/
+LMS_AI/*.pt
+LMS_AI/*.pth
+
+# Database dumps and local data
+LMS_BE/backup*.sql
+**/postgres_data/
+**/pgdata/
+
+# Editors and OS files
+.idea/
+.claude/
+.vscode/settings.json
+.DS_Store
+*.swp
+*.swo

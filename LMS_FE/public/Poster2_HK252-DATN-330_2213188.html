@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library74 Graduation Poster</title>
+    <style>
+      :root {
+        --ink: #111827;
+        --soft: #5f6f86;
+        --blue: #2563eb;
+        --violet: #7c3aed;
+        --mint: #14b8a6;
+        --line: rgba(112, 130, 154, 0.2);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        background:
+          radial-gradient(
+            circle at 18% 12%,
+            rgba(191, 219, 254, 0.72),
+            transparent 32%
+          ),
+          radial-gradient(
+            circle at 78% 6%,
+            rgba(221, 214, 254, 0.78),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at 52% 84%,
+            rgba(204, 251, 241, 0.72),
+            transparent 34%
+          ),
+          #eef6ff;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+      }
+
+      body.export {
+        display: block;
+        padding: 0;
+        background: white;
+      }
+
+      body.export .poster {
+        box-shadow: none;
+      }
+
+      .poster {
+        position: relative;
+        width: 1080px;
+        height: 1350px;
+        overflow: hidden;
+        color: var(--ink);
+        background:
+          linear-gradient(
+            150deg,
+            rgba(255, 255, 255, 0.98),
+            rgba(239, 246, 255, 0.94) 46%,
+            rgba(245, 243, 255, 0.96)
+          ),
+          url('./poster-assets/homepage.png') center / cover;
+        box-shadow: 0 32px 100px rgba(37, 99, 235, 0.22);
+        isolation: isolate;
+      }
+
+      .poster::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+          linear-gradient(rgba(37, 99, 235, 0.045) 1px, transparent 1px);
+        background-size: 54px 54px;
+        mask-image: linear-gradient(to bottom, black, transparent 72%);
+        z-index: -2;
+      }
+
+      .poster::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            circle at 21% 19%,
+            rgba(59, 130, 246, 0.22),
+            transparent 28%
+          ),
+          radial-gradient(
+            circle at 82% 32%,
+            rgba(167, 139, 250, 0.24),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at 54% 72%,
+            rgba(45, 212, 191, 0.16),
+            transparent 34%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0.94) 84%
+          );
+        z-index: -1;
+      }
+
+      .topbar {
+        position: absolute;
+        inset: 38px 54px auto;
+        display: flex;
+        align-items: flex-start; /* CHỈ SỬA DÒNG NÀY: Gióng theo mép trên cùng */
+        justify-content: space-between;
+        z-index: 5;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .school-logo,
+      .brand img {
+        width: 76px;
+        height: 76px;
+        object-fit: contain;
+        filter: drop-shadow(0 18px 26px rgba(79, 70, 229, 0.2));
+      }
+
+      .school {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* CHỈ SỬA DÒNG NÀY: Đổi flex-end thành center để logo nằm giữa đoạn chữ */
+        gap: 8px;
+      }
+
+      .school-text {
+        white-space: nowrap;
+        color: #334155;
+        font-size: 11px;
+        line-height: 1.4;
+        font-weight: 800;
+        text-align: center; /* CHỈ SỬA DÒNG NÀY: Đổi right thành center để 3 dòng chữ tự căn giữa với nhau */
+        text-transform: uppercase;
+      }
+
+      .brand-name strong {
+        display: block;
+        font-size: 42px;
+        line-height: 1;
+        font-weight: 950;
+      }
+
+      .brand-gradient {
+        color: transparent;
+        background: linear-gradient(
+          90deg,
+          #1d4ed8 0%,
+          #4f46e5 52%,
+          #8b5cf6 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+
+      .brand-dark {
+        color: #111827;
+      }
+
+      .tagline {
+        display: block;
+        margin-top: 6px;
+        color: #667085;
+        font-size: 14px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .hero {
+        position: absolute;
+        left: 54px;
+        top: 148px;
+        width: 972px;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Ép các thành phần vào giữa */
+        text-align: center; /* Căn giữa chữ */
+        z-index: 4;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        color: #2563eb;
+        font-size: 17px;
+        font-weight: 900;
+        text-transform: uppercase;
+        align-self: flex-start; /* CHỈ SỬA/THÊM DÒNG NÀY: Đẩy riêng thẻ này sát về lề trái */
+      }
+
+      .eyebrow::before {
+        content: '';
+        width: 46px;
+        height: 4px;
+        border-radius: 99px;
+        background: linear-gradient(90deg, var(--mint), var(--blue), #a78bfa);
+      }
+
+      h1 {
+        margin: 0;
+        width: 100%;
+        color: #1e293b; /* Màu nền tảng: Slate xám đậm */
+        font-size: 36px;
+        line-height: 1.25;
+        letter-spacing: -0.02em;
+        font-weight: 960;
+      }
+
+      /* Định dạng riêng cho cụm từ ăn tiền */
+      .highlight {
+        color: #1e40af; /* Xanh Navy cực gắt và sâu */
+        /* Lưu ý: Xóa hẳn các dòng background và clip đi nhé */
+      }
+
+      .subtitle {
+        width: 500px; /* Trả lại chiều rộng 500px ban đầu để tránh đè lên ảnh */
+        margin: 18px 0 0;
+        color: #415167;
+        font-size: 18px;
+        line-height: 1.36;
+        font-weight: 700;
+        align-self: flex-start; /* Đẩy khối này về sát lề trái */
+        text-align: justify; /* Căn chữ sang trái như cũ */
+      }
+
+      .floating-home {
+        position: absolute;
+        right: -132px;
+        top: 284px;
+        width: 730px;
+        height: 700px;
+        padding: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        border-radius: 12px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.92),
+          rgba(239, 246, 255, 0.78)
+        );
+        box-shadow:
+          0 42px 90px rgba(37, 99, 235, 0.24),
+          0 18px 40px rgba(124, 58, 237, 0.12);
+        transform: rotate(3.4deg);
+        z-index: 2;
+      }
+
+      .floating-home::before {
+        content: '';
+        position: absolute;
+        inset: -28px;
+        border-radius: 18px;
+        background: linear-gradient(
+          135deg,
+          rgba(45, 212, 191, 0.16),
+          rgba(124, 58, 237, 0.14)
+        );
+        filter: blur(18px);
+        z-index: -1;
+      }
+
+      .floating-home img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        object-position: left top;
+        border-radius: 8px;
+      }
+
+      .project-info {
+        position: absolute;
+        left: 54px;
+        top: 414px;
+        width: 462px;
+        display: grid;
+        gap: 12px;
+        z-index: 5;
+      }
+
+      .info-card,
+      .content-card,
+      .mini-shot {
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 18px 42px rgba(59, 130, 246, 0.13);
+        backdrop-filter: blur(16px);
+      }
+
+      .info-card {
+        padding: 17px 19px;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2563eb;
+        font-size: 13px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .info-card strong {
+        display: block;
+        color: #0f172a;
+        font-size: 22px;
+        line-height: 1.18;
+        font-weight: 950;
+      }
+
+      .info-card span,
+      .content-card p,
+      .content-card li {
+        color: #5c6b80;
+        font-size: 14px;
+        line-height: 1.34;
+        font-weight: 730;
+      }
+
+      .people {
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr; /* Tăng ô GVHD lên 1.3 phần, giảm ô SV xuống 0.7 phần */
+        gap: 12px;
+      }
+
+      .people .info-card {
+        min-height: 144px;
+      }
+
+      .people .info-card strong {
+        font-size: 16px;
+        line-height: 1.34;
+      }
+
+      .content-grid {
+        position: absolute;
+        left: 54px;
+        right: 54px;
+        bottom: 450px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        z-index: 7;
+      }
+
+      .content-card {
+        min-height: 204px;
+        padding: 17px 19px 16px;
+      }
+
+      .content-card h2 {
+        margin: 0 0 10px;
+        color: #0f172a;
+        font-size: 22px;
+        line-height: 1.08;
+        font-weight: 950;
+      }
+
+      .content-card p {
+        margin: 0;
+        text-align: justify;
+      }
+
+      .content-card ul {
+        display: grid;
+        gap: 8px; /* Tăng khoảng cách giữa các gạch đầu dòng cho thoáng hơn một chút */
+        margin: 0;
+        padding: 0;
+        list-style: none; /* Xóa chấm đen mặc định của trình duyệt */
+      }
+
+      .content-card li {
+        position: relative;
+        padding-left: 14px; /* Đẩy chữ vào để nhường chỗ cho chấm tròn custom */
+        color: #5c6b80;
+        font-size: 14px;
+        line-height: 1.34;
+        font-weight: 730;
+        text-align: justify;
+      }
+
+      .content-card li::before {
+        content: '•'; /* Dùng ký tự chấm tròn */
+        position: absolute;
+        left: 0;
+        color: #2563eb; /* Đổi màu chấm sang xanh dương cho tone-sur-tone với title */
+        font-size: 16px; /* Chỉnh độ to của chấm */
+        line-height: 1.34;
+      }
+
+      .mini-shot {
+        position: absolute;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 22px 50px rgba(37, 99, 235, 0.15);
+        z-index: 6;
+      }
+
+      .mini-shot.recommend {
+        left: 54px;
+        bottom: 80px;
+        width: 470px;
+        height: 360px;
+      }
+
+      .mini-shot.summary {
+        right: 54px;
+        bottom: 80px;
+        width: 470px;
+        height: 360px;
+      }
+
+      .mini-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 15px;
+        color: #172033;
+        font-size: 13px;
+        font-weight: 920;
+        text-transform: uppercase;
+        background: rgba(248, 250, 252, 0.96);
+      }
+
+      .dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .dots i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #94a3b8;
+      }
+
+      .mini-shot img {
+        width: 100%;
+        height: 302px;
+        display: block;
+        object-fit: contain;
+        object-position: top left;
+      }
+
+      .footer {
+        position: absolute;
+        left: 54px;
+        right: 54px;
+        bottom: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid rgba(148, 163, 184, 0.28);
+        padding-top: 14px;
+        color: #5d6b80;
+        font-size: 15px;
+        font-weight: 800;
+        z-index: 8;
+      }
+
+      .footer strong {
+        color: #172033;
+      }
+
+      @media print {
+        body {
+          padding: 0;
+          background: white;
+        }
+
+        .poster {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="poster" aria-label="Library74 graduation poster">
+      <header class="topbar">
+        <div class="brand">
+          <img src="./poster-assets/logo.png" alt="Library74" />
+          <div class="brand-name">
+            <strong
+              ><span class="brand-gradient">Library</span
+              ><span class="brand-dark">74</span></strong
+            >
+            <span class="tagline">NEXT-GEN DISCOVERY</span>
+          </div>
+        </div>
+        <div class="school">
+          <img
+            class="school-logo"
+            src="./poster-assets/hcmut.png"
+            alt="Logo Trường Đại học Bách khoa"
+          />
+          <div class="school-text">
+            ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH<br />
+            TRƯỜNG ĐẠI HỌC BÁCH KHOA<br />
+            KHOA KHOA HỌC VÀ KỸ THUẬT MÁY TÍNH
+          </div>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="eyebrow">Đồ án tốt nghiệp</div>
+        <h1>
+          XÂY DỰNG HỆ THỐNG QUẢN LÝ THƯ VIỆN TRỰC TUYẾN<br />
+          <span class="highlight">TÍCH HỢP AI</span> HỖ TRỢ TÌM KIẾM VÀ GỢI Ý
+          SÁCH
+        </h1>
+        <p class="subtitle">
+          Library74 số hóa nghiệp vụ thư viện, giúp bạn đọc tìm đúng tài liệu,
+          hiểu nhanh nội dung và theo dõi mượn trả trong một trải nghiệm thống
+          nhất.
+        </p>
+      </section>
+
+      <section class="floating-home">
+        <img src="./poster-assets/homepage.png" alt="Trang chủ Library74" />
+      </section>
+
+      <section class="project-info" aria-label="Thông tin đồ án">
+        <article class="info-card">
+          <span class="label">Mã đề tài</span>
+          <strong>HK252-DATN-330</strong>
+        </article>
+        <div class="people">
+          <article class="info-card">
+            <span class="label">GV hướng dẫn</span>
+            <strong>TS. Trương Tuấn Anh</strong>
+            <strong>CN. Dương Huỳnh Anh Đức</strong>
+          </article>
+          <article class="info-card">
+            <span class="label">SV thực hiện</span>
+            <strong>Hồ Sỹ Thắng</strong>
+            <span>MSSV: 2213188</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-grid" aria-label="Nội dung chính">
+        <article class="content-card">
+          <span class="label">Vấn đề giải quyết</span>
+          <h2>Tra cứu và vận hành còn rời rạc</h2>
+          <p>
+            Tìm kiếm chủ yếu dựa trên từ khóa, chưa tận dụng tốt nội dung PDF;
+            mượn trả, đặt trước, phí phạt và thông báo còn tốn nhiều thao tác
+            thủ công.
+          </p>
+        </article>
+
+        <article class="content-card">
+          <span class="label">Giải pháp</span>
+          <h2>Một nền tảng thư viện tích hợp AI</h2>
+          <ul>
+            <li>Semantic search, tag, tóm tắt và gợi ý sách.</li>
+            <li>Quản lý catalog, mượn trả, đặt trước và phí phạt.</li>
+            <li>Thông báo realtime, dashboard và phân quyền rõ ràng.</li>
+          </ul>
+        </article>
+
+        <article class="content-card">
+          <span class="label">Kết quả</span>
+          <h2>Hoàn thiện hệ thống web end-to-end</h2>
+          <ul>
+            <li>
+              Hoàn thiện 3 portal độc lập (Reader, Librarian, Admin) bằng
+              React/Vite.
+            </li>
+            <li>Backend Spring Boot tích hợp AI Service bằng Python.</li>
+            <li>
+              Hệ thống chạy mượt mà, sẵn sàng triển khai thực tế cho thư viện
+              trường.
+            </li>
+          </ul>
+        </article>
+      </section>
+
+      <article class="mini-shot recommend">
+        <div class="mini-header">
+          Gợi ý tài liệu cá nhân hóa
+          <span class="dots"><i></i><i></i><i></i></span>
+        </div>
+        <img
+          src="./poster-assets/ai_recommendation.png"
+          alt="Gợi ý tài liệu cá nhân hóa"
+        />
+      </article>
+
+      <article class="mini-shot summary">
+        <div class="mini-header">
+          Tóm tắt và tag học thuật
+          <span class="dots"><i></i><i></i><i></i></span>
+        </div>
+        <img
+          src="./poster-assets/ai_summary.png"
+          alt="Tóm tắt và tag học thuật"
+        />
+      </article>
+
+      <footer class="footer">
+        <span
+          ><strong>Library74</strong> - Hệ thống quản lý thư viện trực tuyến
+          tích hợp AI</span
+        >
+        <span>TP.HCM, tháng 5 năm 2026</span>
+      </footer>
+    </main>
+
+    <script>
+      if (new URLSearchParams(window.location.search).get('export') === '1') {
+        document.body.classList.add('export');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library74 Poster</title>
+    <style>
+      :root {
+        --ink: #111827;
+        --soft: #5f6f86;
+        --blue: #2563eb;
+        --violet: #7c3aed;
+        --mint: #14b8a6;
+        --line: rgba(112, 130, 154, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        background:
+          radial-gradient(
+            circle at 18% 12%,
+            rgba(191, 219, 254, 0.72),
+            transparent 32%
+          ),
+          radial-gradient(
+            circle at 78% 6%,
+            rgba(221, 214, 254, 0.78),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at 52% 84%,
+            rgba(204, 251, 241, 0.72),
+            transparent 34%
+          ),
+          #eef6ff;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+      }
+
+      body.export {
+        display: block;
+        padding: 0;
+        background: white;
+      }
+
+      body.export .poster {
+        box-shadow: none;
+      }
+
+      .poster {
+        position: relative;
+        width: 1080px;
+        height: 1350px;
+        overflow: hidden;
+        color: var(--ink);
+        background:
+          linear-gradient(
+            150deg,
+            rgba(255, 255, 255, 0.98),
+            rgba(239, 246, 255, 0.94) 46%,
+            rgba(245, 243, 255, 0.96)
+          ),
+          url('./poster-assets/homepage.png') center / cover;
+        box-shadow: 0 32px 100px rgba(37, 99, 235, 0.22);
+        isolation: isolate;
+      }
+
+      .poster::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+          linear-gradient(rgba(37, 99, 235, 0.045) 1px, transparent 1px);
+        background-size: 54px 54px;
+        mask-image: linear-gradient(to bottom, black, transparent 72%);
+        z-index: -2;
+      }
+
+      .poster::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            circle at 21% 19%,
+            rgba(59, 130, 246, 0.22),
+            transparent 28%
+          ),
+          radial-gradient(
+            circle at 82% 32%,
+            rgba(167, 139, 250, 0.24),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at 54% 72%,
+            rgba(45, 212, 191, 0.16),
+            transparent 34%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0.94) 84%
+          );
+        z-index: -1;
+      }
+
+      .topbar {
+        position: absolute;
+        inset: 44px 54px auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 5;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .brand img {
+        width: 74px;
+        height: 74px;
+        object-fit: contain;
+        filter: drop-shadow(0 18px 26px rgba(79, 70, 229, 0.2));
+      }
+
+      .brand-name strong {
+        display: block;
+        font-size: 42px;
+        line-height: 1;
+        font-weight: 950;
+      }
+
+      .brand-gradient {
+        color: transparent;
+        background: linear-gradient(
+          90deg,
+          #1d4ed8 0%,
+          #4f46e5 52%,
+          #8b5cf6 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+
+      .brand-dark {
+        color: #111827;
+      }
+
+      .tagline {
+        display: block;
+        margin-top: 6px;
+        color: #667085;
+        font-size: 14px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .badge {
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 999px;
+        padding: 13px 18px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #334155;
+        font-size: 15px;
+        font-weight: 850;
+        box-shadow: 0 12px 28px rgba(99, 102, 241, 0.12);
+        backdrop-filter: blur(18px);
+      }
+
+      .hero {
+        position: absolute;
+        left: 54px;
+        top: 160px;
+        width: 972px;
+        z-index: 4;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        color: #2563eb;
+        font-size: 17px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: '';
+        width: 46px;
+        height: 4px;
+        border-radius: 99px;
+        background: linear-gradient(90deg, var(--mint), var(--blue), #a78bfa);
+      }
+
+      h1 {
+        margin: 0;
+        width: 972px;
+        color: transparent;
+        background: linear-gradient(
+          90deg,
+          #1d4ed8 0%,
+          #14b8a6 38%,
+          #4f46e5 68%,
+          #7c3aed 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        font-size: 45px;
+        line-height: 1.08;
+        letter-spacing: 0;
+        font-weight: 960;
+        white-space: nowrap;
+      }
+
+      h1 span {
+        color: inherit;
+      }
+
+      .subtitle {
+        width: 540px;
+        margin: 24px 0 0;
+        color: #415167;
+        font-size: 21px;
+        line-height: 1.4;
+        font-weight: 680;
+      }
+
+      .floating-home {
+        position: absolute;
+        right: -132px;
+        top: 276px;
+        width: 730px;
+        height: 720px;
+        padding: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        border-radius: 12px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.92),
+          rgba(239, 246, 255, 0.78)
+        );
+        box-shadow:
+          0 42px 90px rgba(37, 99, 235, 0.24),
+          0 18px 40px rgba(124, 58, 237, 0.12);
+        transform: rotate(3.4deg);
+        z-index: 2;
+      }
+
+      .floating-home::before {
+        content: '';
+        position: absolute;
+        inset: -28px;
+        border-radius: 18px;
+        background: linear-gradient(
+          135deg,
+          rgba(45, 212, 191, 0.16),
+          rgba(124, 58, 237, 0.14)
+        );
+        filter: blur(18px);
+        z-index: -1;
+      }
+
+      .floating-home img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        object-position: left top;
+        border-radius: 8px;
+      }
+
+      .stats {
+        position: absolute;
+        left: 54px;
+        top: 490px; /* Nhấc lên 48px */
+        width: 460px;
+        display: grid;
+        gap: 14px;
+        z-index: 5;
+      }
+
+      .stat-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .stat {
+        min-height: 112px;
+        padding: 18px 20px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 16px 38px rgba(59, 130, 246, 0.13);
+        backdrop-filter: blur(16px);
+      }
+
+      .stat.wide {
+        min-height: 96px;
+      }
+
+      .stat b {
+        display: block;
+        color: #0f172a;
+        font-size: 39px;
+        line-height: 1;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 10px;
+        color: #667085;
+        font-size: 14px;
+        line-height: 1.24;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .note-card {
+        position: absolute;
+        left: 54px;
+        top: 730px;
+        width: 392px;
+        padding: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.76);
+        box-shadow: 0 20px 52px rgba(99, 102, 241, 0.14);
+        backdrop-filter: blur(18px);
+        z-index: 5;
+      }
+
+      .note-card b {
+        display: block;
+        color: #0f172a;
+        font-size: 28px;
+        line-height: 1.14;
+        margin-bottom: 12px;
+      }
+
+      .note-card span {
+        color: #5c6b80;
+        font-size: 17px;
+        line-height: 1.4;
+        font-weight: 700;
+      }
+
+      .mini-shot {
+        position: absolute;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 22px 50px rgba(37, 99, 235, 0.15);
+        z-index: 6;
+      }
+
+      .mini-shot.recommend {
+        left: 54px;
+        bottom: 80px; /* Điều chỉnh bottom vừa phải, không quá thấp */
+        width: 470px;
+        height: 380px; /* Tăng chiều cao vừa phải (trước là 252px, sau là 540px, giờ là 380px) */
+      }
+
+      .mini-shot.summary {
+        right: 54px;
+        bottom: 80px; /* Tương tự */
+        width: 470px;
+        height: 380px; /* Tương tự */
+      }
+
+      .mini-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 15px;
+        color: #172033;
+        font-size: 13px;
+        font-weight: 920;
+        text-transform: uppercase;
+        background: rgba(248, 250, 252, 0.96);
+      }
+
+      .dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .dots i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #94a3b8;
+      }
+
+      .mini-shot img {
+        width: 100%;
+        height: 320px; /* Tăng chiều cao ảnh vừa phải để lấp đầy thẻ (trước là 199px) */
+        display: block;
+        object-fit: contain; /* GIỮ NGUYÊN: Không nén ảnh, giữ nguyên tỉ lệ */
+        object-position: top left;
+      }
+
+      .footer {
+        position: absolute;
+        left: 54px;
+        right: 54px;
+        bottom: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid rgba(148, 163, 184, 0.28);
+        padding-top: 14px;
+        color: #5d6b80;
+        font-size: 16px;
+        font-weight: 800;
+        z-index: 8;
+      }
+
+      .footer strong {
+        color: #172033;
+      }
+
+      @media print {
+        body {
+          padding: 0;
+          background: white;
+        }
+
+        .poster {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="poster" aria-label="Library74 social poster">
+      <header class="topbar">
+        <div class="brand">
+          <img src="./poster-assets/logo.png" alt="Library74" />
+          <div class="brand-name">
+            <strong
+              ><span class="brand-gradient">Library</span
+              ><span class="brand-dark">74</span></strong
+            >
+            <span class="tagline">NEXT-GEN DISCOVERY</span>
+          </div>
+        </div>
+        <div class="badge">HK252-DATN-330</div>
+      </header>
+
+      <section class="hero">
+        <div class="eyebrow">Nền tảng quản lý thư viện thế hệ mới</div>
+        <h1>Nhập mô tả. Phá giới hạn. Chạm tri thức.</h1>
+        <p class="subtitle">
+          Library74 giúp bạn tìm đúng tài liệu, hiểu nhanh nội dung và theo dõi
+          việc mượn trả trong một trải nghiệm nhẹ nhàng, rõ ràng.
+        </p>
+      </section>
+
+      <section class="floating-home">
+        <img src="./poster-assets/homepage.png" alt="Trang chủ Library74" />
+      </section>
+
+      <section class="stats">
+        <div class="stat-row">
+          <div class="stat">
+            <b>4.7/5</b>
+            <span>Điểm đánh giá trung bình</span>
+          </div>
+          <div class="stat">
+            <b>95%</b>
+            <span>Người dùng hài lòng</span>
+          </div>
+        </div>
+        <div class="stat wide">
+          <b>100+</b>
+          <span>Tài liệu sẵn sàng khám phá</span>
+        </div>
+      </section>
+
+      <aside class="note-card">
+        <b>Không cần nhớ tên sách.</b>
+        <span
+          >Chỉ cần nói điều bạn muốn học, Library74 giúp mở ra những tài liệu
+          phù hợp.</span
+        >
+      </aside>
+
+      <article class="mini-shot recommend">
+        <div class="mini-header">
+          Danh sách yêu thích
+          <span class="dots"><i></i><i></i><i></i></span>
+        </div>
+        <img
+          src="./poster-assets/ai_recommendation.png"
+          alt="Danh sách yêu thích"
+        />
+      </article>
+
+      <article class="mini-shot summary">
+        <div class="mini-header">
+          Hiểu nhanh nội dung sách
+          <span class="dots"><i></i><i></i><i></i></span>
+        </div>
+        <img src="./poster-assets/ai_summary.png" alt="Tóm tắt nội dung sách" />
+      </article>
+
+      <footer class="footer">
+        <span
+          ><strong>Library74</strong> - Thư viện số thân thiện hơn cho việc học
+          mỗi ngày</span
+        >
+        <span>Xây dựng bởi Hồ Sỹ Thắng & Võ Quang Thắng</span>
+      </footer>
+    </main>
+
+    <script>
+      if (new URLSearchParams(window.location.search).get('export') === '1') {
+        document.body.classList.add('export');
+      }
+    </script>
+  </body>
+</html>

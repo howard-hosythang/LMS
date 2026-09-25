@@ -1,0 +1,56 @@
+@startuml frontend_architecture
+!theme plain
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.5
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 50
+
+' Colors
+skinparam rectangle {
+  BorderColor #334155
+  FontColor #0F172A
+}
+skinparam component {
+  BorderColor #334155
+  FontColor #0F172A
+}
+
+actor "User\n(Browser)" as User #EFF6FF
+
+package "React SPA (Vite + TypeScript)" as Frontend #F8FAFC {
+
+  rectangle "UI Layer (Pages & Components)" as UI #FFFFFF {
+    component "Pages\n(Public, User, Librarian, Admin)" as Pages #F0FDFA
+    component "Shared Components\n(Layout, Table, Modal, UI Lib)" as Components #F0FDFA
+    Pages .right.> Components : uses
+  }
+
+  rectangle "State Management (Contexts)" as State #ECFDF5 {
+    component "Global States\n(AuthContext, ThemeContext, NotificationContext)" as Context #ECFDF5
+  }
+
+  rectangle "Infrastructure Layer" as Infra #FEF3C7 {
+    component "HTTP Service (api)\n(Axios Interceptors, Refresh Token Queue)" as Axios #FEF3C7
+    component "Realtime Service\n(SockJS + STOMP)" as Socket #FEF3C7
+  }
+}
+
+cloud "Backend REST API & WebSocket" as API #F5F3FF
+
+' Flow
+User -down-> UI : Interacts
+UI -down-> State : Read / Dispatch actions
+State -down-> Infra : Trigger requests
+UI -down-> Infra : Fetch specific data
+
+Infra -down-> API : REST / WS calls
+API -up-> Infra : JSON Response / WS Events
+
+@enduml

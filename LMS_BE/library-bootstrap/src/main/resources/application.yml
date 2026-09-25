@@ -1,0 +1,158 @@
+spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+  # DevTools Configuration for Multi-Module
+  devtools:
+    restart:
+      additional-paths:
+        - ../library-shared/target/classes
+        - ../library-auth-module/target/classes
+        - ../library-user-module/target/classes
+        - ../library-catalog-module/target/classes
+        - ../library-circulation-module/target/classes
+        - ../library-recommendation-module/target/classes
+      enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  aws:
+    region: ${AWS_REGION:ap-southeast-2}
+    s3:
+      bucket: ${AWS_S3_BUCKET:}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+
+  application:
+    name: library-management-system
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/library}
+    username: ${DATABASE_USERNAME:library}
+    password: ${DATABASE_PASSWORD:library}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Changed from 'update' - let Flyway manage schema
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: false
+    open-in-view: false
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: library-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.library.*"
+
+  mail:
+    host: ${MAIL_HOST:smtp.zoho.com}
+    port: 587
+    username: ${MAIL_SENDER_USERNAME:}
+    password: ${MAIL_SENDER_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+    default-encoding: UTF-8
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    clean-disabled: true  # Prevent accidental data loss
+    schemas: public
+    default-schema: public
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:937096248326-ufp0dhmi6695c2selghgk86gjmk351rd.apps.googleusercontent.com}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            scope: profile, email,openid
+            redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
+            user-name-attribute: sub
+
+library:
+  mail:
+    noreply-address: ${MAIL_NOREPLY_ADDRESS:noreply@library74.uk}
+    noreply-name: ${MAIL_NOREPLY_NAME:Library74 System}
+    support-address: ${MAIL_SUPPORT_ADDRESS:support@library74.uk}
+    support-name: ${MAIL_SUPPORT_NAME:Library74's Support Center}
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+jwt:
+  rsa-private-key: classpath:certs/privateKey.pem
+  rsa-public-key: classpath:certs/publicKey.pem
+  key-id: ${JWT_KEY_ID:library-key}
+  expirationTime: ${EXP_TOKEN:3600} # 1 hour in seconds
+  refreshExpTime: ${EXP_REFRESH_TOKEN:604800} # 7 days in seconds
+
+base:
+  url: ${BASE_URL_WEBSITE:http://localhost:8080}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
+ai:
+  gateway:
+    base-url: ${AI_GATEWAY_BASE_URL:http://localhost:8001}
+    connect-timeout-ms: ${AI_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+    read-timeout-ms: ${AI_GATEWAY_READ_TIMEOUT_MS:5000}
+    processing-read-timeout-ms: ${AI_GATEWAY_PROCESSING_READ_TIMEOUT_MS:900000}
+  callback:
+    secret: ${AI_CALLBACK_SECRET:}
+    max-clock-skew-seconds: ${AI_CALLBACK_MAX_CLOCK_SKEW_SECONDS:300}
+
+google:
+  books:
+    api-key: ${GOOGLE_BOOKS_API_KEY:}
+
+payos:
+  base-url: ${PAYOS_BASE_URL:}
+  client-id: ${CLIENT_ID_PAYOS:}
+  api-key: ${API_KEY_PAYOS:}
+  checksum-key: ${CHECKSUM_KEY_PAYOS:}
+
+#logging:
+#  level:
+#    root: INFO
+#    com.library: DEBUG
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

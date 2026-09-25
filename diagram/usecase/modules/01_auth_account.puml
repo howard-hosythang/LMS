@@ -1,0 +1,69 @@
+@startuml
+!theme plain
+title Use Case - Xác thực và tài khoản
+
+left to right direction
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam ArrowMessageAlignment center
+skinparam packageStyle rectangle
+skinparam nodesep 34
+skinparam ranksep 38
+
+actor "Khách" as Guest
+actor "Người dùng\nđã xác thực" as AuthUser
+actor "Bạn đọc" as Reader
+actor "Thủ thư" as Librarian
+actor "Quản trị viên" as Admin
+actor "Google OAuth" as Google
+actor "Dịch vụ Email" as EmailService
+
+AuthUser <|-- Reader
+AuthUser <|-- Librarian
+AuthUser <|-- Admin
+
+rectangle "Hệ thống LMS - Xác thực và tài khoản" {
+  usecase "Đăng ký\ntài khoản" as UC_Register
+  usecase "Xác thực\nemail" as UC_VerifyEmail
+  usecase "Đăng nhập" as UC_Login
+  usecase "Đăng nhập\nbằng Google" as UC_GoogleLogin
+  usecase "Đăng xuất" as UC_Logout
+  usecase "Làm mới\nphiên đăng nhập" as UC_RefreshToken
+  usecase "Quên\nmật khẩu" as UC_ForgotPassword
+  usecase "Đặt lại\nmật khẩu" as UC_ResetPassword
+  usecase "Hoàn tất\nhồ sơ ban đầu" as UC_Onboarding
+  usecase "Quản lý\nhồ sơ cá nhân" as UC_Profile
+  usecase "Tải ảnh đại diện" as UC_UploadAvatar
+  usecase "Đổi\nmật khẩu" as UC_ChangePassword
+  usecase "Xem và đọc\nthông báo" as UC_Notification
+}
+
+Guest --> UC_Register
+Guest --> UC_Login
+Guest --> UC_GoogleLogin
+Guest --> UC_ForgotPassword
+
+AuthUser --> UC_Logout
+AuthUser --> UC_RefreshToken
+AuthUser --> UC_Profile
+AuthUser --> UC_ChangePassword
+AuthUser --> UC_Notification
+
+Google --> UC_GoogleLogin
+EmailService --> UC_VerifyEmail
+EmailService --> UC_ForgotPassword
+
+UC_Register ..> UC_VerifyEmail : <back:#FFFFFF><<include>></back>
+UC_GoogleLogin ..> UC_Login : <back:#FFFFFF><<extend>></back>
+UC_ForgotPassword ..> UC_ResetPassword : <back:#FFFFFF><<include>></back>
+UC_UploadAvatar ..> UC_Profile : <back:#FFFFFF><<extend>></back>
+UC_Onboarding ..> UC_Profile : <back:#FFFFFF><<extend>></back>
+
+Guest -[hidden]down- AuthUser
+AuthUser -[hidden]down- Google
+UC_Register -[hidden]right- UC_Login
+UC_Login -[hidden]right- UC_Profile
+UC_Profile -[hidden]right- UC_Notification
+
+@enduml

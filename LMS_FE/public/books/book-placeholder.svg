@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450" role="img" aria-label="Library74 book cover placeholder">
+  <defs>
+    <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="450" rx="18" fill="url(#cover)"/>
+  <rect x="52" y="68" width="196" height="278" rx="10" fill="none" stroke="#ffffff" stroke-width="10" opacity="0.92"/>
+  <path d="M150 92v229" stroke="#ffffff" stroke-width="8" opacity="0.75"/>
+  <path d="M82 136h48M82 172h48M170 136h48M170 172h48" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.88"/>
+  <text x="150" y="386" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">Library74</text>
+</svg>

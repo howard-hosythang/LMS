@@ -1,0 +1,59 @@
+{
+  "metadata_cases": [
+    {
+      "id": "metadata-db-001",
+      "title": "Database System Concepts",
+      "expected_tags": ["SQL", "Chuẩn Hóa Dữ Liệu", "Chỉ Mục Dữ Liệu", "Giao Dịch Dữ Liệu", "Điều Khiển Đồng Thời"],
+      "predicted_tags": ["SQL", "Chuẩn Hóa Dữ Liệu", "Chỉ Mục Dữ Liệu", "Giao Dịch Dữ Liệu", "Cơ Sở Dữ Liệu"],
+      "summary": "Tài liệu trình bày cách thiết kế cơ sở dữ liệu quan hệ thông qua SQL, chuẩn hóa lược đồ, chỉ mục, giao dịch và điều khiển đồng thời. Nội dung giúp người đọc hiểu cách tổ chức bảng, tối ưu truy vấn và duy trì tính nhất quán khi nhiều thao tác cùng xảy ra.",
+      "source_keywords": ["SQL", "chuẩn hóa", "chỉ mục", "giao dịch", "điều khiển đồng thời"],
+      "forbidden_terms": ["nấu ăn", "văn học Anh", "thiết kế cơ khí"]
+    },
+    {
+      "id": "metadata-ml-001",
+      "title": "Machine Learning cơ bản",
+      "expected_tags": ["Học Máy", "Học Có Giám Sát", "Kỹ Thuật Đặc Trưng", "Đánh Giá Mô Hình", "Hồi Quy"],
+      "predicted_tags": ["Học Máy", "Học Có Giám Sát", "Kỹ Thuật Đặc Trưng", "Đánh Giá Mô Hình", "Khoa Học Dữ Liệu"],
+      "summary": "Tài liệu giải thích quy trình học máy từ dữ liệu có nhãn, hồi quy, phân loại, kỹ thuật đặc trưng đến đánh giá mô hình. Trọng tâm là khả năng tổng quát hóa, kiểm soát overfitting và phân tích lỗi trong bài toán dự đoán.",
+      "source_keywords": ["học máy", "hồi quy", "phân loại", "đặc trưng", "đánh giá mô hình"],
+      "forbidden_terms": ["cơ sở dữ liệu", "mạch điện", "tiểu thuyết"]
+    },
+    {
+      "id": "metadata-lit-001",
+      "title": "Classic English Novel",
+      "expected_tags": ["Văn Học Anh", "Tiểu Thuyết", "Lãng Mạn", "Châm Biếm Xã Hội", "Quan Hệ Gia Đình"],
+      "predicted_tags": ["Văn Học Anh", "Tiểu Thuyết", "Lãng Mạn", "Châm Biếm Xã Hội", "Quan Hệ Gia Đình"],
+      "summary": "Tác phẩm khai thác đời sống gia đình, kỳ vọng hôn nhân, địa vị xã hội và những thay đổi trong ấn tượng ban đầu. Các đoạn đối thoại thể hiện sự kiêu hãnh, định kiến, danh dự và giới hạn đặt lên phụ nữ trong bối cảnh xã hội cũ.",
+      "source_keywords": ["gia đình", "hôn nhân", "địa vị xã hội", "định kiến", "phụ nữ"],
+      "forbidden_terms": ["SQL", "học máy", "lập chỉ mục"]
+    }
+  ],
+  "search_cases": [
+    {
+      "id": "search-db-001",
+      "query": "thiết kế cơ sở dữ liệu SQL chuẩn hóa giao dịch",
+      "relevant_publication_ids": [101, 102],
+      "returned_publication_ids": [101, 201, 102, 301, 401]
+    },
+    {
+      "id": "search-ml-001",
+      "query": "học máy hồi quy phân loại đánh giá mô hình",
+      "relevant_publication_ids": [201, 202],
+      "returned_publication_ids": [201, 202, 101, 303, 404]
+    }
+  ],
+  "recommendation_cases": [
+    {
+      "id": "rec-user-ai-001",
+      "user_id": 501,
+      "relevant_publication_ids": [201, 202, 203],
+      "returned_publication_ids": [202, 101, 203, 301, 201]
+    },
+    {
+      "id": "rec-user-db-001",
+      "user_id": 502,
+      "relevant_publication_ids": [101, 102, 103],
+      "returned_publication_ids": [101, 102, 301, 302, 401]
+    }
+  ]
+}

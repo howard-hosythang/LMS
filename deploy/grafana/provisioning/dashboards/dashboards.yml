@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Library74
+    orgId: 1
+    folder: Library74
+    type: file
+    disableDeletion: true
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

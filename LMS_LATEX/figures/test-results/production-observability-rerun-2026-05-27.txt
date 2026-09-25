@@ -1,0 +1,24 @@
+NAME             IMAGE                              COMMAND                  SERVICE      CREATED             STATUS                       PORTS
+lms_ai_api       lms-ai-api                         "/app/docker-entrypo…"   ai-api       About an hour ago   Up About an hour (healthy)   8001/tcp
+lms_ai_worker    lms-ai-worker                      "/app/docker-entrypo…"   ai-worker    About an hour ago   Up About an hour             8001/tcp
+lms_backend      lms-backend                        "java -jar app.jar"      backend      4 minutes ago       Up 4 minutes (healthy)       8080/tcp
+lms_caddy        caddy:2.8-alpine                   "caddy run --config …"   caddy        About an hour ago   Up About an hour             0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
+lms_cadvisor     gcr.io/cadvisor/cadvisor:v0.49.1   "/usr/bin/cadvisor -…"   cadvisor     About an hour ago   Up About an hour (healthy)   127.0.0.1:8081->8080/tcp
+lms_frontend     lms-frontend                       "/docker-entrypoint.…"   frontend     4 minutes ago       Up 4 minutes                 80/tcp
+lms_kafka        bitnamilegacy/kafka:3.7.0          "/opt/bitnami/script…"   kafka        6 days ago          Up 6 days (healthy)          9092/tcp
+lms_postgres     pgvector/pgvector:pg15             "docker-entrypoint.s…"   postgres     About an hour ago   Up About an hour (healthy)   127.0.0.1:5432->5432/tcp
+lms_prometheus   prom/prometheus:v2.55.1            "/bin/prometheus --c…"   prometheus   About an hour ago   Up About an hour             127.0.0.1:9090->9090/tcp
+lms_rabbitmq     rabbitmq:3.13-management           "docker-entrypoint.s…"   rabbitmq     6 days ago          Up 6 days (healthy)          4369/tcp, 5671-5672/tcp, 15671-15672/tcp, 15691-15692/tcp, 25672/tcp
+
+--- health ---
+curl: (7) Failed to connect to localhost port 8080 after 0 ms: Couldn't connect to server
+{"status":"UP"}
+--- metrics sample ---
+wget: server returned error: HTTP/1.1 401 
+
+--- docker stats ---
+NAME           CPU %     MEM USAGE / LIMIT
+lms_backend    0.59%     595.2MiB / 7.749GiB
+lms_ai_api     3.62%     370.4MiB / 7.749GiB
+lms_frontend   0.00%     4.109MiB / 7.749GiB
+lms_postgres   0.07%     207.6MiB / 7.749GiB

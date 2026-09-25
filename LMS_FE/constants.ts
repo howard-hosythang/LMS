@@ -1,0 +1,190 @@
+import { Book, DashboardStat } from './types';
+
+export const CURRENT_USER = {
+  name: 'Hồ Sỹ Thắng',
+  id: '2213188',
+  avatar: '/books/book-placeholder.svg',
+  role: 'Student',
+};
+
+export const DASHBOARD_STATS: DashboardStat[] = [
+  {
+    title: 'Sách đang mượn',
+    value: 5,
+    subtitle: 'Tối đa: 10 cuốn',
+    badge: '+2 tuần này',
+    iconName: 'Book',
+    color: 'blue',
+    link: '/my-books',
+  },
+  {
+    title: 'Sách quá hạn',
+    value: 1,
+    subtitle: 'Trả trong 2 ngày',
+    badge: 'Cần xử lý',
+    iconName: 'AlertTriangle',
+    color: 'red',
+    link: '/my-books',
+  },
+  {
+    title: 'Đặt trước',
+    value: 2,
+    subtitle: '1 sách đã sẵn sàng',
+    badge: 'Đang chờ',
+    iconName: 'Clock',
+    color: 'orange',
+    link: '/reservations',
+  },
+  {
+    title: 'Phí phạt hiện tại',
+    value: '0',
+    unit: 'VNĐ',
+    subtitle: 'Cần thanh toán',
+    badge: '$',
+    iconName: 'DollarSign',
+    color: 'purple',
+    link: '/fines',
+  },
+];
+
+export const DUE_BOOKS: Book[] = [
+  {
+    id: '1',
+    title: 'Introduction to Machine Learning',
+    author: 'Andreas C. Müller, Sarah Guido',
+    year: 2024,
+    publisher: "O'Reilly",
+    category: 'ML',
+    borrowDate: '05/01/2026',
+    dueDate: '10/01/2026',
+    code: 'ML-2024-001',
+    daysLeft: -2,
+    loanStatus: 'overdue',
+    thumbnail:
+      'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+    format: 'Print',
+  },
+  {
+    id: '2',
+    title: 'Python for Data Analysis',
+    author: 'Wes McKinney',
+    year: 2024,
+    publisher: "O'Reilly",
+    category: 'Data Science',
+    borrowDate: '28/12/2025',
+    dueDate: '15/01/2026',
+    code: 'PY-2024-089',
+    daysLeft: 3,
+    loanStatus: 'warning',
+    thumbnail:
+      'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+    format: 'Print',
+  },
+  {
+    id: '3',
+    title: 'Deep Learning with PyTorch',
+    author: 'Eli Stevens, Luca Antiga',
+    year: 2024,
+    publisher: 'Manning',
+    category: 'DL',
+    borrowDate: '02/01/2026',
+    dueDate: '24/01/2026',
+    code: 'DL-2024-045',
+    daysLeft: 12,
+    loanStatus: 'active',
+    thumbnail:
+      'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+    format: 'Print',
+  },
+  {
+    id: '4',
+    title: 'Statistical Learning Theory',
+    author: 'Vladimir Vapnik',
+    year: 2024,
+    publisher: 'Wiley',
+    category: 'Stats',
+    borrowDate: '20/12/2025',
+    dueDate: '17/01/2026',
+    code: 'ST-2024-112',
+    daysLeft: 5,
+    loanStatus: 'warning',
+    thumbnail:
+      'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+    format: 'Print',
+  },
+];
+
+export const RECOMMENDATIONS: Book[] = [
+  {
+    id: 'r1',
+    title: 'Artificial Intelligence: A Modern Approach',
+    author: 'Stuart Russell, Peter Norvig',
+    year: 2020,
+    publisher: 'Pearson',
+    category: 'AI/ML',
+    tags: ['Nâng cao'],
+    availableCopies: 3,
+    thumbnail:
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+  },
+  {
+    id: 'r2',
+    title: 'Data Science from Scratch',
+    author: 'Joel Grus',
+    year: 2019,
+    publisher: "O'Reilly",
+    category: 'Data Science',
+    tags: ['Trung cấp'],
+    availableCopies: 5,
+    thumbnail:
+      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+  },
+  {
+    id: 'r3',
+    title: 'Natural Language Processing with Python',
+    author: 'Steven Bird, Ewan Klein',
+    year: 2021,
+    publisher: "O'Reilly",
+    category: 'NLP',
+    tags: ['Trung cấp'],
+    availableCopies: 1,
+    thumbnail:
+      'https://images.unsplash.com/photo-1555421689-491a97ff2040?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+  },
+  {
+    id: 'r4',
+    title: 'Computer Vision: Algorithms and Applications',
+    author: 'Richard Szeliski',
+    year: 2022,
+    publisher: 'Springer',
+    category: 'Computer Vision',
+    tags: ['Nâng cao'],
+    availableCopies: 4,
+    thumbnail:
+      'https://images.unsplash.com/photo-1561736778-92e52a7769ef?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+  },
+  {
+    id: 'r5',
+    title: 'Reinforcement Learning: An Introduction',
+    author: 'Richard S. Sutton, Andrew G. Barto',
+    year: 2018,
+    publisher: 'MIT Press',
+    category: 'RL',
+    tags: ['Nâng cao'],
+    availableCopies: 2,
+    thumbnail:
+      'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+  },
+  {
+    id: 'r6',
+    title: 'Neural Networks and Deep Learning',
+    author: 'Michael Nielsen',
+    year: 2019,
+    publisher: 'Determination Press',
+    category: 'Neural Networks',
+    tags: ['Trung cấp'],
+    availableCopies: 0,
+    thumbnail:
+      'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+  },
+];

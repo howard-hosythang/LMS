@@ -1,0 +1,115 @@
+% --- BẮT ĐẦU PHẦN TỔNG KẾT ---
+
+\chapter{Tổng kết}
+
+Dự án ``Hệ thống Quản lý Thư viện Trực tuyến tích hợp AI'' (Library74) được định hình và phát triển với tầm nhìn chuyển đổi số quy trình vận hành thư viện. Vượt qua giới hạn của một phần mềm quản lý thông thường, dự án đã hiện thực hóa một kiến trúc phân tán bao gồm ba phân lớp lõi: Frontend, Backend và AI Service.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.22\textwidth]{figures/ch09/logo.png}
+    \caption{Nhận diện thương hiệu của nền tảng Library74}
+    \label{fig:library74_logo_conclusion}
+\end{figure}
+
+\section{Tổng hợp kết quả hiện thực}
+
+Đóng góp cốt lõi của đồ án không nằm ở việc xây dựng các module đơn lẻ, mà ở khả năng liên kết các phân hệ thành những luồng dữ liệu và luồng nghiệp vụ khép kín, hoạt động ổn định trên môi trường triển khai thực tế.
+
+\subsection{Phân lớp Frontend}
+
+Thay vì liệt kê các màn hình rời rạc, lớp giao diện được định hình theo nhóm người dùng để tối ưu hóa trải nghiệm tương tác:
+
+\begin{itemize}
+    \item \textbf{Trang công cộng:} Triển khai cơ chế kết xuất trang tĩnh và kết xuất phía máy chủ cho trang chủ, luồng tìm kiếm, đăng nhập OAuth2 và khôi phục mật khẩu. Điều này giúp giảm thiểu rào cản tiếp cận, tối ưu hóa công cụ tìm kiếm (SEO) và cung cấp điểm chạm đầu tiên mượt mà cho độc giả.
+    \item \textbf{Khu vực độc giả:} Xây dựng dashboard cá nhân hóa, quản lý vòng đời phiếu mượn, thanh toán mã QR, hệ thống Wishlist, Rating và thông báo thời gian thực. Các tính năng này giao quyền chủ động cho độc giả trong việc tự phục vụ và theo dõi tài nguyên học tập cá nhân.
+    \item \textbf{Khu vực vận hành:} Thiết kế giao diện quản lý vòng đời ấn phẩm, kiểm soát hàng chờ, xử lý phạt và mất sách cùng dashboard điều hành. Phân hệ này hỗ trợ số hóa nghiệp vụ thủ công, gom cụm các thao tác vận hành vào một không gian làm việc duy nhất.
+    \item \textbf{Khu vực quản trị:} Cung cấp công cụ cấu hình chính sách thư viện, quản trị định danh, phân quyền và giám sát hệ thống qua Audit Log, đảm bảo tính toàn vẹn, bảo mật và khả năng kiểm toán hệ thống minh bạch.
+    \item \textbf{Tối ưu nền tảng:} Áp dụng quản lý trạng thái linh hoạt, hỗ trợ đa ngôn ngữ, hệ thống giao diện sáng tối, Route Guard và luồng Refresh Token ngầm để duy trì sự liền mạch trong các phiên làm việc kéo dài.
+\end{itemize}
+
+\subsection{Phân lớp Backend}
+
+Máy chủ trung tâm đảm nhiệm vai trò kiểm soát toàn vẹn dữ liệu và điều phối các luồng xử lý phức tạp:
+
+\begin{itemize}
+    \item \textbf{Quản trị định danh:} Sử dụng JWT, cơ chế xoay vòng token, xác thực email, Google OAuth2 và kiểm soát quyền truy cập dựa trên vai trò để tạo lập rào chắn bảo mật vững chắc cho toàn bộ API.
+    \item \textbf{Quản lý tài nguyên:} Chuẩn hóa lược đồ cho ấn phẩm, tác giả, danh mục và tích hợp Storage Port lưu trữ file số an toàn, định hình nguồn dữ liệu chuẩn xác cho tài nguyên thư viện.
+    \item \textbf{Luồng mượn trả:} Xử lý giao dịch mượn trả tuân thủ nguyên tắc ACID, quản lý hàng chờ đặt trước, xử lý ngoại lệ trễ hạn và mất sách, giải quyết bài toán cốt lõi của nghiệp vụ thư viện truyền thống.
+    \item \textbf{Thanh toán và sự kiện:} Tích hợp cổng PayOS qua Webhook, xây dựng kiến trúc hướng sự kiện với Kafka cho thông báo và Scheduler định kỳ nhắc hạn nhằm thúc đẩy tự động hóa và giảm độ trễ phản hồi.
+    \item \textbf{Hạ tầng và hệ thống:} Quản lý lược đồ dữ liệu với Flyway, xử lý lỗi tập trung và tích hợp AI Gateway với cơ chế bảo mật chữ ký HMAC, giúp hệ thống dễ dàng mở rộng và bảo trì trong dài hạn.
+\end{itemize}
+
+\subsection{Phân lớp AI Service}
+
+Phân hệ trí tuệ nhân tạo được thiết kế như một dịch vụ độc lập nhằm tránh gây áp lực lên luồng xử lý đồng bộ của hệ thống chính:
+
+\begin{itemize}
+    \item \textbf{Luồng xử lý dữ liệu PDF:} Tự động trích xuất ngữ nghĩa bằng PyMuPDF, làm sạch nhiễu, phân mảnh văn bản và tối ưu tính toán để bỏ qua các file trùng lặp, giúp chuyển đổi dữ liệu phi cấu trúc thành định dạng tiêu chuẩn.
+    \item \textbf{Mô hình nhúng vector:} Khởi tạo vector đa chiều với SentenceTransformer chuẩn hóa tiếng Việt, lưu trữ và truy xuất thông qua pgvector trên PostgreSQL để giải quyết bài toán tìm kiếm ngữ nghĩa theo khoảng cách.
+    \item \textbf{Làm giàu siêu dữ liệu:} Điều phối mô hình ngôn ngữ sinh tóm tắt, trích xuất nhãn đa ngữ và giới hạn tình trạng ảo giác qua cơ chế ép định dạng JSON, giúp giảm thiểu đáng kể công việc nhập liệu thủ công của thủ thư.
+    \item \textbf{Hệ thống gợi ý:} Áp dụng thuật toán kết hợp giữa lọc cộng tác, phân tích nội dung và cơ chế đề xuất theo xu hướng cho người dùng mới, từng bước cá nhân hóa trải nghiệm khám phá tri thức.
+    \item \textbf{Kiến trúc bất đồng bộ:} Tách biệt xử lý bằng FastAPI và Celery Worker qua RabbitMQ, giao tiếp an toàn với Backend qua mã hóa HMAC để ngăn chặn hiện tượng nghẽn cổ chai khi xử lý tác vụ AI nặng.
+\end{itemize}
+
+\subsection{Kiểm thử và Đảm bảo chất lượng}
+
+Để minh chứng cho tính ổn định, hệ thống đã trải qua các kịch bản kiểm thử phân tầng với kết quả khả quan:
+
+\begin{itemize}
+    \item \textbf{Kiểm thử Frontend:} Vượt qua 62/62 kịch bản Unit Test và Component Test cho logic giao diện, quản lý trạng thái và tính hợp lệ của biểu mẫu, đảm bảo tính chống chịu lỗi phía người dùng.
+    \item \textbf{Kiểm thử Backend:} Vượt qua 79/79 kịch bản Integration Test tập trung vào logic nghiệp vụ, luồng giao dịch cơ sở dữ liệu và bảo mật API. Luồng cập nhật dữ liệu hoạt động nhất quán, không xảy ra hiện tượng bế tắc.
+    \item \textbf{Đánh giá AI Service:} Hoàn tất 72/72 Contract Test cho luồng xử lý tự động. Việc đo lường trên tập dữ liệu chuẩn ghi nhận nDCG@5 đạt 0.907, Recall@5 đạt 87.5\% và độ trễ p95 ở mức 540ms.
+    \item \textbf{Vận hành thực tế:} Hệ thống vượt qua 8/8 kịch bản Smoke Test trên tên miền thật. Ở bài toán thăm dò chịu tải với tối đa 200 người dùng ảo đồng thời, hệ thống duy trì tỷ lệ lỗi 0.00\% và đảm bảo phản hồi ổn định.
+\end{itemize}
+
+\subsection{Đóng gói và Triển khai hạ tầng}
+
+Hệ thống được đưa lên môi trường mạng Internet với kiến trúc triển khai tiêu chuẩn:
+
+\begin{itemize}
+    \item \textbf{Nền tảng và môi trường:} Toàn bộ hệ sinh thái được đóng gói container và điều phối bởi Docker Compose trên nền tảng Google Cloud VPS sử dụng Ubuntu 24.04.
+    \item \textbf{Phân giải tên miền và bảo mật:} Vận hành chính thức tại tên miền \texttt{https://library74.uk}, định tuyến DNS qua mạng lưới Cloudflare. Máy chủ Caddy làm định tuyến ngược, tự động cấp phát chứng chỉ SSL để mã hóa giao tiếp.
+    \item \textbf{Vận hành Frontend và Backend:} Ứng dụng React được biên dịch tĩnh và phân phối qua máy chủ Nginx. Khối Spring Boot liên kết chặt chẽ với các dịch vụ nội bộ (PostgreSQL, Kafka, RabbitMQ) và nền tảng bên ngoài (S3, PayOS, Google).
+    \item \textbf{Vận hành AI Engine và dữ liệu:} Môi trường FastAPI vận hành độc lập cùng hệ thống Worker lắng nghe hàng đợi. Hệ quản trị PostgreSQL được ánh xạ bộ nhớ độc lập, trong khi hình ảnh và PDF được đồng bộ với Amazon S3 để dự phòng.
+\end{itemize}
+
+\section{Đánh giá tác động thực tiễn}
+
+Dự án Library74 đã chứng minh được tính khả thi trong việc ứng dụng nền tảng công nghệ để giải quyết bài toán vận hành thực tế của thư viện đại học. Tác động của hệ thống không mang tính lý thuyết mà mang lại giá trị vận hành cụ thể cho từng nhóm đối tượng tham gia:
+
+\begin{itemize}
+    \item \textbf{Đối với sinh viên và giảng viên:} Dưới sự hỗ trợ của công cụ tìm kiếm ngữ nghĩa và hệ thống gợi ý, khoảng cách từ nhu cầu tra cứu học liệu đến quyết định mượn sách được thu hẹp đáng kể. Nền tảng cung cấp một luồng tự phục vụ xuyên suốt, giúp bạn đọc chủ động và nắm toàn quyền kiểm soát quá trình mượn trả tài liệu của cá nhân.
+
+    \item \textbf{Đối với thủ thư:} Hệ thống giải phóng nhân sự khỏi khối lượng lớn các công việc hành chính thủ công. Thông qua các tính năng quản lý vòng đời tài liệu, đối soát thanh toán tự động và xử lý hàng chờ trực tuyến, các bước nghiệp vụ được chuẩn hóa. Điều này giúp hạn chế tối đa sai sót do thao tác con người, từ đó nâng cao hiệu suất phục vụ tổng thể.
+
+    \item \textbf{Đối với nhà trường:} Hệ thống kiến tạo một kho dữ liệu tập trung, lưu vết toàn bộ vòng đời tương tác của tài nguyên học liệu. Đây là nguồn dữ liệu nền tảng thiết yếu để cấp quản lý phân tích xu hướng tìm kiếm, đánh giá mức độ lưu thông sách và đưa ra các quyết định hoạch định chiến lược đầu tư tài nguyên mới một cách có cơ sở.
+
+    \item \textbf{Đối với bài toán chuyển đổi số:} Dự án khẳng định quá trình chuyển đổi số thư viện không đơn thuần dừng lại ở việc chuyển đổi file tài liệu lên máy chủ. Bản chất cốt lõi của giải pháp là sự số hóa toàn diện luồng tương tác giữa con người và tri thức, kết hợp linh hoạt các công cụ học máy để tạo ra bước tiến thực sự về chất lượng dịch vụ.
+\end{itemize}
+
+\section{Nhận định kiến trúc và giới hạn kỹ thuật}
+
+Dựa trên kết quả thực nghiệm, dự án ghi nhận các ưu điểm trong thiết kế kiến trúc cũng như các rào cản kỹ thuật cần khắc phục để đưa hệ thống lên mức chịu tải quy mô lớn hơn:
+
+\begin{itemize}
+    \item \textbf{Kiến trúc nghiệp vụ:} Đạt được sự ổn định nhờ tính toàn vẹn cho các giao dịch mượn trả và phân rã module rõ ràng. Tuy nhiên, do chưa áp dụng kiến trúc vi dịch vụ hoàn chỉnh, hệ thống có thể đối mặt với rào cản mở rộng cục bộ nếu một module gặp tình trạng quá tải đột biến.
+    \item \textbf{Trí tuệ nhân tạo:} Kiến trúc tách rời giúp luồng backend không bị ảnh hưởng bởi quá trình suy luận của AI. Dù vậy, hệ thống gợi ý vẫn chịu ảnh hưởng của hiện tượng khởi động nguội do thiếu tập dữ liệu tương tác thực, đồng thời siêu dữ liệu dễ bị nhiễu nếu file PDF đầu vào có định dạng sai lệch.
+    \item \textbf{Hạ tầng và vận hành:} Hệ thống dễ dàng tái tạo tự động thông qua cấu trúc mã hóa và lớp bảo mật định tuyến nghiêm ngặt. Điểm hạn chế là việc kiểm thử tải mới dừng ở mức thăm dò có kiểm soát, chưa thực hiện các kịch bản kiểm thử giới hạn cực đại để xác định điểm gãy của phần cứng.
+\end{itemize}
+
+\section{Định hướng phát triển}
+
+Để nâng tầm Library74 thành một nền tảng phục vụ cho các đại học quy mô lớn, các trọng tâm kỹ thuật trong giai đoạn tiếp theo bao gồm:
+
+\begin{itemize}
+    \item \textbf{Xây dựng hệ thống giám sát toàn diện:} Tích hợp các công cụ theo dõi đo lường và ghi log theo thời gian thực, đồng thời cài đặt hệ thống cảnh báo tự động để phát hiện nguy cơ trước khi máy chủ chạm ngưỡng thắt cổ chai.
+    \item \textbf{Khắc phục nhiễu dữ liệu đầu vào:} Bổ sung công nghệ nhận dạng ký tự quang học kết hợp thuật toán phân tích bố cục hình ảnh để trích xuất văn bản từ sách scan cổ, sách mờ hoặc có thiết kế dàn trang phức tạp.
+    \item \textbf{Tối ưu hóa hệ thống gợi ý:} Chuyển dịch dần từ việc phân tích dữ liệu tĩnh sang nắm bắt hành vi ngầm của độc giả, chẳng hạn như thời gian dừng trên trang hoặc tỷ lệ nhấp chuột, nhằm tinh chỉnh mô hình đề xuất sát với thực tế hơn.
+    \item \textbf{Cơ chế dự phòng và phục hồi:} Tự động hóa hoàn toàn luồng sao lưu gia tăng cho cơ sở dữ liệu và thiết lập các kịch bản chuyển đổi dự phòng để đảm bảo tính sẵn sàng cao cho hệ thống vận hành.
+\end{itemize}
+
+\section{Kết luận chung}
+
+Đồ án \textbf{"Xây dựng Hệ thống Quản lý Thư viện Trực tuyến tích hợp AI"} đã hoàn thành các mục tiêu nghiên cứu và kỹ thuật được đặt ra ban đầu. Dự án không chỉ dừng lại ở mức độ nghiên cứu lý thuyết mà đã phát triển thành một hệ thống phần mềm có mức độ hoàn thiện ổn định, đáp ứng được các yêu cầu vận hành cơ bản.
+
+Bằng việc kết hợp hài hòa giữa kiến trúc phần mềm, quy trình nghiệp vụ thư viện và khả năng hỗ trợ của các thuật toán học máy, Library74 là một ví dụ cụ thể cho việc áp dụng nền tảng kỹ thuật công nghệ vào kiến tạo những giải pháp mang lại giá trị thực tiễn cho môi trường giáo dục đại học.

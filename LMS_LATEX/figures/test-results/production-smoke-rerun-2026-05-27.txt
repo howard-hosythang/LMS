@@ -1,0 +1,13 @@
+Production API smoke test: https://library74.uk
+| Case | Status | Latency ms | Result |
+| --- | ---: | ---: | --- |
+| homepage loads | 200 | 95.58 | PASS: `<!DOCTYPE html> <html lang="vi"> <head> <meta charset="UTF-8" /> <link rel="icon" type="image/png" href="/logo.png" /> <` |
+| catalog search returns 200 | 200 | 136.23 | PASS: `{"code":200,"message":"Success","data":{"content":[{"publicationId":"20","title":"Hands-On Machine Learning with Scikit-` |
+| public stats returns 200 | 200 | 251.25 | PASS: `{"code":200,"message":"get public library stats success","data":{"totalPublications":167,"activeUsers":89,"totalBorrows"` |
+| newest books returns 200 | 200 | 106.12 | PASS: `{"code":200,"message":"get newest publications success","data":[{"publicationId":"846304415070968827","title":"Petroleum` |
+| semantic search returns 200 | 200 | 344.91 | PASS: `{"code":200,"message":"Success","data":{"publicationIds":["20","846266784685642694","18","31","19"]}}` |
+| bad login is rejected | 400 | 135.29 | PASS: `{"code":1109,"message":"Email or password is incorrect"}` |
+| admin endpoint without token is rejected | 401 | 120.12 | PASS: `{"code":1400,"message":"Authentication required"}` |
+| invalid semantic payload is handled | 200 | 100.85 | PASS: `{"code":200,"message":"Success","data":{"publicationIds":[]}}` |
+
+Summary: 8/8 passed

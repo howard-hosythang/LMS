@@ -1,0 +1,50 @@
+@startuml ai_etl_pipeline
+scale 2
+!theme plain
+left to right direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.5
+
+' Khoảng cách được tính toán lại để luồng ngang thoáng và đẹp
+skinparam nodesep 60
+skinparam ranksep 70
+
+rectangle "Spring Boot\nBackend" as Backend #DBEAFE
+actor "worker.py\n(Background Task)" as Worker #EFF6FF
+component "pdf_processing.py\n(PyMuPDF)" as PDF #EEF2FF
+component "Sliding Window\nChunker" as Chunker #F0FDFA
+
+' Khối xử lý song song đặt theo hàng dọc bên phải
+rectangle "Parallel AI Processing" as AI_Process <<dashed>> {
+    component "embedding_client.py\n(Vietnamese Model)" as Embedder #ECFDF5
+    component "llm_client.py & tag_quality.py\n(Gemini API)" as LLM #FFF7ED
+
+    ' Ép LLM nằm dưới Embedder trong khối
+    Embedder -[hidden]down-> LLM
+}
+
+database "pgvector (PostgreSQL)" as DB #FEF3C7
+
+' --- LUỒNG CHÍNH CHẠY TỪ TRÁI SANG PHẢI ---
+Backend -right-> Worker : " 0. Trigger ETL"
+Worker -right-> PDF : " 1. Download PDF\n 2. Extract Text"
+PDF -right-> Chunker : " 3. Clean Header/Footer\n 4. Pass clean text"
+
+' Chunker chỉa sang 2 nhánh song song
+Chunker -right-> Embedder : " 5. Split chunks\n 6. Generate Vectors"
+Chunker -right-> LLM : " 7. Select chunks\n 8. Prompt LLM"
+
+' --- LUỒNG RẼ DỌC XUỐNG ĐÁY HẠ TẦNG ---
+Embedder -down-> DB : " 9. Save vectors"
+LLM -down-> DB : " 10. Clean En-Vi Tags\n 11. Save metadata"
+
+' Luồng callback quay ngược về đầu nguồn (Vẽ đường cong vòng lên trên)
+Worker <-up- Backend : " 12. HMAC Callback (Sync Status)"
+
+@enduml

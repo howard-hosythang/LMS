@@ -1,0 +1,82 @@
+@startuml system_architecture_overview
+!theme plain
+
+title Sơ đồ kiến trúc tổng thể hệ thống SmartLibrary LMS
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam ArrowColor #374151
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+
+skinparam rectangle {
+  BorderColor #374151
+  FontColor #111827
+}
+skinparam database {
+  BorderColor #374151
+  BackgroundColor #FEF3C7
+}
+skinparam queue {
+  BorderColor #374151
+  BackgroundColor #E0F2FE
+}
+
+actor "Người dùng\nĐộc giả / Thủ thư / Quản trị" as User
+
+rectangle "Frontend\nReact + Vite\n\n- Giao diện web\n- Gọi REST API\n- Nhận thông báo realtime" as Frontend #ECFDF5
+
+rectangle "Backend\nSpring Boot\n\n- Xác thực, phân quyền\n- Quản lý người dùng\n- Quản lý sách/tài liệu\n- Mượn, trả, đặt trước\n- Đánh giá, yêu thích\n- Kết nối AI" as Backend #EFF6FF
+
+rectangle "AI Service\nFastAPI + Celery\n\n- Tìm kiếm ngữ nghĩa\n- Gợi ý sách\n- Xử lý PDF\n- Tạo vector embedding" as AIService #F5F3FF
+
+database "PostgreSQL + pgvector\n\n- Dữ liệu nghiệp vụ thư viện\n- Dữ liệu người dùng\n- Vector AI\n- Cache gợi ý" as Database
+
+queue "Kafka\n\nEmail và thông báo nội bộ" as Kafka
+
+queue "RabbitMQ\n\nHàng đợi xử lý PDF cho AI" as RabbitMQ
+
+cloud "Dịch vụ bên ngoài" as External {
+  rectangle "AWS S3\nLưu file PDF / ảnh bìa" as S3 #FFF7ED
+  rectangle "Google OAuth2\nĐăng nhập Google" as GoogleOAuth #FFF7ED
+  rectangle "Google Books API\nTra cứu ISBN" as GoogleBooks #FFF7ED
+  rectangle "Gemini API\nTóm tắt và gắn thẻ sách" as Gemini #FFF7ED
+  rectangle "Gmail SMTP\nGửi email" as Gmail #FFF7ED
+  rectangle "PayOS\nThanh toán phí phạt" as PayOS #FFF7ED
+}
+
+User --> Frontend : Sử dụng trình duyệt
+Frontend --> Backend : REST API\nWebSocket notification
+
+Backend --> Database : Đọc / ghi dữ liệu
+Backend --> Kafka : Gửi sự kiện email,\nthông báo
+Kafka --> Backend : Consumer xử lý thông báo
+
+Backend --> S3 : Upload / lấy URL tài liệu
+Backend --> GoogleOAuth : Đăng nhập Google
+Backend --> GoogleBooks : Tra cứu thông tin sách
+Backend --> Gmail : Gửi email
+Backend --> PayOS : Tạo / kiểm tra thanh toán
+
+Backend --> AIService : Tìm kiếm ngữ nghĩa,\ngợi ý sách,\nyêu cầu xử lý PDF
+AIService --> Database : Đọc dữ liệu,\nlưu vector và metadata AI
+AIService --> RabbitMQ : Đưa job xử lý PDF
+RabbitMQ --> AIService : Worker nhận job
+AIService --> S3 : Tải PDF để xử lý
+AIService --> Gemini : Tạo tóm tắt,\nđối tượng phù hợp, tag
+AIService --> Backend : Callback kết quả xử lý PDF
+
+note bottom of Backend
+Backend là trung tâm điều phối nghiệp vụ chính.
+AI Service chỉ hỗ trợ tìm kiếm, gợi ý và xử lý nội dung PDF.
+end note
+
+note bottom of Database
+Hệ thống dùng một PostgreSQL chung.
+pgvector được dùng cho tìm kiếm ngữ nghĩa.
+end note
+
+@enduml

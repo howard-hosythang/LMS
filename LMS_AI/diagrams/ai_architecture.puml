@@ -1,0 +1,60 @@
+@startuml ai_architecture
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.5
+skinparam linetype ortho
+
+' Tăng mạnh khoảng cách ngang và dọc để không bị đè chữ
+skinparam nodesep 100
+skinparam ranksep 120
+
+rectangle "Spring Boot Backend" as Backend #DBEAFE
+
+database "PostgreSQL\n(pgvector)" as DB #FEF3C7
+
+package "Python AI Service (FastAPI)" as AIService #F8FAFC {
+  component "api_service.py\n(Synchronous REST Gateway)" as API #E0F2FE
+  component "worker.py\n(Asynchronous Background Task)" as Worker #EEF2FF
+
+  rectangle "AI Core Engines" as Core #FFFFFF {
+    component "recommender.py\n(ALS & Hybrid)" as Recommender #FDF2F8
+    component "embedding_client.py\n(SentenceTransformer)" as Embedding #ECFDF5
+    component "llm_client.py\n(Prompt & JSON Parsing)" as LLMClient #FFF7ED
+  }
+}
+
+cloud "External Services" as Cloud #F5F3FF {
+  component "Google Gemini API\n(LLM)" as Gemini
+  component "AWS S3\n(Storage)" as S3
+}
+
+' Định tuyến mũi tên rành mạch (Thêm dấu cách trước chữ để không dính vào đường line)
+Backend -down-> API : " Search, Recommend\n (Sync REST)"
+Backend -down-> Worker : " Trigger Process PDF\n (Message/REST)"
+Worker -up-> Backend : " HMAC Callback\n (Status)"
+
+API -down-> Recommender : " Fetch suggestions"
+API -down-> Embedding : " Encode search query"
+
+Worker -down-> Embedding : " Encode chunks"
+Worker -down-> LLMClient : " Generate metadata"
+
+API -left-> DB : " Vector Search\n / Read logs"
+Worker -left-> DB : " Write vectors\n & metadata"
+
+Worker -right-> S3 : " Download PDF"
+LLMClient -right-> Gemini : " API Calls\n (Throttle/Retry)"
+
+' Ép vị trí vật lý để canvas tự bung rộng sang 2 bên
+DB -[hidden]right- AIService
+AIService -[hidden]right- Cloud
+API -[hidden]right- Worker
+Recommender -[hidden]right- Embedding
+Embedding -[hidden]right- LLMClient
+
+@enduml

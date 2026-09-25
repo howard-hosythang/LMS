@@ -1,0 +1,21 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.6.0
+rootdir: /Users/hosythang/Desktop/Rốt lập trình/LMS/LMS_AI
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.13.0
+collected 75 items
+
+tests/integration/test_api_contract_and_latency.py sss                   [  4%]
+tests/test_ai_metadata_quality.py ............                           [ 20%]
+tests/test_ai_quality_benchmark.py .....                                 [ 26%]
+tests/test_api_service_contract.py .............                         [ 44%]
+tests/test_config.py ..                                                  [ 46%]
+tests/test_database_sql_contract.py .....                                [ 53%]
+tests/test_llm_client.py .........                                       [ 65%]
+tests/test_pdf_processing.py .......                                     [ 74%]
+tests/test_pipeline_core.py ...........                                  [ 89%]
+tests/test_recommender_engine.py ....                                    [ 94%]
+tests/test_worker_contract.py ....                                       [100%]
+
+======================== 72 passed, 3 skipped in 3.22s =========================

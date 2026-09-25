@@ -1,0 +1,75 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: lms_ai_rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lms_ai_api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://library:library@host.docker.internal:5433/library}
+      RABBITMQ_URL: ${DOCKER_RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      FASTAPI_PORT: ${FASTAPI_PORT:-8001}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: 5433
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      HF_HOME: /models/hf
+      TRANSFORMERS_CACHE: /models/hf
+      BACKEND_WEBHOOK_SECRET: ${BACKEND_WEBHOOK_SECRET:?BACKEND_WEBHOOK_SECRET is required}
+      RUN_AI_SCHEMA_MIGRATION: '1'
+    ports:
+      - '${FASTAPI_PORT:-8001}:${FASTAPI_PORT:-8001}'
+    volumes:
+      - model_cache:/models
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    entrypoint: ['/app/docker-entrypoint.sh']
+    command: ['/app/scripts/run_api.sh']
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lms_ai_worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://library:library@host.docker.internal:5433/library}
+      RABBITMQ_URL: ${DOCKER_RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: 5433
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      HF_HOME: /models/hf
+      TRANSFORMERS_CACHE: /models/hf
+      BACKEND_WEBHOOK_URL: ${BACKEND_WEBHOOK_URL:-http://host.docker.internal:8080/api/ai/callback}
+      BACKEND_WEBHOOK_SECRET: ${BACKEND_WEBHOOK_SECRET:?BACKEND_WEBHOOK_SECRET is required}
+      RUN_AI_SCHEMA_MIGRATION: '0'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - model_cache:/models
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    entrypoint: ['/app/docker-entrypoint.sh']
+    command: ['/app/scripts/run_worker.sh']
+
+volumes:
+  model_cache:

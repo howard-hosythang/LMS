@@ -1,0 +1,71 @@
+@startuml
+!theme plain
+title Use Case - Chức năng thủ thư
+
+left to right direction
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam ArrowMessageAlignment center
+skinparam packageStyle rectangle
+skinparam nodesep 34
+skinparam ranksep 38
+
+actor "Thủ thư" as Librarian
+actor "Dịch vụ Email" as EmailService
+actor "Gemini API" as Gemini
+
+rectangle "Hệ thống LMS - Chức năng thủ thư" {
+  usecase "Xem dashboard\nthủ thư" as UC_Dashboard
+  usecase "Quản lý\nấn phẩm" as UC_ManagePublication
+  usecase "Thêm/cập nhật/xóa\nấn phẩm" as UC_CRUDPublication
+  usecase "Tải ảnh bìa\nvà PDF" as UC_UploadAssets
+  usecase "Xử lý PDF\nbằng AI" as UC_ProcessPdfAI
+  usecase "Quản lý\nbản sao" as UC_ManageItems
+  usecase "Tra cứu sách\nvà bản sao" as UC_LookupBook
+  usecase "Xử lý yêu cầu\nmượn sách" as UC_ProcessBorrowRequest
+  usecase "Cho mượn\ntrực tiếp" as UC_DirectBorrow
+  usecase "Xác nhận\nnhận sách" as UC_ConfirmPickup
+  usecase "Xác nhận\nnhận sách đặt trước" as UC_ConfirmReservationPickup
+  usecase "Trả sách" as UC_ReturnBook
+  usecase "Tính phí\nphát sinh" as UC_CalculateFine
+  usecase "Báo cáo sách\như/mất" as UC_ReportIssue
+  usecase "Quản lý giao dịch\nmượn trả" as UC_ManageTransactions
+  usecase "Ghi chú\ngiao dịch" as UC_TransactionNote
+  usecase "Thu tiền mặt\nphí phạt" as UC_CashPayment
+  usecase "Gửi thông báo\ncho bạn đọc" as UC_SendNotification
+}
+
+Librarian --> UC_Dashboard
+Librarian --> UC_ManagePublication
+Librarian --> UC_ManageItems
+Librarian --> UC_LookupBook
+Librarian --> UC_ProcessBorrowRequest
+Librarian --> UC_DirectBorrow
+Librarian --> UC_ConfirmPickup
+Librarian --> UC_ConfirmReservationPickup
+Librarian --> UC_ReturnBook
+Librarian --> UC_ReportIssue
+Librarian --> UC_ManageTransactions
+Librarian --> UC_TransactionNote
+Librarian --> UC_CashPayment
+
+Gemini --> UC_ProcessPdfAI
+EmailService --> UC_SendNotification
+
+UC_ManagePublication ..> UC_CRUDPublication : <back:#FFFFFF><<include>></back>
+UC_ManagePublication ..> UC_UploadAssets : <back:#FFFFFF><<include>></back>
+UC_UploadAssets ..> UC_ProcessPdfAI : <back:#FFFFFF><<include>></back>
+UC_ProcessBorrowRequest ..> UC_ConfirmPickup : <back:#FFFFFF><<include>></back>
+UC_ReturnBook ..> UC_CalculateFine : <back:#FFFFFF><<include>></back>
+UC_ReturnBook ..> UC_SendNotification : <back:#FFFFFF><<include>></back>
+UC_ReportIssue ..> UC_CalculateFine : <back:#FFFFFF><<include>></back>
+UC_ReportIssue ..> UC_SendNotification : <back:#FFFFFF><<include>></back>
+UC_TransactionNote ..> UC_ManageTransactions : <back:#FFFFFF><<extend>></back>
+
+UC_Dashboard -[hidden]right- UC_ManagePublication
+UC_ManagePublication -[hidden]right- UC_ProcessBorrowRequest
+UC_ProcessBorrowRequest -[hidden]right- UC_ReturnBook
+UC_ReturnBook -[hidden]right- UC_ManageTransactions
+
+@enduml

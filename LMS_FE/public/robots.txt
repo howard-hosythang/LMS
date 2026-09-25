@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /adminpage/
+Disallow: /librarianpage/
+Disallow: /userpage/
+
+Sitemap: /sitemap.xml
+
