@@ -1,0 +1,282 @@
+name: library74
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  kafka:
+    image: bitnamilegacy/kafka:3.7.0
+    restart: unless-stopped
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    volumes:
+      - kafka_data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    restart: unless-stopped
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ./LMS_BE
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      DATABASE_URL: ${BE_DATABASE_URL}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      AI_GATEWAY_BASE_URL: http://ai-api:8001
+      BASE_URL_WEBSITE: https://${PUBLIC_DOMAIN}
+      FRONTEND_URL: https://${PUBLIC_DOMAIN}
+      OAUTH2_REDIRECT_URI: https://${PUBLIC_DOMAIN}/oauth2/callback
+      AI_CALLBACK_SECRET: ${SERVICE_CALLBACK_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 12
+
+  ai-api:
+    build:
+      context: ./LMS_AI
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      DATABASE_URL: ${AI_DATABASE_URL}
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      DB_HOST: postgres
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      FASTAPI_PORT: 8001
+      BACKEND_WEBHOOK_SECRET: ${SERVICE_CALLBACK_SECRET}
+      RUN_AI_SCHEMA_MIGRATION: "1"
+      HF_HOME: /models/hf
+      TRANSFORMERS_CACHE: /models/hf
+    volumes:
+      - model_cache:/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    command: ["/app/scripts/run_api.sh"]
+
+  ai-worker:
+    build:
+      context: ./LMS_AI
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      DATABASE_URL: ${AI_DATABASE_URL}
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      DB_HOST: postgres
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      BACKEND_WEBHOOK_URL: http://backend:8080/api/ai/callback
+      BACKEND_WEBHOOK_SECRET: ${SERVICE_CALLBACK_SECRET}
+      RUN_AI_SCHEMA_MIGRATION: "0"
+      HF_HOME: /models/hf
+      TRANSFORMERS_CACHE: /models/hf
+    volumes:
+      - model_cache:/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    command: ["/app/scripts/run_worker.sh"]
+
+  frontend:
+    build:
+      context: ./LMS_FE
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_WS_URL: /ws
+        VITE_API_TIMEOUT: ${VITE_API_TIMEOUT:-10000}
+        VITE_PUBLIC_SITE_URL: https://${PUBLIC_DOMAIN}
+        VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID:-}
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles: ["observability"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus-rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    profiles: ["observability"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./deploy/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    profiles: ["observability"]
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    profiles: ["observability"]
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    profiles: ["observability"]
+    restart: unless-stopped
+    command: ["--path.rootfs=/host"]
+    volumes:
+      - /:/host:ro,rslave
+
+  loki:
+    image: grafana/loki:3.3.2
+    profiles: ["observability"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3100:3100"
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./deploy/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    profiles: ["observability"]
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./deploy/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - promtail_positions:/tmp
+    depends_on:
+      - loki
+
+  telegram-alert-webhook:
+    image: python:3.12-alpine
+    profiles: ["observability"]
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      TELEGRAM_ALERT_WEBHOOK_PORT: 9094
+    command: ["python", "/app/telegram_alert_webhook.py"]
+    volumes:
+      - ./deploy/telegram_alert_webhook.py:/app/telegram_alert_webhook.py:ro
+
+  postgres-backup:
+    image: postgres:15-alpine
+    profiles: ["backup"]
+    env_file: .env.prod
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["sh", "-c"]
+    command: ["pg_dump -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -Fc -f /backups/library-$$(date +%Y%m%d-%H%M%S).dump"]
+
+volumes:
+  postgres_data:
+  kafka_data:
+  rabbitmq_data:
+  model_cache:
+  caddy_data:
+  caddy_config:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
+  loki_data:
+  promtail_positions:
