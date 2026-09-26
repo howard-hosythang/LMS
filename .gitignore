@@ -61,3 +61,4 @@ LMS_BE/backup*.sql
 .DS_Store
 *.swp
 *.swo
+recovery/backup-library.sql
