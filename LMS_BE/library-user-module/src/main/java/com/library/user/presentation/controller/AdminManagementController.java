@@ -5,14 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.shared.constant.RoleConstants;
 import com.library.shared.util.RequiresRole;
 import com.library.shared.util.TsIdGenerator;
+import com.library.user.application.dto.request.AdminUpdateUserRequest;
 import com.library.user.application.dto.request.CreateManagedUserRequest;
 import com.library.user.domain.entities.UserStatus;
 import com.library.user.domain.enums.FacultyEnum;
-import com.library.user.application.dto.request.AdminUpdateUserRequest;
 import com.library.user.infrastructure.persistence.entity.RoleEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -856,17 +855,27 @@ public class AdminManagementController {
         if (phoneNumber == null) {
             return;
         }
+        String sql = currentUserId == null
+            ? """
+              SELECT COUNT(*)
+              FROM users
+              WHERE NULLIF(BTRIM(phone_number), '') IS NOT NULL
+                AND phone_number = :phoneNumber
+              """
+            : """
+              SELECT COUNT(*)
+              FROM users
+              WHERE NULLIF(BTRIM(phone_number), '') IS NOT NULL
+                AND phone_number = :phoneNumber
+                AND id <> :currentUserId
+              """;
         MapSqlParameterSource params = new MapSqlParameterSource()
-            .addValue("phoneNumber", phoneNumber)
-            .addValue("currentUserId", currentUserId);
+            .addValue("phoneNumber", phoneNumber);
+        if (currentUserId != null) {
+            params.addValue("currentUserId", currentUserId);
+        }
         Integer duplicates = jdbcTemplate.queryForObject(
-            """
-            SELECT COUNT(*)
-            FROM users
-            WHERE NULLIF(BTRIM(phone_number), '') IS NOT NULL
-              AND phone_number = :phoneNumber
-              AND (:currentUserId IS NULL OR id <> :currentUserId)
-            """,
+            sql,
             params,
             Integer.class
         );
@@ -880,17 +889,27 @@ public class AdminManagementController {
         if (normalizedCode == null) {
             return;
         }
+        String sql = currentUserId == null
+            ? """
+              SELECT COUNT(*)
+              FROM users
+              WHERE NULLIF(BTRIM(student_id), '') IS NOT NULL
+                AND student_id = :code
+              """
+            : """
+              SELECT COUNT(*)
+              FROM users
+              WHERE NULLIF(BTRIM(student_id), '') IS NOT NULL
+                AND student_id = :code
+                AND id <> :currentUserId
+              """;
         MapSqlParameterSource params = new MapSqlParameterSource()
-            .addValue("code", normalizedCode)
-            .addValue("currentUserId", currentUserId);
+            .addValue("code", normalizedCode);
+        if (currentUserId != null) {
+            params.addValue("currentUserId", currentUserId);
+        }
         Integer duplicates = jdbcTemplate.queryForObject(
-            """
-            SELECT COUNT(*)
-            FROM users
-            WHERE NULLIF(BTRIM(student_id), '') IS NOT NULL
-              AND student_id = :code
-              AND (:currentUserId IS NULL OR id <> :currentUserId)
-            """,
+            sql,
             params,
             Integer.class
         );
