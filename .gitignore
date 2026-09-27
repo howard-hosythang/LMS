@@ -62,3 +62,6 @@ LMS_BE/backup*.sql
 *.swp
 *.swo
 recovery/backup-library.sql
+
+# CI/CD Workflows (temporarily ignored until ready for automated pipeline)
+.github/workflows/
