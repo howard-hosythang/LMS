@@ -358,18 +358,7 @@ const BookDetails = () => {
     }
   };
 
-  const applyLookupResult = async (rawItem: BookSearchItem) => {
-    let item = rawItem;
-    if (rawItem.editionId && (!rawItem.tableOfContents || !rawItem.description)) {
-      try {
-        const fullRes = await publicationsService.bookLookupByEdition(rawItem.editionId);
-        if (fullRes.code === 200 && fullRes.data) {
-          item = { ...rawItem, ...fullRes.data };
-        }
-      } catch {
-        // Fallback to original item
-      }
-    }
+  const applyLookupResult = async (item: BookSearchItem) => {
 
     setForm(prev => ({
       ...prev,
