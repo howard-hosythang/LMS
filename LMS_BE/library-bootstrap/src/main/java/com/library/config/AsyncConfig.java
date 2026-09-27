@@ -2,6 +2,7 @@ package com.library.config;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -24,11 +25,15 @@ public class AsyncConfig {
     }
 
     @Bean("aiProcessingExecutor")
-    public Executor aiProcessingExecutor() {
+    public Executor aiProcessingExecutor(
+        @Value("${ai.processing.core-pool-size:2}") int corePoolSize,
+        @Value("${ai.processing.max-pool-size:4}") int maxPoolSize,
+        @Value("${ai.processing.queue-capacity:1000}") int queueCapacity
+    ) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(1);
-        executor.setMaxPoolSize(2);
-        executor.setQueueCapacity(1000);
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
         executor.setKeepAliveSeconds(60);
         executor.setThreadNamePrefix("ai-processing-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
