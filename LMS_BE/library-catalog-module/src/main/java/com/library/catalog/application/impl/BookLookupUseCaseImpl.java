@@ -5,6 +5,8 @@ import com.library.catalog.dto.response.publication.BookLookupResponse;
 import com.library.catalog.dto.response.publication.BookSearchItem;
 import com.library.catalog.infrastructure.external.GoogleBooksClient;
 import com.library.catalog.infrastructure.external.OpenLibraryClient;
+import com.library.shared.exception.AppException;
+import com.library.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -23,16 +24,32 @@ public class BookLookupUseCaseImpl implements BookLookupUseCase {
     private final GoogleBooksClient googleBooksClient;
     private final OpenLibraryClient openLibraryClient;
 
-    private static final Pattern ISBN_PATTERN = Pattern.compile("^[\\d\\-]{10,17}$");
-
     @Override
     public BookLookupResponse execute(String query) {
-        String normalized = query.trim();
-        String digitsOnly = normalized.replace("-", "");
-        boolean isIsbn = ISBN_PATTERN.matcher(normalized).matches()
-            && (digitsOnly.length() == 10 || digitsOnly.length() == 13);
+        String trimmed = query.trim();
 
-        return isIsbn ? lookupByIsbn(digitsOnly) : searchByTitle(normalized);
+        // 1. Kiểm tra ISBN (chuẩn hóa loại bỏ '-', khoảng trắng, hỗ trợ ISBN-10 và ISBN-13)
+        String normalizedIsbn = OpenLibraryClient.normalizeIsbn(trimmed);
+        if (normalizedIsbn != null) {
+            return lookupByIsbn(normalizedIsbn);
+        }
+
+        // 2. Kiểm tra Edition ID (ví dụ: OL26222911M hoặc /books/OL26222911M)
+        if (isEditionKey(trimmed)) {
+            String cleanId = trimmed.replace("/books/", "").trim();
+            BookSearchItem item = lookupByEditionId(cleanId);
+            return new BookLookupResponse("EDITION", List.of(item));
+        }
+
+        // 3. Fallback tìm kiếm theo Title
+        return searchByTitle(trimmed);
+    }
+
+    @Override
+    public BookSearchItem lookupByEditionId(String editionId) {
+        String cleanId = editionId.replace("/books/", "").trim();
+        return openLibraryClient.lookupByEditionId(cleanId)
+            .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     private BookLookupResponse lookupByIsbn(String isbn) {
@@ -61,13 +78,13 @@ public class BookLookupUseCaseImpl implements BookLookupUseCase {
         List<BookSearchItem> google = googleFuture.join();
         List<BookSearchItem> openLib = openLibFuture.join();
 
-        List<BookSearchItem> merged = new ArrayList<>(google);
-        for (BookSearchItem ol : openLib) {
-            boolean duplicate = google.stream().anyMatch(g -> titlesMatch(g.title(), ol.title()));
-            if (!duplicate) merged.add(ol);
+        List<BookSearchItem> merged = new ArrayList<>(openLib);
+        for (BookSearchItem g : google) {
+            boolean duplicate = merged.stream().anyMatch(m -> titlesMatch(m.title(), g.title()));
+            if (!duplicate) merged.add(g);
         }
 
-        return new BookLookupResponse("TITLE", merged.stream().limit(7).toList());
+        return new BookLookupResponse("TITLE", merged.stream().limit(10).toList());
     }
 
     private BookSearchItem mergeIsbnResults(BookSearchItem google, BookSearchItem openLib) {
@@ -75,17 +92,31 @@ public class BookLookupUseCaseImpl implements BookLookupUseCase {
         if (google == null) return openLib;
         if (openLib == null) return google;
 
-        String primaryCover   = coalesce(google.coverImageUrl(), openLib.coverImageUrl());
-        String secondaryCover = (google.coverImageUrl() != null && openLib.coverImageUrl() != null
-                && !google.coverImageUrl().equals(openLib.coverImageUrl()))
-                ? openLib.coverImageUrl() : null;
+        // Tổng hợp tất cả covers có thể có từ cả OpenLibrary và GoogleBooks
+        List<String> mergedCovers = new ArrayList<>();
+        if (openLib.coverUrls() != null) {
+            mergedCovers.addAll(openLib.coverUrls());
+        }
+        if (google.coverImageUrl() != null && !mergedCovers.contains(google.coverImageUrl())) {
+            mergedCovers.add(0, google.coverImageUrl());
+        }
+        if (openLib.coverImageUrl() != null && !mergedCovers.contains(openLib.coverImageUrl())) {
+            mergedCovers.add(openLib.coverImageUrl());
+        }
+
+        String primaryCover = !mergedCovers.isEmpty() ? mergedCovers.get(0) : null;
+        String secondaryCover = mergedCovers.size() > 1 ? mergedCovers.get(1) : null;
+
+        String coverSmall = openLib.coverSmall() != null ? openLib.coverSmall() : primaryCover;
+        String coverMedium = openLib.coverMedium() != null ? openLib.coverMedium() : primaryCover;
+        String coverLarge = openLib.coverLarge() != null ? openLib.coverLarge() : primaryCover;
 
         return new BookSearchItem(
             coalesce(google.isbn(), openLib.isbn()),
             coalesce(google.title(), openLib.title()),
             coalesce(google.subtitle(), openLib.subtitle()),
-            google.description(),
-            google.language(),
+            coalesce(google.description(), openLib.description()),
+            coalesce(google.language(), openLib.language()),
             coalesce(google.numberOfPages(), openLib.numberOfPages()),
             coalesce(google.publicationYear(), openLib.publicationYear()),
             coalesce(google.publisherName(), openLib.publisherName()),
@@ -94,8 +125,20 @@ public class BookLookupUseCaseImpl implements BookLookupUseCase {
             primaryCover,
             secondaryCover,
             openLib.callNumber(),
-            openLib.tableOfContents()
+            openLib.tableOfContents(),
+            openLib.editionId(),
+            openLib.isbn10(),
+            openLib.isbn13(),
+            coverSmall,
+            coverMedium,
+            coverLarge,
+            mergedCovers
         );
+    }
+
+    private boolean isEditionKey(String q) {
+        String clean = q.replace("/books/", "").trim();
+        return clean.matches("^OL\\d+M$");
     }
 
     private boolean titlesMatch(String t1, String t2) {

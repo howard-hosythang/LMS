@@ -23,6 +23,7 @@ import com.library.catalog.dto.request.publication.SaveDocumentUrlRequest;
 import com.library.catalog.dto.request.publication.UpdatePublicationRequest;
 import com.library.catalog.dto.response.item.ItemsByPublicationIdResponse;
 import com.library.catalog.dto.response.publication.BookLookupResponse;
+import com.library.catalog.dto.response.publication.BookSearchItem;
 import com.library.catalog.dto.response.publication.DocumentUploadUrlResponse;
 import com.library.catalog.dto.response.publication.PublicSearchResult;
 import com.library.catalog.dto.response.publication.LibrarianPublicationListResponse;
@@ -170,6 +171,13 @@ public class PublicationController {
   public ApiResponseApp<BookLookupResponse> bookLookup(
       @RequestParam(name = "q") String query) {
     return ApiResponseApp.success(bookLookupUseCase.execute(query));
+  }
+
+  @GetMapping("/book-lookup/edition/{editionId}")
+  @RequiresRole(RoleConstants.LIBRARIAN)
+  public ApiResponseApp<BookSearchItem> bookLookupByEdition(
+      @PathVariable(name = "editionId") String editionId) {
+    return ApiResponseApp.success(bookLookupUseCase.lookupByEditionId(editionId));
   }
 
   // public endpoint

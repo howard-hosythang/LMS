@@ -358,7 +358,19 @@ const BookDetails = () => {
     }
   };
 
-  const applyLookupResult = async (item: BookSearchItem) => {
+  const applyLookupResult = async (rawItem: BookSearchItem) => {
+    let item = rawItem;
+    if (rawItem.editionId && (!rawItem.tableOfContents || !rawItem.description)) {
+      try {
+        const fullRes = await publicationsService.bookLookupByEdition(rawItem.editionId);
+        if (fullRes.code === 200 && fullRes.data) {
+          item = { ...rawItem, ...fullRes.data };
+        }
+      } catch {
+        // Fallback to original item
+      }
+    }
+
     setForm(prev => ({
       ...prev,
       isbn: item.isbn ?? prev.isbn,
@@ -374,7 +386,9 @@ const BookDetails = () => {
     }));
     setLookupApplied(item);
     setShowResultsModal(false);
-    const covers = [item.coverImageUrl, item.alternativeCoverUrl].filter(Boolean) as string[];
+    const covers = (item.coverUrls && item.coverUrls.length > 0)
+      ? item.coverUrls
+      : ([item.coverImageUrl, item.alternativeCoverUrl].filter(Boolean) as string[]);
     setAvailableCovers(covers);
 
     setIsResolvingEntities(true);
@@ -2000,10 +2014,12 @@ const BookDetails = () => {
                   {item.authorNames?.length > 0 && (
                     <p className="text-sm text-slate-500 truncate">{item.authorNames.join(', ')}</p>
                   )}
-                  <div className="flex gap-2 mt-1 text-xs text-slate-400">
+                  <div className="flex gap-2 mt-1 text-xs text-slate-400 flex-wrap">
                     {item.publisherName && <span>{item.publisherName}</span>}
                     {item.publicationYear && <span>· {item.publicationYear}</span>}
                     {item.language && <span>· {item.language}</span>}
+                    {item.isbn && <span>· ISBN: {item.isbn}</span>}
+                    {item.editionId && !item.isbn && <span>· {item.editionId}</span>}
                   </div>
                 </div>
               </button>

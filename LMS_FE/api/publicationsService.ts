@@ -320,6 +320,10 @@ const publicationsService = {
     return axiosInstance.get(`/publications/book-lookup?q=${encodeURIComponent(q)}`);
   },
 
+  bookLookupByEdition: async (editionId: string): Promise<ApiResponse<BookSearchItem>> => {
+    return axiosInstance.get(`/publications/book-lookup/edition/${encodeURIComponent(editionId)}`);
+  },
+
   getPublicationRatingSummary: async (
     id: string
   ): Promise<ApiResponse<PublicationRatingSummary>> => {

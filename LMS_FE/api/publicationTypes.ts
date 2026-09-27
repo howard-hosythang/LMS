@@ -366,10 +366,17 @@ export interface BookSearchItem {
   alternativeCoverUrl: string | null;
   callNumber: string | null;
   tableOfContents: TocEntry[] | null;
+  editionId?: string | null;
+  isbn10?: string | null;
+  isbn13?: string | null;
+  coverSmall?: string | null;
+  coverMedium?: string | null;
+  coverLarge?: string | null;
+  coverUrls?: string[];
 }
 
 export interface BookLookupResponse {
-  queryType: 'ISBN' | 'TITLE';
+  queryType: 'ISBN' | 'TITLE' | 'EDITION';
   results: BookSearchItem[];
 }
 
