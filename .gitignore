@@ -51,6 +51,8 @@ LMS_AI/*.pth
 
 # Database dumps and local data
 LMS_BE/backup*.sql
+backups/
+*.dump
 **/postgres_data/
 **/pgdata/
 
