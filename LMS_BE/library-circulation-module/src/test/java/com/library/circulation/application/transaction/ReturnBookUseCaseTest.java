@@ -30,6 +30,7 @@ import com.library.shared.port.ItemStatusPort;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,6 +62,7 @@ class ReturnBookUseCaseTest {
 
     @InjectMocks private ReturnBookUseCaseImpl useCase;
 
+    private static final ZoneId ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final Long LIBRARIAN_ID = 999L;
     private static final Long ITEM_ID = 2001L;
     private static final Long TRANSACTION_ID = 5001L;
@@ -94,7 +96,7 @@ class ReturnBookUseCaseTest {
     @DisplayName("Trả sách thành công không phát sinh phí phạt khi còn trong hạn")
     void returnSuccess_noFine() {
         // Given — dueDate là ngày mai
-        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        LocalDate tomorrow = LocalDate.now(ZONE).plusDays(1);
         when(itemStatusPort.lockAndGetByBarcode(BARCODE)).thenReturn(item);
         when(jdbcTemplate.queryForList(anyString(), any(Map.class)))
             .thenReturn(List.of(Map.of("id", TRANSACTION_ID)));
@@ -120,7 +122,7 @@ class ReturnBookUseCaseTest {
     @DisplayName("Trả sách trễ 3 ngày → phát sinh phí phạt 3.000đ")
     void returnSuccess_withOverdueFine_3Days() {
         // Given — dueDate là 3 ngày trước
-        LocalDate threeDaysAgo = LocalDate.now().minusDays(3);
+        LocalDate threeDaysAgo = LocalDate.now(ZONE).minusDays(3);
         when(itemStatusPort.lockAndGetByBarcode(BARCODE)).thenReturn(item);
         when(jdbcTemplate.queryForList(anyString(), any(Map.class)))
             .thenReturn(List.of(Map.of("id", TRANSACTION_ID)));

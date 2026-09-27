@@ -22,7 +22,7 @@ concurrency:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./LMS_AI
@@ -48,6 +48,3 @@ jobs:
 
       - name: Run contract and regression tests
         run: python -m pytest -q
-
-      - name: Build production image
-        run: docker build --tag library74-ai:${{ github.sha }} .
