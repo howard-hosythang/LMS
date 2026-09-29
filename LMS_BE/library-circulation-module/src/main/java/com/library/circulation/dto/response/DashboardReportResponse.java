@@ -1,5 +1,7 @@
 package com.library.circulation.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -73,14 +75,14 @@ public record DashboardReportResponse(
 
     @Builder
     public record TopBorrowedPublication(
-        long publicationId,
+        @JsonSerialize(using = ToStringSerializer.class) Long publicationId,
         String title,
         long borrowCount
     ) {}
 
     @Builder
     public record RiskyReaderRow(
-        long userId,
+        @JsonSerialize(using = ToStringSerializer.class) Long userId,
         String studentId,
         String fullName,
         String email,

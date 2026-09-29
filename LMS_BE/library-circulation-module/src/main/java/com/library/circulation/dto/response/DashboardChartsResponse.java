@@ -1,5 +1,7 @@
 package com.library.circulation.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Builder;
 import lombok.Data;
 
@@ -35,7 +37,8 @@ public class DashboardChartsResponse {
     @Data
     @Builder
     public static class TopBorrowedPublication {
-        private long publicationId;
+        @JsonSerialize(using = ToStringSerializer.class)
+        private Long publicationId;
         private String title;
         private long borrowCount;
         private String coverImageUrl;

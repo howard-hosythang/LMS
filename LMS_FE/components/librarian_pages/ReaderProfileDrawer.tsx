@@ -149,7 +149,7 @@ const ReaderProfileDrawer = ({
   const facultyName = profile ? (profile.facultyDisplayName || profile.major || prettyFaculty(profile.faculty)) : '-';
 
   const params = useMemo(() => ({
-    userId: reader?.userId || undefined,
+    userId: reader?.userId ? String(reader.userId) : undefined,
     studentId: reader?.studentId || undefined,
   }), [reader?.userId, reader?.studentId]);
 

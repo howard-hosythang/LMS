@@ -48,7 +48,7 @@ export interface DashboardChartsResponse {
       lost: number;
     };
     topBorrowedPublications: {
-      publicationId: number;
+      publicationId: string;
       title: string;
       borrowCount: number;
       coverImageUrl: string;
@@ -62,7 +62,7 @@ export interface DashboardChartsResponse {
 }
 
 export interface RiskyUser {
-  userId: number;
+  userId: string;
   studentId: string | null;
   fullName: string;
   email: string;
@@ -192,12 +192,12 @@ export interface DashboardReportResponse {
       finesCollected: number;
     }[];
     topBorrowedPublications: {
-      publicationId: number;
+      publicationId: string;
       title: string;
       borrowCount: number;
     }[];
     riskyReaders?: {
-      userId: number;
+      userId: string;
       studentId: string | null;
       fullName: string;
       email: string;

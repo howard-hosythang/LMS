@@ -1,5 +1,7 @@
 package com.library.circulation.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,7 +11,8 @@ import java.math.BigDecimal;
 @Builder
 public class RiskyUserResponse {
 
-    private long userId;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long userId;
     private String studentId;
     private String fullName;
     private String email;

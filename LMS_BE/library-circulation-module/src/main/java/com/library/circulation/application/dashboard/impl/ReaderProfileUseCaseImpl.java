@@ -99,40 +99,55 @@ public class ReaderProfileUseCaseImpl implements ReaderProfileUseCase {
     QuerySpec query = profileQuery(userId, studentId);
     int borrowLimit = circulationPolicyService.getPolicy().maxActiveBorrows();
     try {
-      return jdbcTemplate.queryForObject(query.sql(), query.params(), (rs, rowNum) -> {
-        BigDecimal unpaid = rs.getBigDecimal("unpaid_fine_amount");
-        int creditScore = rs.getInt("credit_score");
-        String faculty = rs.getString("faculty");
-        String facultyDisplayName = facultyDisplayName(faculty);
-        return ReaderProfileResponse.builder()
-            .userId(rs.getLong("user_id"))
-            .studentId(rs.getString("student_id"))
-            .fullName(rs.getString("full_name"))
-            .email(rs.getString("email"))
-            .phoneNumber(rs.getString("phone_number"))
-            .profilePictureUrl(rs.getString("profile_picture_url"))
-            .faculty(faculty)
-            .facultyDisplayName(facultyDisplayName)
-            .major(facultyDisplayName)
-            .activeBorrows(rs.getInt("active_borrows"))
-            .borrowLimit(borrowLimit)
-            .unpaidFineAmount(unpaid)
-            .creditScore(creditScore)
-            .borrowingBlocked(creditScore < 50 || unpaid.compareTo(BigDecimal.ZERO) > 0)
-            .totalBorrowed(rs.getLong("total_borrowed"))
-            .returnedCount(rs.getLong("returned_count"))
-            .overdueCount(rs.getLong("overdue_count"))
-            .fineCount(rs.getLong("fine_count"))
-            .unpaidFineCount(rs.getLong("unpaid_fine_count"))
-            .damagedFineCount(rs.getLong("damaged_fine_count"))
-            .lostFineCount(rs.getLong("lost_fine_count"))
-            .totalFineAmount(rs.getBigDecimal("total_fine_amount"))
-            .paidFineAmount(rs.getBigDecimal("paid_fine_amount"))
-            .build();
-      });
+      return executeProfileQuery(query, borrowLimit);
     } catch (EmptyResultDataAccessException e) {
+      String normalizedStudentId = studentId == null || studentId.isBlank() ? null : studentId.trim();
+      if (userId != null && normalizedStudentId != null) {
+        try {
+          QuerySpec fallbackQuery = new QuerySpec(
+              PROFILE_BASE_SQL + "WHERE u.student_id = :studentId\n" + PROFILE_GROUP_SQL,
+              new MapSqlParameterSource().addValue("studentId", normalizedStudentId)
+          );
+          return executeProfileQuery(fallbackQuery, borrowLimit);
+        } catch (EmptyResultDataAccessException ignored) {
+        }
+      }
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Reader not found");
     }
+  }
+
+  private ReaderProfileResponse executeProfileQuery(QuerySpec query, int borrowLimit) {
+    return jdbcTemplate.queryForObject(query.sql(), query.params(), (rs, rowNum) -> {
+      BigDecimal unpaid = rs.getBigDecimal("unpaid_fine_amount");
+      int creditScore = rs.getInt("credit_score");
+      String faculty = rs.getString("faculty");
+      String facultyDisplayName = facultyDisplayName(faculty);
+      return ReaderProfileResponse.builder()
+          .userId(rs.getLong("user_id"))
+          .studentId(rs.getString("student_id"))
+          .fullName(rs.getString("full_name"))
+          .email(rs.getString("email"))
+          .phoneNumber(rs.getString("phone_number"))
+          .profilePictureUrl(rs.getString("profile_picture_url"))
+          .faculty(faculty)
+          .facultyDisplayName(facultyDisplayName)
+          .major(facultyDisplayName)
+          .activeBorrows(rs.getInt("active_borrows"))
+          .borrowLimit(borrowLimit)
+          .unpaidFineAmount(unpaid)
+          .creditScore(creditScore)
+          .borrowingBlocked(creditScore < 50 || unpaid.compareTo(BigDecimal.ZERO) > 0)
+          .totalBorrowed(rs.getLong("total_borrowed"))
+          .returnedCount(rs.getLong("returned_count"))
+          .overdueCount(rs.getLong("overdue_count"))
+          .fineCount(rs.getLong("fine_count"))
+          .unpaidFineCount(rs.getLong("unpaid_fine_count"))
+          .damagedFineCount(rs.getLong("damaged_fine_count"))
+          .lostFineCount(rs.getLong("lost_fine_count"))
+          .totalFineAmount(rs.getBigDecimal("total_fine_amount"))
+          .paidFineAmount(rs.getBigDecimal("paid_fine_amount"))
+          .build();
+    });
   }
 
   @Override

@@ -1,5 +1,7 @@
 package com.library.circulation.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.Builder;
@@ -13,7 +15,7 @@ public record CirculationPolicyResponse(
     BigDecimal overdueFinePerDay,
     BigDecimal defaultDepositAmount,
     Boolean blockBorrowWhenUnpaidFines,
-    Long updatedByAdminId,
+    @JsonSerialize(using = ToStringSerializer.class) Long updatedByAdminId,
     String updatedByAdminName,
     Instant updatedAt
 ) {
