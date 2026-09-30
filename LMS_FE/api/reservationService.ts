@@ -36,7 +36,7 @@ interface PageData<T> {
 
 export async function createReservation(publicationId: string, preferredBranch: string): Promise<Reservation> {
   const res: any = await axiosInstance.post('/reservations', {
-    publicationId: parseInt(publicationId),
+    publicationId,
     preferredBranch,
   });
   return res.data;
