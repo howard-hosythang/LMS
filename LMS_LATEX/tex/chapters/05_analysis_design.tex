@@ -22,28 +22,98 @@ có thể mở rộng sang semantic search; mượn/đặt trước bao gồm ki
 mượn; upload PDF bao gồm xử lý AI; trả sách và báo hư/mất bao gồm tính phí và
 gửi thông báo.
 
-\begin{table}[H]
-\centering
+\begin{longtable}{|
+    p{0.22\linewidth}|
+    >{\raggedright\arraybackslash}p{0.37\linewidth}|
+    >{\raggedright\arraybackslash}p{0.37\linewidth}|
+}
 \caption{Đối chiếu nhóm Use Case với hiện thực hệ thống}
 \label{tab:usecase_mapping_reality}
-\begin{tabularx}{\linewidth}{|p{0.22\linewidth}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\\
 \hline
-\textbf{Nhóm} & \textbf{Use case chính} & \textbf{Hiện thực tương ứng} \\
+
+\textbf{Nhóm}
+&
+\textbf{Use case chính}
+&
+\textbf{Hiện thực tương ứng}
+\\
 \hline
-Xác thực và tài khoản & Đăng ký, xác thực email, đăng nhập thường, đăng nhập Google, refresh token, quên/đặt lại mật khẩu, hồ sơ, avatar, đổi mật khẩu, thông báo & Auth/User modules, OAuth2 Google, JWT/refresh token, email verification/reset password, profile API và notification API. \\
+
+\endfirsthead
+
+\multicolumn{3}{c}%
+{\textbf{Bảng \thetable{} -- tiếp tục từ trang trước}}
+\\
 \hline
-Tra cứu và khám phá tài liệu & Trang chủ, tìm kiếm catalog, semantic search, lọc danh mục/tag, chi tiết tài liệu, bản sao, đánh giá, sách tương tự, thống kê công khai & Public pages và catalog/recommendation API: \texttt{/api/v1/publications/search}, \texttt{/api/v1/ai/semantic-search}, \texttt{/api/v1/publications/\{id\}}, \texttt{/items}, \texttt{/ratings}, \texttt{/similar}. \\
+
+\textbf{Nhóm}
+&
+\textbf{Use case chính}
+&
+\textbf{Hiện thực tương ứng}
+\\
 \hline
-Chức năng bạn đọc & Mượn, đặt trước, hủy đặt trước, theo dõi sách đang mượn, lịch sử mượn trả, phí phạt, PayOS, wishlist, rating, gợi ý cá nhân hóa & Reader pages, circulation/reservation/fine APIs, PayOS payment, wishlist/rating APIs và recommendation API. \\
+
+\endhead
+
 \hline
-Chức năng thủ thư & Quản lý ấn phẩm, bản sao, upload bìa/PDF, AI ETL, xử lý yêu cầu mượn, mượn trực tiếp, trả sách, báo hư/mất, ghi chú giao dịch, thu tiền mặt & Librarian pages, catalog/item APIs, presigned upload, backend AI gateway, circulation transaction APIs, fine cash payment và notification/email events. \\
+\multicolumn{3}{r}{\textit{Tiếp tục ở trang sau}}
+\\
+\endfoot
+
 \hline
-Chức năng quản trị & Quản lý thủ thư, quản lý người dùng, khóa/mở khóa, xác minh tài khoản, chính sách mượn trả, nhật ký hệ thống & Admin pages và admin APIs: librarian/user management, circulation policy, audit log và account verification. \\
+\endlastfoot
+
+Xác thực và tài khoản
+&
+Đăng ký, xác thực email, đăng nhập thường, đăng nhập Google, refresh token, quên/đặt lại mật khẩu, hồ sơ, avatar, đổi mật khẩu, thông báo
+&
+Auth/User modules, OAuth2 Google, JWT/refresh token, email verification/reset password, profile API và notification API.
+\\
 \hline
-AI và xử lý tự động & Semantic search, recommendation, sách tương tự, xử lý PDF, trích xuất text, embedding, sinh summary/tag/audience, ghi nhận tương tác, realtime/email notification & AI service FastAPI/Celery, RabbitMQ, Gemini API, PostgreSQL pgvector, interaction tracking, Kafka/email/WebSocket notification. \\
+
+Tra cứu và khám phá tài liệu
+&
+Trang chủ, tìm kiếm catalog, semantic search, lọc danh mục/tag, chi tiết tài liệu, bản sao, đánh giá, sách tương tự, thống kê công khai
+&
+Public pages và catalog/recommendation API: \texttt{/api/v1/publications/}\allowbreak\texttt{search}, \texttt{/api/v1/ai/semantic-search}, \texttt{/api/v1/publications/}\allowbreak\texttt{\{id\}}, \texttt{/items}, \texttt{/ratings}, \texttt{/similar}.
+\\
 \hline
-\end{tabularx}
-\end{table}
+
+Chức năng bạn đọc
+&
+Mượn, đặt trước, hủy đặt trước, theo dõi sách đang mượn, lịch sử mượn trả, phí phạt, PayOS, wishlist, rating, gợi ý cá nhân hóa
+&
+Reader pages, circulation/reservation/fine APIs, PayOS payment, wishlist/rating APIs và recommendation API.
+\\
+\hline
+
+Chức năng thủ thư
+&
+Quản lý ấn phẩm, bản sao, upload bìa/PDF, AI ETL, xử lý yêu cầu mượn, mượn trực tiếp, trả sách, báo hư/mất, ghi chú giao dịch, thu tiền mặt
+&
+Librarian pages, catalog/item APIs, presigned upload, backend AI gateway, circulation transaction APIs, fine cash payment và notification/email events.
+\\
+\hline
+
+Chức năng quản trị
+&
+Quản lý thủ thư, quản lý người dùng, khóa/mở khóa, xác minh tài khoản, chính sách mượn trả, nhật ký hệ thống
+&
+Admin pages và admin APIs: librarian/user management, circulation policy, audit log và account verification.
+\\
+\hline
+
+AI và xử lý tự động
+&
+Semantic search, recommendation, sách tương tự, xử lý PDF, trích xuất text, embedding, sinh summary/tag/audience, ghi nhận tương tác, realtime/email notification
+&
+AI service FastAPI/Celery, RabbitMQ, Gemini API, PostgreSQL pgvector, interaction tracking, Kafka/email/WebSocket notification.
+\\
+\hline
+
+\end{longtable}
 
 \subsection{Mô hình hóa luồng xử lý (Activity Diagram)}
 \label{subsec:activity-diagram}
@@ -127,6 +197,8 @@ quản lý sách, đánh giá, xử lý hàng chờ và gợi ý sách.
     \caption{Activity Diagram cho nghiệp vụ thêm sách}
     \label{fig:activity_add_book}
 \end{figure}
+
+
 \subsection{Mô hình lớp (Class diagram)}
 \label{subsec:ClassDiagram}
 
@@ -139,71 +211,154 @@ phân tích use case với thiết kế dữ liệu và cấu trúc backend.
 
 \begin{figure}[H]
  \centering
- \includegraphics[width=\linewidth,height=0.9\textheight,keepaspectratio]{figures/ch05/class/classdiagram.png}
+ \includegraphics[width=\linewidth,height=0.8\textheight,keepaspectratio]{figures/ch05/class/classdiagram.png}
  \caption{Class diagram tổng quát của hệ thống}
  \label{fig:class_diagram_lms}
 \end{figure}
+
+
 \subsection{Công nghệ được sử dụng}
 \label{subsec:technologies-used}
-\begin{table}[H]
-\centering
+
+\begingroup
 \small
 \renewcommand{\arraystretch}{1.18}
 \setlength{\tabcolsep}{4pt}
-\begin{tabularx}{\linewidth}{|p{2.2cm}|p{4.1cm}|X|}
-\hline
-\textbf{Phần} & \textbf{Công nghệ} & \textbf{Vai trò trong hệ thống} \\
-\hline
-\textbf{Frontend} & React, TypeScript, Vite & Xây dựng SPA, chia trang theo vai trò và phát triển giao diện có kiểm soát kiểu dữ liệu. \\
-\hline
-\textbf{Frontend} & Tailwind CSS, lucide-react, sonner & Thiết kế giao diện, icon, toast notification và trạng thái tương tác. \\
-\hline
-\textbf{Frontend} & React Router/HashRouter & Điều hướng public/user/librarian/admin page và bảo vệ route theo vai trò. \\
-\hline
-\textbf{Frontend} & Context API & Quản lý trạng thái dùng chung như đăng nhập, ngôn ngữ, theme, notification và upload. \\
-\hline
-\textbf{Frontend} & Axios, STOMP/SockJS & Gọi REST API, gắn JWT/refresh token và nhận thông báo realtime qua WebSocket. \\
-\hline
-\textbf{Frontend} & Jest, Testing Library, Nginx & Kiểm thử frontend và phục vụ bản build static trong container production. \\
-\hline
-\textbf{Backend} & Java 21, Spring Boot & Hiện thực API nghiệp vụ theo mô hình modular monolith. \\
-\hline
-\textbf{Backend} & Spring Security, JWT, OAuth2 & Xác thực, phân quyền, refresh token và đăng nhập Google. \\
-\hline
-\textbf{Backend} & Spring Data JPA, Flyway & Truy cập dữ liệu, quản lý entity và migration cơ sở dữ liệu. \\
-\hline
-\textbf{Backend} & PostgreSQL, pgvector & Lưu dữ liệu nghiệp vụ, metadata AI và vector phục vụ semantic search. \\
-\hline
-\textbf{Backend} & Kafka, WebSocket & Phát sự kiện và đẩy thông báo realtime đến người dùng. \\
-\hline
-\textbf{Backend} & RabbitMQ, S3-compatible Storage & Gửi job xử lý AI và lưu trữ ảnh bìa/PDF thông qua presigned URL. \\
-\hline
-\textbf{Backend} & PayOS, Gmail SMTP, OpenAPI/Swagger & Thanh toán phí phạt, gửi email và tài liệu hóa API. \\
-\hline
-\textbf{Backend} & JUnit, Mockito, Testcontainers & Kiểm thử unit/controller và integration với PostgreSQL thật. \\
-\hline
-\textbf{Backend} & Docker, Docker Compose & Đóng gói backend và triển khai cùng các dịch vụ phụ trợ. \\
-\hline
-\textbf{AI Service} & Python, FastAPI & Xây dựng API cho semantic search, similar books, recommendation và health check. \\
-\hline
-\textbf{AI Service} & Celery, RabbitMQ & Xử lý job AI bất đồng bộ sau khi thủ thư upload PDF. \\
-\hline
-\textbf{AI Service} & PyMuPDF & Trích xuất văn bản từ PDF trước khi làm sạch và chia chunk. \\
-\hline
-\textbf{AI Service} & SentenceTransformer/SBERT & Sinh embedding tiếng Việt cho chunk tài liệu và truy vấn tìm kiếm. \\
-\hline
-\textbf{AI Service} & Gemini API & Sinh summary, audience và tag học thuật ở bước metadata enrichment. \\
-\hline
-\textbf{AI Service} & PostgreSQL, pgvector & Lưu vector, ETL run, search log và dữ liệu phục vụ truy vấn nearest-neighbor. \\
-\hline
-\textbf{AI Service} & ALS implicit feedback, content-based, trending fallback & Tạo gợi ý sách cá nhân hóa và fallback khi dữ liệu tương tác còn ít. \\
-\hline
-\textbf{AI Service} & pytest, Docker & Kiểm thử AI Service và đóng gói FastAPI/Celery Worker để chạy tách biệt trong production. \\
-\hline
-\end{tabularx}
+\begin{xltabular}{\linewidth}{|p{2.2cm}|p{4.1cm}|X|}
 \caption{Công nghệ được sử dụng trong hệ thống}
-\label{tab:technologies_used}
-\end{table}
+\label{tab:technologies_used} \\
+
+\hline
+\textbf{Phần} &
+\textbf{Công nghệ} &
+\textbf{Vai trò trong hệ thống} \\
+\hline
+\endfirsthead
+
+\hline
+\textbf{Phần} &
+\textbf{Công nghệ} &
+\textbf{Vai trò trong hệ thống} \\
+\hline
+\endhead
+
+\textbf{Frontend} &
+React, TypeScript, Vite &
+Xây dựng SPA, chia trang theo vai trò và phát triển giao diện có kiểm soát kiểu dữ liệu. \\
+\hline
+
+\textbf{Frontend} &
+Tailwind CSS, lucide-react, sonner &
+Thiết kế giao diện, icon, toast notification và trạng thái tương tác. \\
+\hline
+
+\textbf{Frontend} &
+React Router/HashRouter &
+Điều hướng public/user/librarian/admin page và bảo vệ route theo vai trò. \\
+\hline
+
+\textbf{Frontend} &
+Context API &
+Quản lý trạng thái dùng chung như đăng nhập, ngôn ngữ, theme, notification và upload. \\
+\hline
+
+\textbf{Frontend} &
+Axios, STOMP/SockJS &
+Gọi REST API, gắn JWT/refresh token và nhận thông báo realtime qua WebSocket. \\
+\hline
+
+\textbf{Frontend} &
+Jest, Testing Library, Nginx &
+Kiểm thử frontend và phục vụ bản build static trong container production. \\
+\hline
+
+\textbf{Backend} &
+Java 21, Spring Boot &
+Hiện thực API nghiệp vụ theo mô hình modular monolith. \\
+\hline
+
+\textbf{Backend} &
+Spring Security, JWT, OAuth2 &
+Xác thực, phân quyền, refresh token và đăng nhập Google. \\
+\hline
+
+\textbf{Backend} &
+Spring Data JPA, Flyway &
+Truy cập dữ liệu, quản lý entity và migration cơ sở dữ liệu. \\
+\hline
+
+\textbf{Backend} &
+PostgreSQL, pgvector &
+Lưu dữ liệu nghiệp vụ, metadata AI và vector phục vụ semantic search. \\
+\hline
+
+\textbf{Backend} &
+Kafka, WebSocket &
+Phát sự kiện và đẩy thông báo realtime đến người dùng. \\
+\hline
+
+\textbf{Backend} &
+RabbitMQ, S3-compatible Storage &
+Gửi job xử lý AI và lưu trữ ảnh bìa/PDF thông qua presigned URL. \\
+\hline
+
+\textbf{Backend} &
+PayOS, Gmail SMTP, OpenAPI/Swagger &
+Thanh toán phí phạt, gửi email và tài liệu hóa API. \\
+\hline
+
+\textbf{Backend} &
+JUnit, Mockito, Testcontainers &
+Kiểm thử unit/controller và integration với PostgreSQL thật. \\
+\hline
+
+\textbf{Backend} &
+Docker, Docker Compose &
+Đóng gói backend và triển khai cùng các dịch vụ phụ trợ. \\
+\hline
+
+\textbf{AI Service} &
+Python, FastAPI &
+Xây dựng API cho semantic search, similar books, recommendation và health check. \\
+\hline
+
+\textbf{AI Service} &
+Celery, RabbitMQ &
+Xử lý job AI bất đồng bộ sau khi thủ thư upload PDF. \\
+\hline
+
+\textbf{AI Service} &
+PyMuPDF &
+Trích xuất văn bản từ PDF trước khi làm sạch và chia chunk. \\
+\hline
+
+\textbf{AI Service} &
+SentenceTransformer\allowbreak/ SBERT &
+Sinh embedding tiếng Việt cho chunk tài liệu và truy vấn tìm kiếm. \\
+\hline
+
+\textbf{AI Service} &
+Gemini API &
+Sinh summary, audience và tag học thuật ở bước metadata enrichment. \\
+\hline
+
+\textbf{AI Service} &
+PostgreSQL, pgvector &
+Lưu vector, ETL run, search log và dữ liệu phục vụ truy vấn nearest-neighbor. \\
+\hline
+
+\textbf{AI Service} &
+ALS implicit feedback, content-based, trending fallback &
+Tạo gợi ý sách cá nhân hóa và fallback khi dữ liệu tương tác còn ít. \\
+\hline
+
+\textbf{AI Service} &
+pytest, Docker &
+Kiểm thử AI Service và đóng gói FastAPI/Celery Worker để chạy tách biệt trong production. \\
+\hline
+
+\end{xltabular}
+\endgroup
 Các công nghệ trong hệ thống được chọn theo đúng phạm vi hiện thực: frontend
 phục vụ trải nghiệm người dùng, backend xử lý nghiệp vụ thư viện và AI Service
 xử lý các tác vụ tìm kiếm/gợi ý thông minh. Bảng dưới đây gom các công nghệ
@@ -442,7 +597,7 @@ Text cleaning & Chuẩn hóa khoảng trắng, bỏ số trang/header/footer l�
 \hline
 Sliding window chunking & Chia văn bản thành các chunk có overlap để giữ ngữ cảnh liên tục. & Tăng khả năng tìm trúng đoạn liên quan khi truy vấn theo ý nghĩa. \\
 \hline
-SentenceTransformer/SBERT & Sinh embedding 768 chiều cho từng chunk và query. & Phù hợp mô hình bi-encoder, vector được tính trước nên tìm kiếm nhanh. \\
+SentenceTransformer\allowbreak/SBERT & Sinh embedding 768 chiều cho từng chunk và query. & Phù hợp mô hình bi-encoder, vector được tính trước nên tìm kiếm nhanh. \\
 \hline
 Gemini reduce & Nhận một phần nội dung đại diện, sinh summary, audience và tag theo JSON. & LLM chỉ dùng để làm giàu metadata, không nằm trên đường tìm kiếm chính. \\
 \hline
@@ -490,7 +645,7 @@ Upload và lưu file & Frontend xin \textbf{presigned upload URL}; file PDF đư
 \hline
 ETL nội dung & AI Service dùng \textbf{PyMuPDF} để trích xuất text, làm sạch header/footer/số trang, sau đó chia chunk bằng sliding window. & \textbf{Index nội dung thật của PDF}, không chỉ index tiêu đề hay mô tả thủ công. \\
 \hline
-Embedding và metadata & Chunk được vector hóa và lưu vào \texttt{ai\_engine.publication\_vectors}; Gemini chỉ được gọi ở bước reduce để tạo summary, audience và tag. & \textbf{Không gọi LLM trong mỗi lần tìm kiếm}; giảm độ trễ, giảm quota và tăng độ ổn định. \\
+Embedding và metadata & Chunk được vector hóa và lưu vào \texttt{ai\_engine.publication\_}\allowbreak\texttt{vectors}; Gemini chỉ được gọi ở bước reduce để tạo summary, audience và tag. & \textbf{Không gọi LLM trong mỗi lần tìm kiếm}; giảm độ trễ, giảm quota và tăng độ ổn định. \\
 \hline
 Theo dõi trạng thái & Kết quả xử lý được lưu với trạng thái \texttt{RUNNING}, \texttt{SUCCESS}, \texttt{FAILED}; nếu lỗi, catalog vẫn giữ ấn phẩm. & \textbf{AI lỗi không làm hỏng nghiệp vụ thư viện}. \\
 \hline
@@ -709,7 +864,7 @@ hành thực tế.
 \section{Thiết kế cơ sở dữ liệu}
 Thiết kế cơ sở dữ liệu là quá trình chuyển đổi từ mô hình phân tích yêu cầu và các thực thể đã được đặc tả ở các phần trước thành một cấu trúc lưu trữ logic và vật lý. Mục tiêu là xây dựng một nền tảng dữ liệu nhất quán, toàn vẹn, hiệu quả và có khả năng mở rộng để hỗ trợ toàn bộ nghiệp vụ của hệ thống, từ các giao dịch mượn trả cơ bản đến các tính năng AI phức tạp.
 
-\subsubsection{Lựa chọn Hệ Quản trị Cơ sở dữ liệu (HQTCSDL)}
+\subsection{Lựa chọn Hệ Quản trị Cơ sở dữ liệu (HQTCSDL)}
 Dựa trên bản chất quan hệ chặt chẽ của dữ liệu (người dùng, sách, lượt mượn), hệ thống lựa chọn \textbf{PostgreSQL} làm HQTCSDL chính.
 \begin{itemize}
  \item \textbf{Tính tin cậy và toàn vẹn dữ liệu:} PostgreSQL nổi tiếng với sự tuân thủ nghiêm ngặt các tiêu chuẩn ACID (Atomicity, Consistency, Isolation, Durability), đảm bảo các giao dịch nghiệp vụ quan trọng như mượn, trả, và tính phí phạt luôn được thực hiện một cách an toàn.
@@ -717,7 +872,7 @@ Dựa trên bản chất quan hệ chặt chẽ của dữ liệu (người dùn
  \item \textbf{Khả năng mở rộng:} Đây là một hệ quản trị CSDL mã nguồn mở mạnh mẽ, đã được chứng minh về hiệu năng trong các hệ thống quy mô lớn.
 \end{itemize}
 
-\subsubsection{Mô hình Quan hệ Thực thể (ERD)}
+\subsection{Mô hình Quan hệ Thực thể (ERD)}
 Bên dưới là sơ đồ ERD tổng quan của toàn bộ hệ thống. Mô hình dữ liệu được
 thiết kế xoay quanh thực thể trung tâm là \textbf{Publication} và
 \textbf{User}. \textbf{Publication} biểu diễn đầu sách hoặc tài liệu thư viện,

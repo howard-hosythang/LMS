@@ -10,7 +10,7 @@
 - `references.bib`: danh muc tai lieu tham khao BibTeX.
 - `build/`: file phu sinh ra khi bien dich LaTeX.
 
-## Quy uoc dat ten
+## Quy uoc dat tenQ
 
 - File nguon LaTeX dung tien to so thu tu 2 chu so: `01_introduction.tex`, `02_background.tex`.
 - Ten file/folder dung `snake_case`, chu thuong, khong dau, de tranh loi duong dan tren LaTeX va Git.

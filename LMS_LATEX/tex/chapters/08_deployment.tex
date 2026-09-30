@@ -19,7 +19,7 @@ ngoài.
 
 Trong repository hiện tại, cấu hình container được tách theo từng thành phần:
 \texttt{LMS\_BE/docker-compose.yml} quản lý PostgreSQL và Kafka cho backend,
-còn \texttt{LMS-AI/docker-compose.yml} quản lý RabbitMQ, FastAPI API server và
+còn\\ \texttt{LMS-AI/docker-compose.yml} quản lý RabbitMQ, FastAPI API server và
 Celery worker. Frontend và backend có Dockerfile riêng để build image triển
 khai. Khi đưa lên server, các thành phần này cần được đặt trong cùng một mạng
 triển khai hoặc được cấu hình endpoint rõ ràng thông qua biến môi trường.
@@ -31,7 +31,7 @@ Luồng kết nối quan trọng nhất là backend gọi AI qua
 ở AI service.
 
 Một điểm khác biệt quan trọng so với cấu hình phát triển là giá trị
-\texttt{KAFKA\_CFG\_ADVERTISED\_LISTENERS} được thay đổi từ
+\path{KAFKA_CFG_ADVERTISED_LISTENERS} được thay đổi từ
 \texttt{PLAINTEXT://localhost:9092} thành \texttt{PLAINTEXT://kafka:9092}.
 Trong môi trường phát triển, Spring Boot chạy trên máy host nên dùng
 \texttt{localhost}; trong môi trường container, Spring Boot nằm trong một
@@ -44,7 +44,7 @@ cd LMS_BE && docker compose up -d
 # AI Service
 cd ../LMS-AI && docker compose up -d --build
 
-# Build image Backend và Frontend khi triển khai container hóa đầy đủ
+# Build image Backend và Frontend
 cd ../LMS_BE && docker build -t lms-backend .
 cd ../LMS_fe && docker build -t lms-frontend .
 \end{verbatim}
@@ -120,7 +120,7 @@ Frontend
 \end{table}
 
 Khi triển khai lên máy chủ, mỗi thành phần có file môi trường riêng:
-\texttt{LMS\_BE/.env}, \texttt{LMS-AI/.env} và cấu hình build cho
+\path{LMS_BE.env}, \path{LMS-AI.env} và cấu hình build cho
 \texttt{LMS\_fe}. Các file này được tạo từ \texttt{.env.example}, điền giá trị
 thực tế trên server và không đưa vào lịch sử git. Với Docker Compose, các biến
 được tham chiếu qua \texttt{env\_file} hoặc truyền vào build argument để tránh
@@ -143,55 +143,354 @@ library-bootstrap/src/main/resources/db/migration/
 \-- V22__cleanup_ai_metadata_junk.sql
 \end{verbatim}
 
-\section{Quy trình triển khai}
+\section{Quy trình khởi tạo hạ tầng ban đầu}
 
-Quy trình triển khai hệ thống lên một máy chủ Linux mới bao gồm các bước sau:
+Quy trình thiết lập hệ thống từ đầu trên một máy chủ Linux (Ubuntu Server) trắng bao gồm các bước sau:
 
 \begin{enumerate}
-    \item \textbf{Chuẩn bị máy chủ:} Cài đặt Docker Engine và Docker Compose
-          Plugin trên máy chủ Ubuntu.
-
-    \begin{verbatim}
+    \item \textbf{Chuẩn bị môi trường máy chủ:} Cài đặt Docker Engine và Docker Compose
+          Plugin chính thức từ Docker repository:
+\begin{verbatim}
 curl -fsSL https://get.docker.com | sh
-    \end{verbatim}
+sudo usermod -aG docker $USER
+\end{verbatim}
 
-    \item \textbf{Sao chép mã nguồn:} Clone repository về máy chủ.
+    \item \textbf{Sao chép mã nguồn:} Tải repository dự án về thư mục quản trị trên máy chủ:
+\begin{verbatim}
+git clone <repository-url> /opt/library74
+cd /opt/library74
+\end{verbatim}
 
-    \begin{verbatim}
-git clone <repository-url>
-cd LMS
-    \end{verbatim}
-
-    \item \textbf{Cấu hình môi trường:} Tạo file \texttt{.env} từ template và
-          điền các giá trị thực tế (database credentials, API keys, v.v.).
-
-    \begin{verbatim}
+    \item \textbf{Cấu hình môi trường vận hành:} Khởi tạo các file biến môi trường bảo mật từ mẫu cấu hình và thiết lập giá trị thực tế (thông số kết nối database, khóa bí mật JWT, API key của bên thứ ba):
+\begin{verbatim}
 cp LMS_BE/.env.example LMS_BE/.env
 cp LMS-AI/.env.example LMS-AI/.env
 cp LMS_fe/.env.example LMS_fe/.env
-# Chỉnh sửa các file .env với giá trị thực tế
-    \end{verbatim}
+chmod 600 LMS_BE/.env LMS-AI/.env LMS_fe/.env
+\end{verbatim}
 
-    \item \textbf{Khởi động hệ thống:} Build image và khởi động tất cả container.
-
-    \begin{verbatim}
+    \item \textbf{Khởi động hệ thống ban đầu:} Đóng gói và kích hoạt toàn bộ các cụm container dịch vụ:
+\begin{verbatim}
 cd LMS_BE && docker compose up -d
 cd ../LMS-AI && docker compose up -d --build
-    \end{verbatim}
+\end{verbatim}
 
-    \item \textbf{Kiểm tra trạng thái:} Xác nhận tất cả container đang chạy.
-
-    \begin{verbatim}
-cd LMS_BE && docker compose ps
-cd ../LMS-AI && docker compose ps
-docker logs lms_ai_api
-docker logs lms_ai_worker
-    \end{verbatim}
+    \item \textbf{Kiểm tra trạng thái sẵn sàng:} Xác nhận tất cả container vận hành ổn định và đọc log khởi động ban đầu:
+\begin{verbatim}
+docker compose ps
+docker logs -f lms_backend
+docker logs -f lms_ai_api
+\end{verbatim}
 \end{enumerate}
 
-Sau khi khởi động, Flyway tự động chạy các migration của backend. AI service
-kiểm tra schema AI, kết nối RabbitMQ, tải model embedding khi cần và sẵn sàng
-nhận request tại endpoint đã cấu hình.
+Sau khi khởi động lần đầu, Flyway tự động thực thi các tệp migration của backend. Cụm AI service tự động đồng bộ lược đồ vector, kết nối Message Broker RabbitMQ, tải nạp mô hình Sentence-Transformers về bộ nhớ cache cục bộ và sẵn sàng phục vụ các truy vấn nghiệp vụ.
+
+\section{Hệ thống Tích hợp và Triển khai liên tục (CI/CD Pipeline)}
+\label{sec:cicd_pipeline}
+
+\subsection{Đặt vấn đề và mục tiêu thiết kế}
+
+Trong các dự án phần mềm quy mô lớn kết hợp đa nền tảng công nghệ (Java/Spring Boot, Python/FastAPI, React/TypeScript), việc áp dụng quy trình triển khai thủ công (Manual Deployment) bộc lộ nhiều điểm nghẽn nghiêm trọng:
+\begin{itemize}[noitemsep]
+    \item \textbf{Rủi ro sai sót thao tác (Human Error):} Lập trình viên phải trực tiếp truy cập SSH vào máy chủ sản xuất, tự thực hiện các lệnh kéo mã nguồn và build container, rất dễ nhầm lẫn biến môi trường hoặc xung đột phiên bản.
+    \item \textbf{Mã nguồn lỗi lọt vào môi trường Production:} Nếu không có rào chắn kiểm thử tự động bắt buộc trước khi đóng gói, các commit chứa lỗi logic hoặc lỗi hồi quy (regression) có thể làm tê liệt dịch vụ ngay khi đưa lên server.
+    \item \textbf{Rủi ro thất thoát dữ liệu:} Quá trình cập nhật phiên bản backend mới thường đi kèm các thay đổi về cấu trúc cơ sở dữ liệu (Flyway migration). Nếu không có cơ chế tự động sao lưu dữ liệu tức thì (snapshot) ngay trước thời điểm deploy, việc khôi phục dữ liệu khi xảy ra lỗi là vô cùng phức tạp.
+    \item \textbf{Thời gian ngưng trệ dịch vụ (Downtime) kéo dài:} Việc biên dịch ứng dụng và build Docker image trực tiếp trên máy chủ gây quá tải CPU/RAM, ảnh hưởng trực tiếp đến người dùng đang hoạt động.
+\end{itemize}
+
+Nhằm khắc phục toàn diện các vấn đề trên, hệ thống CI/CD của dự án Library74 được thiết kế dựa trên nền tảng GitHub Actions với 4 mục tiêu cốt lõi:
+\begin{enumerate}[noitemsep]
+    \item \textbf{Tự động hóa toàn diện 100\% (End-to-End Automation):} Mọi thay đổi mã nguồn sau khi được gộp (merge) vào nhánh chính \texttt{main} đều tự động kích hoạt kiểm thử, đóng gói và triển khai lên máy chủ mà không cần can thiệp thủ công.
+    \item \textbf{Kiến trúc Monorepo phân tách theo module (Path-filtered Pipeline):} Bộ lọc đường dẫn thay đổi giúp tách biệt hoàn toàn pipeline của ba phân hệ độc lập (\texttt{LMS\_BE}, \texttt{LMS\_FE}, \texttt{LMS\_AI}), giúp tiết kiệm tài nguyên và rút ngắn tối đa thời gian phát hành.
+    \item \textbf{An toàn dữ liệu tuyệt đối (Zero Data Loss):} Luôn tự động chụp bản sao lưu cơ sở dữ liệu nhị phân (Database Snapshot) trước khi bất kỳ phiên bản backend mới nào được khởi chạy.
+    \item \textbf{Kiểm tra sức khỏe dịch vụ tự động (Post-deployment Health Check):} Tự động thăm dò trạng thái sẵn sàng của container trước khi chính thức đánh dấu quá trình triển khai thành công.
+\end{enumerate}
+
+\subsection{Kiến trúc tổng thể và luồng hoạt động}
+
+Kiến trúc luồng hoạt động của hệ thống CI/CD được minh họa chi tiết trong Hình~\ref{fig:cicd_flow}. Quy trình được chia thành bốn giai đoạn kế tiếp nhau với sự phân định rạch ròi về môi trường thực thi:
+\begin{enumerate}
+    \item \textbf{Giai đoạn Kích hoạt (Trigger):} Lập trình viên đẩy commit hoặc hoàn tất Pull Request sáp nhập vào nhánh \texttt{main}. Bộ lọc đường dẫn (\textit{Path Filter}) phân tích các tệp tin sửa đổi để xác định phân hệ bị ảnh hưởng.
+    \item \textbf{Giai đoạn Tích hợp liên tục (CI):} Khởi chạy máy ảo độc lập trên GitHub Actions Runner. Từng phân hệ thực hiện khôi phục bộ nhớ đệm (cache), chạy kiểm thử tự động và biên dịch thử nghiệm.
+    \item \textbf{Cổng kiểm soát chất lượng (Quality Gate):} Toàn bộ các bài kiểm tra phải đạt trạng thái \texttt{success}. Nếu có bất kỳ kiểm thử nào thất bại, pipeline lập tức dừng lại, gửi thông báo cảnh báo và từ chối tiến hành triển khai.
+    \item \textbf{Giai đoạn Triển khai liên tục (CD):} Máy ảo GitHub kết nối tới máy chủ sản xuất (Production VPS) thông qua giao thức SSH với khóa bảo mật riêng biệt, đồng bộ mã nguồn, thực hiện snapshot dữ liệu, biên dịch container và kiểm tra phản hồi của dịch vụ.
+\end{enumerate}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.65, transform shape,
+    % Styles
+    startstop/.style={rectangle, draw=blue!80!black, fill=blue!10, rounded corners=4pt, text width=4.8cm, minimum height=0.9cm, align=center, font=\small\bfseries},
+    cibox/.style={rectangle, draw=teal!80!black, fill=teal!8, rounded corners=4pt, text width=3.4cm, minimum height=1.35cm, align=center, font=\footnotesize},
+    cdbox/.style={rectangle, draw=orange!90!black, fill=orange!8, rounded corners=4pt, text width=4.8cm, minimum height=0.85cm, align=center, font=\footnotesize},
+    decision/.style={diamond, draw=purple!80!black, fill=purple!8, aspect=2.2, inner sep=2pt, align=center, font=\scriptsize\bfseries},
+    respass/.style={rectangle, draw=green!60!black, fill=green!15, rounded corners=4pt, text width=3.8cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries},
+    resfail/.style={rectangle, draw=red!70!black, fill=red!12, rounded corners=4pt, text width=3.8cm, minimum height=0.85cm, align=center, font=\footnotesize\bfseries},
+    cigroup/.style={draw=teal!70!black, dashed, rounded corners=6pt, line width=0.9pt, inner sep=10pt},
+    cdgroup/.style={draw=orange!80!black, dashed, rounded corners=6pt, line width=0.9pt, inner sep=10pt},
+    arrow/.style={-{Stealth[scale=0.9]}, thick, draw=gray!80!black},
+    lbl/.style={font=\scriptsize\itshape, fill=white, inner sep=1.5pt}
+]
+
+% 1. DEVELOPER
+\node[startstop] (dev) at (0, 0) {Developer Push / Merge\\{\normalfont\scriptsize Nhánh chính \texttt{main} trên GitHub}};
+
+% 2. PATH FILTER
+\node[decision, below=0.6cm of dev] (filter) {Bộ lọc đường dẫn\\{\normalfont\scriptsize (Path-filtered Trigger)}};
+
+% 3. CI NODES
+\node[cibox, below=1.3cm of filter] (ci_fe) {
+    \textbf{Frontend CI}\\[2pt]
+    \scriptsize Node.js 20 \& NPM Cache\\
+    Jest Unit Tests\\
+    Vite Production Build\\
+    Build thử Docker Nginx
+};
+
+\node[cibox, left=0.7cm of ci_fe] (ci_be) {
+    \textbf{Backend CI}\\[2pt]
+    \scriptsize JDK 21 \& Maven Cache\\
+    Unit \& Integration Tests\\
+    Build thử Docker Backend
+};
+
+\node[cibox, right=0.7cm of ci_fe] (ci_ai) {
+    \textbf{AI Service CI}\\[2pt]
+    \scriptsize Python 3.10 \& Pip Cache\\
+    Compileall syntax check\\
+    Pytest Logic Tests\\
+    (Bỏ build Docker nặng)
+};
+
+% CI Group
+\node[cigroup, fit=(ci_be) (ci_fe) (ci_ai)] (ci_group) {};
+\node[font=\footnotesize\bfseries, text=teal!90!black, fill=white, inner sep=2pt, anchor=south] at ([yshift=8pt]ci_be.north) {Giai đoạn 1: Tích hợp liên tục (CI)};
+
+% 4. QUALITY GATE
+\node[decision, below=1.2cm of ci_fe] (gate) {Quality Gate\\{\normalfont\scriptsize CI thành công trên nhánh \texttt{main}?}};
+
+% 5. CD NODES (Production VPS)
+\node[cdbox, below=1.4cm of gate] (ssh) {
+    \textbf{1. Xác thực SSH an toàn}\\
+    \scriptsize Private Key \texttt{ed25519} + Known Hosts
+};
+
+\node[cdbox, below=0.45cm of ssh] (pull) {
+    \textbf{2. Đồng bộ mã nguồn an toàn}\\
+    \scriptsize \texttt{git pull --ff-only origin main}
+};
+
+\node[cdbox, below=0.45cm of pull] (dump) {
+    \textbf{3. Sao lưu Database tự động}\\
+    \scriptsize Snapshot \texttt{library-*.dump} nén nhị phân
+};
+
+\node[cdbox, below=0.45cm of dump] (rebuild) {
+    \textbf{4. Cập nhật container độc lập}\\
+    \scriptsize \texttt{docker compose up -d --build <service>}
+};
+
+\node[cdbox, below=0.45cm of rebuild, draw=purple!80!black, fill=purple!8] (health) {
+    \textbf{5. Vòng lặp Polling Health Check (36 lần $\times$ 5s)}\\
+    \scriptsize Backend Actuator / AI FastAPI / Nginx \& Public Domain
+};
+
+\node[respass, below left=0.7cm and 0.2cm of health] (success) {
+    Triển khai THÀNH CÔNG\\
+    {\normalfont\scriptsize Dịch vụ sẵn sàng phục vụ}
+};
+
+\node[resfail, below right=0.7cm and 0.2cm of health] (fail) {
+    Triển khai THẤT BẠI\\
+    {\normalfont\scriptsize Giữ snapshot DB \& gửi cảnh báo}
+};
+
+% CD Group
+\node[cdgroup, fit=(ssh) (pull) (dump) (rebuild) (health) (success) (fail)] (cd_group) {};
+\node[font=\footnotesize\bfseries, text=orange!90!black, fill=white, inner sep=2pt, anchor=south west] at ([xshift=6pt, yshift=3pt]cd_group.north west) {Giai đoạn 2: Triển khai liên tục (CD trên VPS)};
+
+% CONNECTING ARROWS
+\draw[arrow] (dev) -- (filter);
+\draw[arrow] (filter) -| node[lbl, pos=0.45] {\texttt{LMS\_BE/**}} (ci_be);
+\draw[arrow] (filter) -- node[lbl, right=2pt, pos=0.35] {\texttt{LMS\_FE/**}} (ci_fe);
+\draw[arrow] (filter) -| node[lbl, pos=0.45] {\texttt{LMS\_AI/**}} (ci_ai);
+
+\draw[arrow] (ci_be) |- (gate);
+\draw[arrow] (ci_fe) -- (gate);
+\draw[arrow] (ci_ai) |- (gate);
+
+\draw[arrow] (gate) -- node[lbl, right=2pt, pos=0.4] {Đạt (Pass)} (ssh);
+\draw[arrow] (ssh) -- (pull);
+\draw[arrow] (pull) -- (dump);
+\draw[arrow] (dump) -- (rebuild);
+\draw[arrow] (rebuild) -- (health);
+
+\draw[arrow] (health) -| node[lbl, near start] {HTTP 200 / UP} (success);
+\draw[arrow] (health) -| node[lbl, near start] {Lỗi / Hết giờ} (fail);
+
+\end{tikzpicture}
+\caption{Kiến trúc tổng thể luồng CI/CD trong hệ thống Library74}
+\label{fig:cicd_flow}
+\end{figure}
+
+\subsection{Chi tiết giai đoạn Tích hợp liên tục (CI)}
+
+Giai đoạn CI được thực thi trên môi trường máy ảo Ubuntu sạch của GitHub (\textit{GitHub-hosted Runner}). Bảng~\ref{tab:ci_workflows} tổng hợp các workflow CI tương ứng với từng thành phần kiến trúc.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Chi tiết các workflow Tích hợp liên tục (CI)}
+\label{tab:ci_workflows}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|p{2.6cm}|p{3.3cm}|X|p{1.8cm}|}
+\hline
+\textbf{Thành phần} & \textbf{Tệp cấu hình} & \textbf{Nhiệm vụ chính} & \textbf{Thời gian} \\
+\hline
+\textbf{Backend CI} &
+\texttt{backend-ci.yml} \newline
+{\scriptsize \path{.github/workflows/}} &
+- Cấu hình OpenJDK 21 Temurin kèm cache Maven. \newline
+- Thực thi toàn bộ Unit \& Integration Test suite. \newline
+- Build thử nghiệm Docker Image Backend nhằm xác thực Dockerfile multi-stage. &
+$\sim$1--2 phút \\
+\hline
+\textbf{Frontend CI} &
+\texttt{frontend-ci.yml} \newline
+{\scriptsize \path{.github/workflows/}} &
+- Cấu hình Node.js 20 kèm cache NPM package. \newline
+- Cài đặt sạch các gói phụ thuộc (\texttt{npm ci}). \newline
+- Chạy toàn bộ Unit Test giao diện bằng Jest. \newline
+- Biên dịch gói tĩnh Vite (\texttt{npm run build}). \newline
+- Build thử nghiệm Docker Image Nginx đóng gói web. &
+$\sim$1--2 phút \\
+\hline
+\textbf{AI Service CI} &
+\texttt{ai-ci.yml} \newline
+{\scriptsize \path{.github/workflows/}} &
+- Cấu hình Python 3.10 kèm cache Pip wheel. \newline
+- Biên dịch kiểm tra toàn bộ cú pháp (\texttt{compileall}). \newline
+- Thực thi bộ test logic và hợp đồng bằng Pytest. &
+$\sim$1--2 phút \\
+\hline
+\end{tabularx}
+\end{table}
+
+\noindent \textbf{Chiến lược tối ưu hóa đặc thù cho phân hệ AI CI:}
+Trong quá trình thiết kế pipeline, phân hệ AI Service sử dụng các thư viện tính toán khoa học và học sâu rất nặng như \texttt{torch} ($\sim$1GB), \texttt{sentence-transformers}, \texttt{scipy}. Nếu áp dụng bước \texttt{docker build} trên GitHub-hosted Runner, máy ảo sẽ phải tải lại toàn bộ PyTorch và model weights từ đầu mà không có lớp cache cục bộ, dẫn đến thời gian thực thi CI kéo dài từ 12 đến 15 phút, gây lãng phí nghiêm trọng quota tính giờ của GitHub Actions.
+
+Để tối ưu, nhóm phát triển đã đưa ra quyết định kiến trúc: \textit{Tách biệt hoàn toàn việc kiểm thử logic và đóng gói container đối với AI Service}. Phân hệ AI CI trên GitHub Runner chỉ tập trung biên dịch cú pháp mã nguồn và chạy Pytest với môi trường Python chuẩn. Việc đóng gói Docker image được chuyển giao hoàn toàn cho máy chủ VPS trong giai đoạn CD. Tại VPS, Docker Daemon đã lưu trữ sẵn các layer cơ sở của PyTorch và thư viện AI trong bộ nhớ đệm cục bộ, do đó quá trình build lại image khi có cập nhật mã nguồn mới chỉ tiêu tốn từ 3 đến 5 giây.
+
+\subsection{Chi tiết giai đoạn Triển khai liên tục (CD)}
+
+Giai đoạn Triển khai liên tục (CD) được kích hoạt tự động theo cơ chế liên kết sự kiện \texttt{workflow\_run}, với điều kiện bắt buộc là workflow CI tương ứng đã hoàn thành thành công (\texttt{conclusion == 'success'}) trên nhánh \texttt{main}, hoặc có thể được người quản trị kích hoạt thủ công thông qua sự kiện \texttt{workflow\_dispatch}.
+
+Quá trình CD trên máy chủ Production tuân thủ nghiêm ngặt quy trình an toàn 6 bước sau:
+
+\begin{enumerate}
+    \item \textbf{Xác thực bảo mật SSH không mật khẩu (Zero Password Authentication):}
+    Pipeline sử dụng Private Key chuẩn mã hóa hiện đại \texttt{ed25519} được lưu trữ an toàn trong GitHub Secrets (\texttt{DEPLOY\_SSH\_KEY}). Trước khi mở kết nối, GitHub Runner tiến hành đối soát dấu vân tay máy chủ thông qua biến \texttt{DEPLOY\_KNOWN\_HOSTS}, loại trừ hoàn toàn nguy cơ bị tấn công giả mạo máy chủ (Man-in-the-Middle).
+
+    \item \textbf{Đồng bộ mã nguồn an toàn (Fast-forward Synchronization):}
+    Lệnh kéo mã nguồn sử dụng cờ \texttt{--ff-only} để đảm bảo lịch sử git trên máy chủ luôn là một đường thẳng khớp chính xác với commit đã qua kiểm thử trên nhánh \texttt{main}:
+\begin{verbatim}
+cd /opt/library74
+git pull --ff-only origin main
+\end{verbatim}
+    Cơ chế này ngăn chặn tuyệt đối tình trạng máy chủ tự động tạo merge commit bất thường ngoài tầm kiểm soát khi môi trường thực thi bị can thiệp.
+
+    \item \textbf{Kiểm tra tính hợp lệ của cấu hình triển khai:}
+    Trước khi thay đổi bất kỳ trạng thái nào của dịch vụ đang chạy, Docker Compose thực hiện kiểm tra cú pháp và tham chiếu biến môi trường:
+\begin{verbatim}
+docker compose --env-file .env.prod \
+  -f docker-compose.prod.yml config >/dev/null
+\end{verbatim}
+
+    \item \textbf{Bảo vệ dữ liệu tự động (Pre-deployment Database Snapshot):}
+    Đối với phân hệ Backend CD, nhằm phòng tránh rủi ro migration thất bại gây hỏng dữ liệu, hệ thống tự động kích hoạt container sao lưu cơ sở dữ liệu:
+\begin{verbatim}
+docker compose --env-file .env.prod -f docker-compose.prod.yml \
+  --profile backup run --rm postgres-backup
+\end{verbatim}
+    Tác vụ này tạo ra bản chụp cơ sở dữ liệu nhị phân nén dạng \path{library-YYYYMMDD-HHMMSS.dump} lưu trữ trong thư mục \path{backups/} trên máy chủ trước khi phiên bản backend mới khởi chạy và chạy migration.
+
+    \item \textbf{Cập nhật dịch vụ độc lập không gián đoạn (Zero Interruption):}
+    Hệ thống áp dụng cơ chế triển khai theo từng container chuyên biệt, tránh việc restart toàn bộ hệ thống gây gián đoạn:
+    \begin{itemize}[noitemsep]
+        \item Backend: \texttt{docker compose ... up -d --build backend}
+        \item AI Service: \texttt{docker compose ... up -d --build ai-api ai-worker}
+        \item Frontend: \texttt{docker compose ... up -d --build frontend}
+    \end{itemize}
+    Các dịch vụ hạ tầng nền tảng như PostgreSQL, Kafka, RabbitMQ, Caddy Reverse Proxy vẫn duy trì kết nối liên tục 100\% mà không bị ngắt quãng.
+
+    \item \textbf{Kiểm tra sức khỏe dịch vụ sau triển khai (Post-deployment Health Check):}
+    Để khẳng định container mới không chỉ ``đang chạy'' (running) mà đã thực sự sẵn sàng phục vụ yêu cầu của người dùng, script CD thực hiện vòng lặp thăm dò (polling) tối đa 36 lần, mỗi lần cách nhau 5 giây (thời gian chờ tối đa 3 phút):
+    \begin{itemize}[noitemsep]
+        \item \textbf{Backend:} Truy vấn actuator health endpoint nội bộ:
+\begin{verbatim}
+docker compose exec -T backend wget -qO- \ 
+  http://127.0.0.1:8080/actuator/health | grep -q UP
+\end{verbatim}
+        \item \textbf{AI Service:} Truy vấn endpoint kiểm tra trạng thái của FastAPI:
+\begin{verbatim}
+docker compose exec -T ai-api \
+curl -fsS http://127.0.0.1:8001/health
+\end{verbatim}
+        \item \textbf{Frontend:} Kiểm tra đồng thời phản hồi HTTP của Nginx nội bộ và domain công khai:
+\begin{verbatim}
+docker compose exec -T frontend wget -qO- http://127.0.0.1/ \ 
+  >/dev/null && curl -fsS https://library74.uk/ >/dev/null
+\end{verbatim}
+    \end{itemize}
+    Nếu sau 36 lần thăm dò mà dịch vụ không phản hồi mã trạng thái thành công, pipeline lập tức báo lỗi \textit{Deployment Failed} và gửi thông báo cho đội ngũ quản trị để kịp thời xử lý.
+\end{enumerate}
+
+\subsection{Quản lý bảo mật và phân tách cấu hình bí mật}
+
+Hệ thống tuân thủ nguyên tắc đặc quyền tối thiểu (Principle of Least Privilege) bằng cách phân tách cấu hình thành hai lớp bảo mật:
+\begin{itemize}
+    \item \textbf{Biến môi trường nghiệp vụ (\texttt{.env.prod}):} Được lưu trữ cố định trên máy chủ sản xuất với phân quyền nghiêm ngặt (\texttt{chmod 600}, chỉ user quản trị hệ thống mới có quyền đọc/ghi). Các khóa nhạy cảm bao gồm mật khẩu database, S3 secret key, API key PayOS và token kết nối không bao giờ được đưa vào mã nguồn hay lưu trên kho lưu trữ git.
+    \item \textbf{Biến môi trường triển khai (GitHub Repository Secrets):} Chỉ chứa các thông số định danh cần thiết để phục vụ quá trình kết nối và vận hành tự động: \texttt{DEPLOY\_HOST}, \texttt{DEPLOY\_PORT}, \texttt{DEPLOY\_USER}, \texttt{DEPLOY\_PATH}, khóa bảo mật \texttt{DEPLOY\_SSH\_KEY} và chuỗi định danh \texttt{DEPLOY\_KNOWN\_HOSTS}.
+\end{itemize}
+
+\subsection{Đánh giá định lượng hiệu quả hệ thống}
+
+Việc đưa hệ thống CI/CD vào vận hành chính thức đã nâng cao rõ rệt độ tin cậy, an toàn và tốc độ phát hành của dự án. Bảng~\ref{tab:cicd_evaluation} so sánh định lượng các chỉ số vận hành then chốt trước và sau khi triển khai giải pháp CI/CD.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Đánh giá hiệu quả vận hành trước và sau khi áp dụng CI/CD}
+\label{tab:cicd_evaluation}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|p{3.5cm}|p{4.8cm}|X|}
+\hline
+\textbf{Tiêu chí đánh giá} & \textbf{Quy trình thủ công (Trước)} & \textbf{Hệ thống CI/CD (Sau)} \\
+\hline
+\textbf{Thời gian phát hành} &
+15--30 phút (đăng nhập SSH, gõ lệnh thủ công từng dịch vụ). &
+\textbf{Dưới 3 phút} (tự động hóa 100\% từ khi push code). \\
+\hline
+\textbf{Kiểm định chất lượng mã nguồn} &
+Phụ thuộc sự cẩn thận của lập trình viên, dễ bỏ sót test. &
+\textbf{100\% tự động vượt qua test suite} trước khi được phép triển khai. \\
+\hline
+\textbf{An toàn dữ liệu cơ sở dữ liệu} &
+Thực hiện thủ công, dễ bị lãng quên trước khi cập nhật. &
+\textbf{Tự động chụp snapshot nhị phân} trước mỗi lần deploy Backend. \\
+\hline
+\textbf{Mức độ gián đoạn dịch vụ (Downtime)} &
+Downtime kéo dài do máy chủ bị chiếm dụng tài nguyên để build image. &
+\textbf{Tối thiểu hóa downtime} nhờ cập nhật tách biệt theo container. \\
+\hline
+\textbf{Phát hiện lỗi phát hành} &
+Phát hiện muộn thông qua phản ánh của người dùng hoặc kiểm tra thủ công. &
+\textbf{Hệ thống Polling Health Check} tự động bắt lỗi ngay trong 3 phút đầu. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\noindent Kết quả cho thấy hệ thống CI/CD không chỉ loại bỏ hoàn toàn các thao tác thủ công rủi ro mà còn thiết lập một quy trình chuyển giao phần mềm tiêu chuẩn, an toàn và có khả năng phục hồi cao theo đúng chuẩn mực công nghiệp trong phát triển phần mềm hiện đại.
 
 \section{Hạ tầng mạng: Domain và HTTPS}
 
@@ -205,7 +504,7 @@ VPS, Caddy nhận request HTTPS, tự động xử lý chứng chỉ TLS và đ�
 
 Luồng kết nối sau khi đi vào backend tiếp tục được phân tách theo trách nhiệm:
 Spring Boot xử lý nghiệp vụ chính và kết nối PostgreSQL/Kafka; backend gọi AI
-Service qua \texttt{AI\_GATEWAY\_BASE\_URL}; AI worker xử lý PDF bất đồng bộ qua
+Service qua \path{AI_GATEWAY_BASE_URL}; AI worker xử lý PDF bất đồng bộ qua
 RabbitMQ và callback kết quả về backend bằng chữ ký HMAC. Các tích hợp ngoài
 như S3-compatible storage, PayOS, Gmail SMTP, Google OAuth2 và Gemini API được
 kết nối từ backend hoặc AI worker theo đúng vai trò của từng dịch vụ.

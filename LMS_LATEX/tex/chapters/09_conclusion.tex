@@ -68,7 +68,7 @@ Hệ thống được đưa lên môi trường mạng Internet với kiến tr�
 
 \begin{itemize}
     \item \textbf{Nền tảng và môi trường:} Toàn bộ hệ sinh thái được đóng gói container và điều phối bởi Docker Compose trên nền tảng Google Cloud VPS sử dụng Ubuntu 24.04.
-    \item \textbf{Phân giải tên miền và bảo mật:} Vận hành chính thức tại tên miền \texttt{https://library74.uk}, định tuyến DNS qua mạng lưới Cloudflare. Máy chủ Caddy làm định tuyến ngược, tự động cấp phát chứng chỉ SSL để mã hóa giao tiếp.
+    \item \textbf{Phân giải tên miền và bảo mật:} Vận hành chính thức tại tên miền \url{https://library74.uk}, định tuyến DNS qua mạng lưới Cloudflare. Máy chủ Caddy làm định tuyến ngược, tự động cấp phát chứng chỉ SSL để mã hóa giao tiếp.
     \item \textbf{Vận hành Frontend và Backend:} Ứng dụng React được biên dịch tĩnh và phân phối qua máy chủ Nginx. Khối Spring Boot liên kết chặt chẽ với các dịch vụ nội bộ (PostgreSQL, Kafka, RabbitMQ) và nền tảng bên ngoài (S3, PayOS, Google).
     \item \textbf{Vận hành AI Engine và dữ liệu:} Môi trường FastAPI vận hành độc lập cùng hệ thống Worker lắng nghe hàng đợi. Hệ quản trị PostgreSQL được ánh xạ bộ nhớ độc lập, trong khi hình ảnh và PDF được đồng bộ với Amazon S3 để dự phòng.
 \end{itemize}

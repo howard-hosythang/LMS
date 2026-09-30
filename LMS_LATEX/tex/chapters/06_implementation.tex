@@ -43,7 +43,7 @@ Cụ thể, lớp \texttt{api} được đóng gói độc lập để xử lý 
 
 Dựa trên nền tảng kiến trúc vững chắc này, hệ thống đã triển khai thành công các luồng nghiệp vụ phức tạp và phân định rạch ròi quyền truy cập thông qua cơ chế Route Protection. Bảng \ref{tab:fe_pages_implemented} liệt kê chi tiết danh sách các màn hình chức năng đã được hiện thực và phân quyền cụ thể cho từng nhóm người dùng (Bạn đọc, Thủ thư, Quản trị viên).
 
-\begin{longtable}{|p{2.9cm}|p{4.2cm}|p{7.2cm}|}
+\begin{longtable}{|p{3.3cm}|p{3.8cm}|p{7.2cm}|}
 \caption{Các màn hình Frontend đã hiện thực theo nhóm người dùng}
 \label{tab:fe_pages_implemented}\\
 \hline
@@ -277,53 +277,73 @@ Cuối cùng, để đảm bảo tính kết nối và đáp ứng đa dạng nh
 % --- ĐOẠN CHUYỂN Ý 1: TỪ GIAO DIỆN SANG KỸ THUẬT ---
 Đằng sau giao diện trực quan và các trải nghiệm cá nhân hóa linh hoạt, phân hệ Frontend được xây dựng dựa trên một kiến trúc kỹ thuật vững chắc nhằm đảm bảo tính mở rộng và hiệu năng cao. Bảng \ref{tab:fe_technical_summary} tổng hợp các giải pháp kỹ thuật trọng tâm đã được áp dụng để giải quyết các bài toán cốt lõi: từ quản lý trạng thái tập trung, tối ưu giao tiếp API, đến xử lý luồng sự kiện thời gian thực (real-time) và tích hợp an toàn các dịch vụ bên thứ ba.
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{|p{3.4cm}|X|}
+\begin{longtable}{|p{3.4cm}|>{\raggedright\arraybackslash}p{\dimexpr\textwidth-3.4cm-2\tabcolsep-2\arrayrulewidth\relax}|}
+\caption{Các hạng mục kỹ thuật Frontend}
+\label{tab:fe_technical_summary}
+\\
 \hline
 \textbf{Hạng mục Frontend} & \textbf{Nội dung đã hiện thực} \\
 \hline
+\endfirsthead
+
+\multicolumn{2}{c}%
+{\textbf{Bảng \thetable{} -- tiếp tục từ trang trước}}
+\\
+\hline
+\textbf{Hạng mục Frontend} & \textbf{Nội dung đã hiện thực} \\
+\hline
+\endhead
+
+\hline
+\multicolumn{2}{r}{\textit{Tiếp tục ở trang sau}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
 Routing và phân quyền &
 \texttt{HashRouter}, lazy loading theo page, \texttt{ProtectedRoute}, redirect
 theo role \texttt{student}, \texttt{librarian}, \texttt{admin}. \\
 \hline
+
 State dùng chung &
 \texttt{AuthContext}, \texttt{LanguageContext}, \texttt{ThemeContext},
 \texttt{NotificationContext}, \texttt{UploadContext}, \texttt{AppDialogContext}. \\
 \hline
+
 Giao tiếp API &
 Axios instance, gắn JWT và \texttt{Accept-Language}, unwrap response, xử lý lỗi
 nghiệp vụ, refresh token bằng queue để tránh gọi refresh nhiều lần. \\
 \hline
+
 Realtime và notification &
 STOMP/SockJS, unread count, toast realtime, đánh dấu đã đọc và đồng bộ danh sách
 thông báo. \\
 \hline
+
 Upload và tài liệu &
 Upload bìa/PDF bằng presigned URL, hiển thị progress, cảnh báo khi đóng tab lúc
 upload đang chạy, gửi yêu cầu AI xử lý tài liệu. \\
 \hline
+
 Thanh toán &
 Khởi tạo thanh toán PayOS, hiển thị QR, polling trạng thái, cập nhật UI cho thủ
 thư và bạn đọc sau khi thanh toán. \\
 \hline
+
 Cá nhân hóa &
 Light/dark/system theme, song ngữ Việt--Anh, lưu cấu hình vào
 \texttt{localStorage}, cập nhật \texttt{document.lang}. \\
 \hline
-\end{tabularx}
-\caption{Các hạng mục kỹ thuật Frontend}
-\label{tab:fe_technical_summary}
-\end{table}
 
+\end{longtable}
 % --- ĐOẠN CHUYỂN Ý 2: TỪ KỸ THUẬT SANG GIÁ TRỊ THỰC TIỄN ---
 Tất cả các quyết định về mặt kiến trúc và kỹ thuật nêu trên đều hướng tới một mục tiêu duy nhất: chuyển hóa công nghệ thành giá trị sử dụng. Bảng \ref{tab:fe_value_highlights} đúc kết lại những điểm sáng nổi bật của phân hệ, minh chứng cho việc ứng dụng công nghệ không chỉ dừng lại ở mặt hiển thị mà đã thực sự giải quyết triệt để các bài toán vận hành, chuyển đổi toàn diện trải nghiệm của bạn đọc và thủ thư.
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.4cm}|}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|p{6.6cm}|X|}
 \hline
 \textbf{Giá trị hiện thực} & \textbf{Cách hệ thống đã làm} & \textbf{Tác động với người dùng} \\
 \hline
@@ -491,7 +511,7 @@ Việc áp dụng kiến trúc Modular Monolith và các công nghệ phụ tr�
 \begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.4cm}|}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|p{5.6cm}|X|}
 \hline
 \textbf{Điểm hiện thực} & \textbf{Nội dung đã làm} & \textbf{Ý nghĩa vận hành} \\
 \hline
@@ -546,7 +566,7 @@ Chi tiết về chức năng và nhiệm vụ cụ thể của từng thành ph�
 
 % ================= NỐI TIẾP BẰNG BẢNG CỦA BẠN =================
 
-\begin{longtable}{|p{3.8cm}|p{4cm}|p{6.5cm}|}
+\begin{longtable}{|p{4.6cm}|p{3.2cm}|p{6.5cm}|}
 \caption{Các thành phần AI Service đã hiện thực}
 \label{tab:ai_components_implemented}\\
 \hline
@@ -635,41 +655,63 @@ pgvector và bảng recommendation. \\
 % --- ĐOẠN CHUYỂN Ý 2: TỪ HÌNH ẢNH SANG NĂNG LỰC KỸ THUẬT ---
 Dựa trên các kết quả trực quan này, Bảng \ref{tab:ai_capability_summary} tổng hợp chi tiết các năng lực trí tuệ nhân tạo cốt lõi mà phân hệ AI Service đã đảm nhiệm. Các năng lực này được thiết kế không chỉ để phô diễn công nghệ, mà còn phải đáp ứng nghiêm ngặt các tiêu chuẩn về an toàn tích hợp, khả năng chịu lỗi (fault tolerance) và cơ chế dự phòng (fallback) khi giao tiếp với mô hình ngôn ngữ lớn (LLM).
 
-\begin{table}[H]
-\centering
 \small
-\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\begin{longtable}{|p{3.5cm}|>{\raggedright\arraybackslash}p{\dimexpr\textwidth-3.5cm-2\tabcolsep-2\arrayrulewidth\relax}|}
+\caption{Các năng lực AI đã tích hợp vào hệ thống}
+\label{tab:ai_capability_summary}
+\\
 \hline
 \textbf{Năng lực AI} & \textbf{Nội dung đã hiện thực} \\
 \hline
+\endfirsthead
+
+\multicolumn{2}{c}%
+{\textbf{Bảng \thetable{} -- tiếp tục từ trang trước}}
+\\
+\hline
+\textbf{Năng lực AI} & \textbf{Nội dung đã hiện thực} \\
+\hline
+\endhead
+
+\hline
+\multicolumn{2}{r}{\textit{Tiếp tục ở trang sau}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
 Xử lý PDF &
 Upload PDF từ thủ thư, chạy ETL nền, lưu trạng thái \texttt{RUNNING},
 \texttt{SUCCESS}, \texttt{FAILED}, không làm gián đoạn nghiệp vụ catalog. \\
 \hline
+
 Semantic search &
 Sinh embedding cho truy vấn, tìm chunk gần nhất bằng pgvector, gom về
 publication id và trả kết quả cho backend lọc nghiệp vụ. \\
 \hline
+
 Metadata enrichment &
 Sinh summary, audience, tag học thuật, alias tiếng Anh và ghi về publication để
 hiển thị trên chi tiết sách/tìm kiếm. \\
 \hline
+
 Similar books &
 Tính tương đồng dựa trên vector nội dung và metadata để đề xuất sách liên quan
 từ trang chi tiết. \\
 \hline
+
 Recommendation &
 Gợi ý cá nhân hóa theo lịch sử xem, wishlist, mượn, rating; có fallback khi
 người dùng mới hoặc dữ liệu tương tác còn ít. \\
 \hline
+
 An toàn tích hợp &
 Callback HMAC, timeout/retry, fallback local khi LLM lỗi, kiểm thử API contract
 và kiểm tra độ trễ cơ bản. \\
 \hline
-\end{tabularx}
-\caption{Các năng lực AI đã tích hợp vào hệ thống}
-\label{tab:ai_capability_summary}
-\end{table}
+
+\end{longtable}
+\normalsize
 
 % --- ĐOẠN CHUYỂN Ý 3: TỪ KỸ THUẬT SANG GIÁ TRỊ VẬN HÀNH ---
 Công nghệ chỉ thực sự có ý nghĩa khi nó phục vụ đúng bài toán con người. Bảng \ref{tab:ai_value_highlights} đúc kết những điểm sáng nổi bật nhất, minh chứng cho việc ứng dụng AI đã thực sự giải phóng sức lao động của thủ thư (thông qua tự động hóa xử lý nền) và nâng tầm trải nghiệm khám phá tri thức của độc giả (thông qua tìm kiếm trên lõi nội dung thay vì từ khóa bề mặt).
@@ -677,7 +719,7 @@ Công nghệ chỉ thực sự có ý nghĩa khi nó phục vụ đúng bài to�
 \begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.4cm}|}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|p{5.6cm}|X|}
 \hline
 \textbf{Điểm hiện thực} & \textbf{Nội dung đã làm} & \textbf{Giá trị thực tế} \\
 \hline
@@ -712,7 +754,7 @@ Bảng \ref{tab:implementation_value_flows} tổng hợp 4 luồng giá trị x�
 \begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.4cm}|}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|p{5.6cm}|X|}
 \hline
 \textbf{Luồng được show} & \textbf{Thành phần tham gia} & \textbf{Kết quả thể hiện trong Chương 6} \\
 \hline

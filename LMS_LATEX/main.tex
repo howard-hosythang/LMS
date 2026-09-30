@@ -12,6 +12,7 @@
 \usepackage{parskip} % Xử lý khoảng cách giữa các đoạn
 \usepackage{hyperref} % Tạo link (nên gọi sớm để cấu hình)
 \usepackage{xurl} % Hỗ trợ ngắt dòng link dài
+\usepackage{makecell}
 \usepackage{pdfpages} % Nối các phiếu scan/PDF bắt buộc vào báo cáo hoàn chỉnh
 
 % ===================================================
@@ -34,6 +35,7 @@
 % 3. BẢNG BIỂU VÀ KHUNG VĂN BẢN
 % ===================================================
 \usepackage{array, tabularx, caption}
+\usepackage{xltabular}
 \usepackage{ltablex, multirow, multicol}
 \usepackage{hhline, booktabs}
 \usepackage[table]{xcolor} % Khai báo xcolor cùng option table 1 lần duy nhất
@@ -149,7 +151,7 @@
 }
 \fancyhead[R]{}
 \fancyfoot{}
-\fancyfoot[L]{\scriptsize \ttfamily HK252-DATN-330}
+\fancyfoot[L]{\scriptsize \ttfamily HK253-DATN-076}
 % Chỉ in footer Trang X/Y trên các trang có style 'fancy'
 \fancyfoot[R]{\scriptsize \ttfamily Trang {\thepage}/\pageref{LastContentPage}}
 \renewcommand{\headrulewidth}{0.3pt}
@@ -163,14 +165,14 @@
 % ===================================================
 % 7. THÔNG TIN BÌA VÀ CÁC TRANG BẮT BUỘC
 % ===================================================
-\newcommand{\reportCode}{HK252-DATN-330}
+\newcommand{\reportCode}{HK253-DATN-076}
 \newcommand{\reportTitle}{XÂY DỰNG HỆ THỐNG QUẢN LÝ THƯ VIỆN\\TRỰC TUYẾN TÍCH HỢP AI HỖ TRỢ\\TÌM KIẾM VÀ GỢI Ý SÁCH}
 \newcommand{\reportMajor}{Khoa học Máy tính}
 \newcommand{\advisorOne}{TS. Trương Tuấn Anh}
 \newcommand{\advisorTwo}{CN. Dương Huỳnh Anh Đức}
 \newcommand{\reviewerName}{ThS. Trần Thị Quế Nguyệt}
-\newcommand{\studentOne}{Hồ Sỹ Thắng - 2213188}
-\newcommand{\defenseDate}{TP. HỒ CHÍ MINH, 05/2026}
+\newcommand{\studentOne}{Võ Quang Thắng - 2213214}
+\newcommand{\defenseDate}{TP. HỒ CHÍ MINH, 09/2026}
 
 % Bật/tắt file PDF scan gồm phiếu nhiệm vụ, phiếu chấm hướng dẫn và phiếu chấm phản biện.
 % Dùng \includeSignedFormstrue cho bản nộp đủ phiếu, \includeSignedFormsfalse cho bản không kèm phiếu.
@@ -217,7 +219,7 @@
     {\fontsize{15}{18}\selectfont\bfseries
     \begin{tabular}{rl}
         MÃ ĐỀ TÀI: & \reportCode\\
-        HỘI ĐỒNG: & 11L Khoa học Máy tính\\
+        HỘI ĐỒNG: & 5L Khoa học Máy tính\\
         GVHD: & \advisorOne\\
               & \advisorTwo\\
         GVPB: & \reviewerName\\
@@ -324,13 +326,13 @@
 
 % Đặt mốc kết thúc đếm tổng số trang nội dung chính tại đây.
 \label{LastContentPage}
+\clearpage
 
 % --- PHẦN TÀI LIỆU THAM KHẢO ---
 \pagestyle{empty}
 \makeatletter
 \let\ps@plain\ps@empty
 \makeatother
-\clearpage
 \phantomsection
 \makeatletter
 \addtocontents{toc}{\protect\contentsline{chapter}{Tài liệu tham khảo}{}{\@currentHref}\protected@file@percent}
