@@ -28,7 +28,7 @@ Tổng: 24 slide.
 - Có thể thêm ảnh giao diện đẹp nhất: `figures/ch06/frontend/homepage` không có, thay bằng `figures/ch05/ui/public/homepage.png`.
 
 **Lời dẫn:**
-> Đề tài của nhóm là xây dựng một hệ thống quản lý thư viện trực tuyến tích hợp AI. Điểm chính không chỉ là tra cứu sách, mà là số hóa quy trình vận hành thư viện và dùng AI ở những nơi thật sự tạo giá trị: đọc nội dung PDF, tìm kiếm theo ngữ nghĩa và gợi ý tài liệu theo hành vi người dùng.
+> Xin chào thầy cô và các bạn, Em xin báo cáo đề tài của nhóm là xây dựng một hệ thống quản lý thư viện trực tuyến tích hợp AI. Điểm chính không chỉ là tra cứu sách, mà là số hóa quy trình vận hành thư viện và dùng AI ở những nơi thật sự tạo giá trị: đọc nội dung PDF, tìm kiếm theo ngữ nghĩa và gợi ý tài liệu theo hành vi người dùng.
 
 ---
 
