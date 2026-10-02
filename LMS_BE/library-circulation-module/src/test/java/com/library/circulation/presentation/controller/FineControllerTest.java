@@ -13,6 +13,11 @@ import com.library.circulation.application.fine.GetMyFinesUseCase;
 import com.library.circulation.application.fine.GetStudentFinesUseCase;
 import com.library.circulation.application.fine.PayAllFinesUseCase;
 import com.library.circulation.application.fine.PayFineUseCase;
+import com.library.circulation.application.fine.UpdateFineAmountUseCase;
+import com.library.circulation.dto.request.UpdateFineAmountRequest;
+import com.library.shared.exception.AppException;
+import com.library.shared.exception.ErrorCode;
+import com.library.shared.exception.GlobalExceptionHandler;
 import com.library.circulation.domain.enums.PaymentStatus;
 import com.library.circulation.dto.response.FinePaymentLinkResponse;
 import com.library.circulation.dto.response.FineResponse;
@@ -43,6 +48,7 @@ class FineControllerTest {
     @Mock private PayFineUseCase payFineUseCase;
     @Mock private PayAllFinesUseCase payAllFinesUseCase;
     @Mock private FinePaymentService finePaymentService;
+    @Mock private UpdateFineAmountUseCase updateFineAmountUseCase;
     @Mock private SecurityEvaluator security;
 
     @InjectMocks private FineController controller;
@@ -184,5 +190,39 @@ class FineControllerTest {
             .type(ViolationType.OVERDUE_RETURN)
             .status(status)
             .build();
+    }
+
+    @Test
+    void updateFineAmount_returnsUpdatedAmount() throws Exception {
+        when(security.getCurrentUserId()).thenReturn(USER_ID);
+        var request = new UpdateFineAmountRequest(new BigDecimal("100000"), "Correction");
+        when(updateFineAmountUseCase.execute(10L, USER_ID, request)).thenReturn(request.fineAmount());
+        mockMvc.perform(put("/api/v1/fines/10/amount")
+                .contentType("application/json").content("{\"fineAmount\":100000,\"reason\":\"Correction\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.fineId").value("10"))
+            .andExpect(jsonPath("$.data.fineAmount").value(100000));
+        verify(updateFineAmountUseCase).execute(10L, USER_ID, request);
+    }
+
+    @Test
+    void updateFineAmount_rejectsNegativeAmount() throws Exception {
+        mockMvc.perform(put("/api/v1/fines/10/amount")
+                .contentType("application/json").content("{\"fineAmount\":-1}"))
+            .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(updateFineAmountUseCase);
+    }
+
+    @Test
+    void updateFineAmount_paidFineReturnsConflict() throws Exception {
+        var mvc = MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(new GlobalExceptionHandler()).build();
+        when(security.getCurrentUserId()).thenReturn(USER_ID);
+        when(updateFineAmountUseCase.execute(10L, USER_ID,
+            new UpdateFineAmountRequest(new BigDecimal("100000"), null)))
+            .thenThrow(new AppException(ErrorCode.FINE_ALREADY_PAID));
+        mvc.perform(put("/api/v1/fines/10/amount")
+                .contentType("application/json").content("{\"fineAmount\":100000}"))
+            .andExpect(status().isConflict());
     }
 }

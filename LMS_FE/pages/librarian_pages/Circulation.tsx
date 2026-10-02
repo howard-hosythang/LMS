@@ -8,6 +8,7 @@ import {
   DollarSign,
   Hash,
   Info,
+  Pencil,
   RotateCcw,
   Scan,
   TriangleAlert,
@@ -32,6 +33,8 @@ import transactionsService, {
   StudentActiveTransactionsResponse,
 } from '../../api/transactionsService';
 import { getFriendlyErrorMessage } from '../../utils/errorMessages';
+import CurrencyInput from '../../components/CurrencyInput';
+import FineAdjustmentDialog from '../../components/librarian_pages/FineAdjustmentDialog';
 
 type MainTab = 'pickup' | 'direct' | 'return' | 'restoreLost' | 'fines';
 type LookupMode = 'qr' | 'manual';
@@ -431,8 +434,8 @@ const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
 
   const handleReportIssue = async () => {
     if (!selectedItem) return;
-    const amount = parseFloat(fineAmount);
-    if (isNaN(amount) || amount <= 0) return;
+    const amount = Number(fineAmount);
+    if (!Number.isInteger(amount) || amount <= 0 || amount > 10000000) return;
     setIsSubmitting(true);
     setActionError(null);
     try {
@@ -716,10 +719,10 @@ const ActionPanel = ({ item, action, fineAmount, setFineAmount, isSubmitting, er
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
                       {action === 'damaged' ? 'Phí phạt hư hỏng (đ)' : 'Phí phạt mất sách (đ)'}
                     </label>
-                    <input type="number" min="1" autoFocus value={fineAmount}
-                      onChange={e => setFineAmount(e.target.value)}
+                    <CurrencyInput autoFocus value={fineAmount}
+                      onValueChange={setFineAmount}
                       onKeyDown={e => e.key === 'Enter' && onIssue()}
-                      placeholder="Nhập số tiền do thủ thư định..."
+                      placeholder="Từ 1đ đến 10.000.000đ"
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
                   </div>
                   <IssueFineGuide />
@@ -727,7 +730,7 @@ const ActionPanel = ({ item, action, fineAmount, setFineAmount, isSubmitting, er
                     <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-sm text-red-700">{error}</div>
                   )}
                   <button onClick={onIssue}
-                    disabled={isSubmitting || !fineAmount.trim() || parseFloat(fineAmount) <= 0}
+                    disabled={isSubmitting || !fineAmount.trim() || Number(fineAmount) <= 0 || Number(fineAmount) > 10000000}
                     className={`w-full text-white py-2.5 rounded-lg font-semibold disabled:opacity-50 transition-colors ${action === 'damaged' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700'}`}>
                     {isSubmitting ? 'Đang xử lý...' : action === 'damaged' ? 'Xác nhận hư hỏng' : 'Xác nhận mất sách'}
                   </button>
@@ -865,6 +868,7 @@ const FINE_REASON_TEXT: Record<string, string> = {
 };
 
 const FineTab = () => {
+  const [editingFine, setEditingFine] = useState<Fine | null>(null);
   const [mssvInput, setMssvInput] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -1100,6 +1104,10 @@ const FineTab = () => {
                       <span className="font-bold text-slate-900">
                         {new Intl.NumberFormat('vi-VN').format(fine.fineAmount)}đ
                       </span>
+                      {fine.status === 'UNPAID' && <button type="button" onClick={() => setEditingFine(fine)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                        <Pencil size={14} aria-hidden="true" /> Chỉnh sửa phí
+                      </button>}
                     </div>
                   </div>
                 ))}
@@ -1115,6 +1123,9 @@ const FineTab = () => {
           <p className="text-sm">Nhập MSSV để xem và thu phí phạt của sinh viên</p>
         </div>
       )}
+
+      {editingFine && <FineAdjustmentDialog fines={[editingFine]} onClose={() => setEditingFine(null)}
+        onUpdated={() => refreshStudentFines(studentData!.studentId)} />}
 
       {payOsPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
@@ -1347,11 +1358,9 @@ const RestoreLostTab = () => {
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">Số tiền hoàn/miễn phạt (đ)</label>
-        <input
-          type="number"
-          min="0"
+        <CurrencyInput
           value={refundAmount}
-          onChange={e => setRefundAmount(e.target.value)}
+          onValueChange={setRefundAmount}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           disabled={!preview}
           placeholder="Hệ thống sẽ gợi ý sau khi tra giao dịch"

@@ -9,6 +9,7 @@ import {
   CreditCard,
   Filter,
   Loader2,
+  Pencil,
   RefreshCcw,
   Search,
   Star,
@@ -28,6 +29,9 @@ import ReaderProfileDrawer, { ReaderRef } from '../../components/librarian_pages
 import { useAppDialog } from '../../contexts/AppDialogContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { toast } from 'sonner';
+import fineService, { Fine } from '../../api/fineService';
+import FineAdjustmentDialog from '../../components/librarian_pages/FineAdjustmentDialog';
+import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 
 const copyText = {
   vi: {
@@ -299,6 +303,8 @@ const settlementStatus = (
 };
 
 const TransactionList = () => {
+  const [editableFines, setEditableFines] = useState<Fine[] | null>(null);
+  const [loadingFinesId, setLoadingFinesId] = useState<string | null>(null);
   const { language } = useLanguage();
   const c = copyText[language];
   const dialog = useAppDialog();
@@ -531,6 +537,17 @@ const TransactionList = () => {
     } finally {
       setRenewingTransactionId(null);
     }
+  };
+
+  const openFineAdjustment = async (tx: LibrarianTransaction) => {
+    setLoadingFinesId(tx.transactionId);
+    try {
+      const response = await fineService.getStudentFines(tx.studentId);
+      const fines = response.data.fines.filter(fine => fine.transactionId === tx.transactionId && fine.status === 'UNPAID');
+      if (fines.length) setEditableFines(fines);
+      else toast.error(language === 'en' ? 'No unpaid fines remain. Refresh the list.' : 'Không còn phí chưa thanh toán. Vui lòng làm mới danh sách.');
+    } catch (error) { toast.error(getFriendlyErrorMessage(error, language)); }
+    finally { setLoadingFinesId(null); }
   };
 
   const actionCards = [
@@ -843,6 +860,11 @@ const TransactionList = () => {
                         {hasFine ? (
                           <div className="space-y-1">
                             <div className="text-red-600 font-semibold">{formatCurrency(tx.fineAmount)}</div>
+                            {tx.finePaymentStatus === 'UNPAID' && <button type="button"
+                              onClick={() => void openFineAdjustment(tx)} disabled={loadingFinesId === tx.transactionId}
+                              className="inline-flex items-center gap-1 rounded border border-blue-200 px-2 py-1.5 text-xs font-medium text-blue-700 disabled:opacity-50">
+                              <Pencil size={13} aria-hidden="true" />{language === 'en' ? 'Edit fee' : 'Chỉnh sửa phí'}
+                            </button>}
                             <div className="flex flex-wrap items-center gap-1">
                               {tx.fineTypes && (
                                 <span className="text-[11px] text-slate-500">{fineTypeLabel(tx.fineTypes, c)}</span>
@@ -1024,6 +1046,8 @@ const TransactionList = () => {
         </div>
       </div>
       <ReaderProfileDrawer reader={selectedReader} onClose={() => setSelectedReader(null)} />
+      {editableFines && <FineAdjustmentDialog fines={editableFines} onClose={() => setEditableFines(null)}
+        onUpdated={async () => { await Promise.all([fetchData(), fetchSummary()]); }} />}
     </div>
   );
 };

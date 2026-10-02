@@ -52,6 +52,9 @@ export interface FinePaymentLinkResponse {
 }
 
 const fineService = {
+  updateAmount: async (fineId: string, fineAmount: number, reason?: string): Promise<{ code: number; message: string; data: { fineId: string; fineAmount: number } }> => {
+    return axiosInstance.put(`/fines/${fineId}/amount`, { fineAmount, reason }) as any;
+  },
   getStudentFines: async (studentId: string): Promise<StudentFinesResponse> => {
     const response = await axiosInstance.get('/fines/student', { params: { studentId } });
     return response as any;

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import adminService, { CirculationPolicy } from '../../api/adminService';
 import { useAppDialog } from '../../contexts/AppDialogContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import CurrencyInput from '../../components/CurrencyInput';
 
 const AdminPoliciesPage = () => {
   const dialog = useAppDialog();
@@ -26,6 +27,12 @@ const AdminPoliciesPage = () => {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!policy) return;
+    if (policy.overdueFinePerDay < 0 || policy.overdueFinePerDay > 1000000
+      || policy.defaultDepositAmount < 0 || policy.defaultDepositAmount > 10000000) {
+      toast.error(isEn ? 'Overdue fine must be 0–1.000.000đ; deposit must be 0–10.000.000đ.'
+        : 'Phí trễ hạn phải từ 0–1.000.000đ; tiền cọc phải từ 0–10.000.000đ.');
+      return;
+    }
     const confirmed = await dialog.confirm({
       title: isEn ? 'Confirm policy changes' : 'Xác nhận thay đổi quy định',
       message: isEn ? 'Save the new circulation policies? This affects borrowing, reservations, and fine calculation immediately.' : 'Bạn có chắc chắn lưu quy định mượn trả mới? Thay đổi này sẽ ảnh hưởng trực tiếp đến mượn sách, đặt trước và tính phí phạt.',
@@ -87,14 +94,19 @@ const AdminPoliciesPage = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <input
+                {field.key === 'overdueFinePerDay' || field.key === 'defaultDepositAmount' ? <CurrencyInput
+                  aria-label={field.label}
+                  value={String(policy[field.key])}
+                  onValueChange={digits => update(field.key, Number(digits))}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-right font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
+                /> : <input
                   type="number"
                   min={field.min}
                   max={field.max}
                   value={policy[field.key] as number}
                   onChange={(event) => update(field.key, Number(event.target.value))}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-right font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
-                />
+                />}
                 <span className="w-24 text-sm font-semibold text-slate-500 dark:text-slate-400">{field.suffix}</span>
               </div>
             </div>

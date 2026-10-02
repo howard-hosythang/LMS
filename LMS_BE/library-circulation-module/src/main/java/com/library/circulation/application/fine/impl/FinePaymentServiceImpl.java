@@ -43,6 +43,7 @@ public class FinePaymentServiceImpl implements FinePaymentService {
           AND u.status = 'ACTIVE'
           AND f.payment_status = 'UNPAID'
         ORDER BY f.id ASC
+        FOR UPDATE OF f
         """;
 
     private static final String FIND_PENDING_ORDER_SQL = """

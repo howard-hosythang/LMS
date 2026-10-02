@@ -31,6 +31,12 @@ const mockedAxiosInstance = axiosInstance as jest.Mocked<typeof axiosInstance>;
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('frontend service contracts', () => {
+  it('sends an unpaid fine adjustment as a numeric amount', async () => {
+    await fineService.updateAmount('10', 100000, 'Correction');
+    expect(mockedAxiosInstance.put).toHaveBeenCalledWith('/fines/10/amount', {
+      fineAmount: 100000, reason: 'Correction',
+    });
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     mockedAxiosInstance.get.mockResolvedValue({ code: 200, data: [] } as any);
@@ -169,6 +175,9 @@ describe('frontend service contracts', () => {
       defaultLoanDays: 14,
       maxActiveBorrows: 5,
       maxActiveReservations: 2,
+      maxRenewals: 2,
+      renewalWindowDays: 3,
+      defaultDepositAmount: 50000,
       overdueFinePerDay: 1000,
       blockBorrowWhenUnpaidFines: true,
       updatedByAdminId: null,

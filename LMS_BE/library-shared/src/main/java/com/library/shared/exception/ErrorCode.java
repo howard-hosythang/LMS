@@ -105,6 +105,7 @@ public enum ErrorCode {
   USER_HAS_UNPAID_FINES(3007, "User has unpaid fines and cannot borrow", "Bạn còn phí phạt chưa thanh toán, không thể thực hiện thao tác này", HttpStatus.FORBIDDEN),
   ACCOUNT_SUSPENDED(3008, "User account is suspended", "Tài khoản của bạn đã bị tạm khóa", HttpStatus.FORBIDDEN),
   FINE_ALREADY_PAID(3009, "Fine is already paid", "Khoản phí phạt này đã được thanh toán", HttpStatus.CONFLICT),
+  FINE_PAYMENT_IN_PROGRESS(3015, "Fine has a pending payment order; resolve it before editing", "Khoản phí đang có đơn thanh toán QR chờ xử lý. Vui lòng xử lý đơn thanh toán trước khi chỉnh sửa", HttpStatus.CONFLICT),
   RESERVATION_NOT_CANCELLABLE(3010, "Reservation cannot be cancelled in its current status", "Lượt đặt trước không thể hủy ở trạng thái hiện tại", HttpStatus.CONFLICT),
   RESERVATION_BOOK_AVAILABLE(3011, "Book is currently available, please borrow it directly", "Sách hiện đang có sẵn, vui lòng mượn trực tiếp", HttpStatus.CONFLICT),
   RESERVATION_BRANCH_NO_ITEMS(3012, "No items of this publication found in the selected branch", "Không có bản sao nào của ấn phẩm này tại cơ sở đã chọn", HttpStatus.BAD_REQUEST),

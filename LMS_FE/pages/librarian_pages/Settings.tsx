@@ -110,8 +110,8 @@ const buildPolicyItems = (policy: CirculationPolicy | null) => [
     icon: CreditCard,
     title: { vi: 'Phí trễ hạn', en: 'Overdue fine' },
     value: {
-      vi: `${Number(policy?.overdueFinePerDay ?? 0).toLocaleString('vi-VN')} VNĐ/ngày`,
-      en: `${Number(policy?.overdueFinePerDay ?? 0).toLocaleString('en-US')} VND/day`,
+      vi: `${Number(policy?.overdueFinePerDay ?? 0).toLocaleString('vi-VN')}đ/ngày`,
+      en: `${Number(policy?.overdueFinePerDay ?? 0).toLocaleString('vi-VN')}đ/day`,
     },
     description: {
       vi: 'Tự động tạo khi trả sách quá hạn hoặc khi thủ thư ghi nhận mất/hỏng có quá hạn.',
@@ -122,8 +122,8 @@ const buildPolicyItems = (policy: CirculationPolicy | null) => [
     icon: Banknote,
     title: { vi: 'Tiền cọc khi mượn', en: 'Borrow deposit' },
     value: {
-      vi: `${Number(policy?.defaultDepositAmount ?? 0).toLocaleString('vi-VN')} VNĐ/cuốn`,
-      en: `${Number(policy?.defaultDepositAmount ?? 0).toLocaleString('en-US')} VND/book`,
+      vi: `${Number(policy?.defaultDepositAmount ?? 0).toLocaleString('vi-VN')}đ/cuốn`,
+      en: `${Number(policy?.defaultDepositAmount ?? 0).toLocaleString('vi-VN')}đ/book`,
     },
     description: {
       vi: 'Thủ thư thu khi giao sách. Khi trả, hệ thống tự cấn vào phạt rồi ghi số hoàn lại hoặc thu thêm.',

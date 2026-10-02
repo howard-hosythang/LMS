@@ -5,6 +5,9 @@ import com.library.circulation.application.fine.GetStudentFinesUseCase;
 import com.library.circulation.application.fine.FinePaymentService;
 import com.library.circulation.application.fine.PayAllFinesUseCase;
 import com.library.circulation.application.fine.PayFineUseCase;
+import com.library.circulation.application.fine.UpdateFineAmountUseCase;
+import com.library.circulation.dto.request.UpdateFineAmountRequest;
+import jakarta.validation.Valid;
 import com.library.circulation.dto.response.FinePaymentLinkResponse;
 import com.library.circulation.dto.response.FineResponse;
 import com.library.circulation.dto.response.StudentFinesResponse;
@@ -39,7 +42,17 @@ public class FineController {
     private final PayFineUseCase payFineUseCase;
     private final PayAllFinesUseCase payAllFinesUseCase;
     private final FinePaymentService finePaymentService;
+    private final UpdateFineAmountUseCase updateFineAmountUseCase;
     private final com.library.shared.util.SecurityEvaluator security;
+
+    @PutMapping("/{id}/amount")
+    @RequiresRole(RoleConstants.LIBRARIAN)
+    @Operation(summary = "Adjust an unpaid fine amount (librarian)")
+    public ApiResponseApp<Map<String, Object>> updateFineAmount(
+        @PathVariable("id") Long fineId, @Valid @RequestBody UpdateFineAmountRequest request) {
+        var amount = updateFineAmountUseCase.execute(fineId, security.getCurrentUserId(), request);
+        return ApiResponseApp.success("Đã cập nhật phí phạt", Map.of("fineId", fineId.toString(), "fineAmount", amount));
+    }
 
     @GetMapping("/student")
     @RequiresRole(RoleConstants.LIBRARIAN)

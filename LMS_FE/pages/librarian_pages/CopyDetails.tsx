@@ -855,7 +855,7 @@ const CopyDetails = () => {
                                     </span>
                                   </td>
                                   <td className="px-4 py-3 text-slate-600">
-                                    {row.fineAmount && row.fineAmount > 0 ? `${row.fineAmount.toLocaleString()} VND` : '-'}
+                                    {row.fineAmount && row.fineAmount > 0 ? `${row.fineAmount.toLocaleString('vi-VN')}đ` : '-'}
                                   </td>
                                   <td className="px-4 py-3 text-right">
                                     <button className="text-blue-600 hover:text-blue-800">

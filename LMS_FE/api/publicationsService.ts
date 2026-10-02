@@ -3,6 +3,7 @@ import axiosInstance from './axiosInstance';
 import {
   ApiResponse,
   BookLookupResponse,
+  BookSearchItem,
   GetPublicationsParams,
   PublicationDetailResponse,
   MostBorrowedPublication,
