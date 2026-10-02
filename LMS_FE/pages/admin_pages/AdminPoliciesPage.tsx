@@ -55,7 +55,7 @@ const AdminPoliciesPage = () => {
     { key: 'maxActiveBorrows' as const, icon: Users, label: isEn ? 'Maximum active borrows / pickups' : 'Số sách đang mượn/chờ lấy tối đa', suffix: isEn ? 'books' : 'quyển', min: 1, max: 50 },
     { key: 'maxActiveReservations' as const, icon: Clock, label: isEn ? 'Maximum active reservations' : 'Số lượt đặt trước tối đa', suffix: isEn ? 'requests' : 'yêu cầu', min: 0, max: 50 },
     { key: 'maxRenewals' as const, icon: BookOpen, label: isEn ? 'Maximum renewals per loan' : 'Số lượt gia hạn tối đa mỗi lần mượn', suffix: isEn ? 'times' : 'lần', min: 0, max: 20 },
-    { key: 'renewalWindowDays' as const, icon: Clock, label: isEn ? 'Renewal window before due date' : 'Cửa sổ gia hạn trước hạn trả', suffix: isEn ? 'days' : 'ngày', min: 1, max: 30 },
+    { key: 'renewalWindowDays' as const, icon: Clock, label: isEn ? 'Renewal window before due date' : 'Cho phép gia hạn trước hạn trả', suffix: isEn ? 'days' : 'ngày', min: 1, max: 30 },
     { key: 'overdueFinePerDay' as const, icon: CreditCard, label: isEn ? 'Overdue fine' : 'Phí trễ hạn', suffix: isEn ? 'VND/day' : 'VNĐ/ngày', min: 0, max: 1000000 },
     { key: 'defaultDepositAmount' as const, icon: CreditCard, label: isEn ? 'Default borrowing deposit' : 'Tiền cọc khi mượn sách', suffix: isEn ? 'VND/book' : 'VNĐ/cuốn', min: 0, max: 10000000 },
   ];
