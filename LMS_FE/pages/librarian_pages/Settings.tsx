@@ -8,6 +8,7 @@ import {
   Laptop,
   Mail,
   Moon,
+  RefreshCw,
   Shield,
   Sun,
   Users,
@@ -73,6 +74,36 @@ const buildPolicyItems = (policy: CirculationPolicy | null) => [
     description: {
       vi: 'Tính trên các đặt trước PENDING và READY_FOR_PICKUP của từng độc giả.',
       en: "Counts each reader's PENDING and READY_FOR_PICKUP reservations.",
+    },
+  },
+  {
+    icon: RefreshCw,
+    title: {
+      vi: 'Số lượt gia hạn tối đa mỗi lần mượn',
+      en: 'Maximum renewals per loan',
+    },
+    value: {
+      vi: `${policy?.maxRenewals ?? '-'} lần`,
+      en: `${policy?.maxRenewals ?? '-'} times`,
+    },
+    description: {
+      vi: 'Số lần tối đa một giao dịch mượn được phép gia hạn thêm thời gian.',
+      en: 'Maximum number of times a borrowing transaction can be renewed.',
+    },
+  },
+  {
+    icon: Clock,
+    title: {
+      vi: 'Cho phép gia hạn trước hạn trả',
+      en: 'Renewal window before due date',
+    },
+    value: {
+      vi: `${policy?.renewalWindowDays ?? '-'} ngày`,
+      en: `${policy?.renewalWindowDays ?? '-'} days`,
+    },
+    description: {
+      vi: 'Chỉ cho phép độc giả và thủ thư gia hạn khi hạn trả còn lại ít hơn hoặc bằng số ngày này.',
+      en: 'Renewals are only allowed when the remaining loan time is within this number of days.',
     },
   },
   {
