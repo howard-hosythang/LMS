@@ -43,6 +43,8 @@ import type { RecommendedPublication } from '../../api/recommendationService';
 import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 import { formatReviewerAcademicLine } from '../../utils/reviewerMeta';
 import Seo from '../../components/Seo';
+import ReviewCommentBody, { ReviewTagBadges } from '../../components/ReviewCommentBody';
+import { REVIEW_TAGS, formatReviewComment, getReviewTagClass, parseReviewComment } from '../../utils/reviewComment';
 
 // --- Sub-components for Tabs ---
 
@@ -57,25 +59,6 @@ const localeOf = (language: Language) => language === 'en' ? 'en-US' : 'vi-VN';
 type TocEntry = { level: number | null; title: string; pageNum: string | null };
 
 type TocGroup = { entry: TocEntry; chapterIdx: number; children: TocEntry[] };
-
-const REVIEW_TAGS = [
-  { vi: 'Đáng đọc', en: 'Worth reading', tone: 'positive' },
-  { vi: 'Dễ áp dụng', en: 'Practical', tone: 'positive' },
-  { vi: 'Ví dụ rõ ràng', en: 'Clear examples', tone: 'positive' },
-  { vi: 'Nội dung cập nhật', en: 'Up to date', tone: 'positive' },
-  { vi: 'Phù hợp sinh viên', en: 'Student-friendly', tone: 'positive' },
-  { vi: 'Truyền cảm hứng', en: 'Inspiring', tone: 'positive' },
-  { vi: 'Nền tảng tốt', en: 'Strong fundamentals', tone: 'positive' },
-  { vi: 'Nhiều lý thuyết', en: 'Theory-heavy', tone: 'neutral' },
-  { vi: 'Khó hiểu', en: 'Hard to follow', tone: 'critical' },
-  { vi: 'Cần đọc kèm tài liệu khác', en: 'Needs companion reading', tone: 'neutral' },
-] as const;
-
-const formatReviewComment = (tags: string[], comment: string) => {
-  const normalizedComment = comment.trim();
-  if (tags.length === 0) return normalizedComment;
-  return `Nhãn: ${tags.join(', ')}\n\n${normalizedComment}`;
-};
 
 const LABELS: Record<string, Record<string, string>> = {
   publicationFormat: {
@@ -440,7 +423,7 @@ const ReviewsTab = ({
   };
 
   const handleSubmit = async () => {
-    if (!comment.trim()) {
+    if (!comment.trim() && selectedTags.length === 0) {
       setMessage({ type: 'error', text: t('bookDetail.reviewRequired') });
       return;
     }
@@ -546,23 +529,14 @@ const ReviewsTab = ({
                 {REVIEW_TAGS.map((tag) => {
                   const label = tag[language];
                   const selected = selectedTags.includes(label);
-                  const toneClass = tag.tone === 'positive'
-                    ? selected
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                      : 'border-emerald-100 bg-emerald-50/60 text-emerald-700 hover:border-emerald-300'
-                    : tag.tone === 'critical'
-                      ? selected
-                        ? 'border-amber-500 bg-amber-50 text-amber-800'
-                        : 'border-amber-100 bg-amber-50/60 text-amber-700 hover:border-amber-300'
-                      : selected
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-blue-100 bg-blue-50/60 text-blue-700 hover:border-blue-300';
+                  const toneClass = getReviewTagClass(label);
                   return (
                     <button
                       key={label}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => toggleTag(label)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${toneClass}`}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${toneClass} ${selected ? 'ring-2 ring-current' : 'hover:opacity-80'}`}
                     >
                       {label}
                     </button>
@@ -571,7 +545,7 @@ const ReviewsTab = ({
               </div>
               {selectedTags.length > 0 && (
                 <p className="mt-2 text-xs text-gray-500">
-                  {language === 'en' ? 'Saved as' : 'Sẽ lưu dạng'}: Nhãn: {selectedTags.join(', ')}
+                  {language === 'en' ? 'Selected tags' : 'Nhãn đã chọn'}: {selectedTags.join(', ')}
                 </p>
               )}
             </div>
@@ -733,7 +707,7 @@ const ReviewsTab = ({
   );
 };
 
-const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarcode, editableByCurrentUser, avatar, replies = [], publicationId, ratingId, userType, onRefresh }: any) => {
+export const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarcode, editableByCurrentUser, avatar, replies = [], publicationId, ratingId, userType, onRefresh }: any) => {
   const { language, t } = useTranslation();
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -741,8 +715,9 @@ const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarco
   const [localLikes, setLocalLikes] = useState(likes);
   const [localLiked, setLocalLiked] = useState(Boolean(liked));
   const [editing, setEditing] = useState(false);
+  const parsedComment = parseReviewComment(text ?? '');
   const [editStars, setEditStars] = useState(rating);
-  const [editText, setEditText] = useState(text);
+  const [editText, setEditText] = useState(parsedComment.cleanComment);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const handleHelpful = async () => {
@@ -780,12 +755,12 @@ const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarco
   };
 
   const handleSaveEdit = async () => {
-    if (!editText.trim()) return;
+    if (!editText.trim() && parsedComment.tags.length === 0) return;
     setSavingEdit(true);
     try {
       const res = await publicationsService.updatePublicationRating(publicationId, ratingId, {
         star: editStars,
-        comment: editText.trim(),
+        comment: formatReviewComment(parsedComment.tags, editText),
       });
       if (res.code === 200) {
         setEditing(false);
@@ -810,7 +785,7 @@ const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarco
           </div>
         )}
       </div>
-      <div className="flex-grow">
+      <div className="min-w-0 flex-grow">
         <div className="flex justify-between items-start">
           <div>
             <h4 className="font-bold text-gray-900 text-sm dark:text-white">{name}</h4>
@@ -833,7 +808,9 @@ const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarco
                 />
               ))}
             </div>
+            {parsedComment.tags.length > 0 && <div className="mb-3"><ReviewTagBadges tags={parsedComment.tags} /></div>}
             <textarea
+              aria-label={t('bookDetail.comment')}
               value={editText}
               onChange={(event) => setEditText(event.target.value)}
               rows={3}
@@ -845,7 +822,7 @@ const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarco
               </button>
               <button
                 onClick={handleSaveEdit}
-                disabled={savingEdit || !editText.trim()}
+                disabled={savingEdit || (!editText.trim() && parsedComment.tags.length === 0)}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {savingEdit ? t('common.loading') : (language === 'en' ? 'Save changes' : 'Lưu chỉnh sửa')}
@@ -857,7 +834,7 @@ const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarco
             <div className="mt-1 mb-2">
               <StarRating rating={rating} size={14} />
             </div>
-            <p className="text-sm text-gray-700 leading-relaxed mb-3 dark:text-slate-100">{text}</p>
+            <ReviewCommentBody text={text ?? ''} />
           </>
         )}
         <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-slate-300">
@@ -873,7 +850,11 @@ const ReviewItem = ({ name, faculty, date, rating, text, likes, liked, itemBarco
             </button>
           )}
           {editableByCurrentUser && !editing && (
-            <button onClick={() => setEditing(true)} className="flex items-center hover:text-blue-600 space-x-1 transition-colors">
+            <button onClick={() => {
+              setEditText(parsedComment.cleanComment);
+              setEditStars(rating);
+              setEditing(true);
+            }} className="flex items-center hover:text-blue-600 space-x-1 transition-colors">
               <PenTool size={14} /> <span>{language === 'en' ? 'Edit review' : 'Chỉnh sửa đánh giá'}</span>
             </button>
           )}
