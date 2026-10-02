@@ -5,6 +5,7 @@ import com.library.catalog.infrastructure.persistence.repository.ItemJpaReposito
 import com.library.circulation.application.policy.CirculationPolicy;
 import com.library.circulation.application.policy.CirculationPolicyService;
 import com.library.circulation.application.transaction.RenewBookUseCase;
+import com.library.circulation.application.transaction.RenewalRules;
 import com.library.circulation.domain.enums.PaymentStatus;
 import com.library.circulation.domain.enums.ReservationStatus;
 import com.library.circulation.domain.enums.TransactionStatus;
@@ -45,24 +46,20 @@ public class RenewBookUseCaseImpl implements RenewBookUseCase {
 
     CirculationPolicy policy = policyService.getPolicy();
     LocalDate today = LocalDate.now(ZONE);
-    if (transaction.getStatus() != TransactionStatus.BORROWING
-        || transaction.getDueDate() == null
-        || today.isAfter(transaction.getDueDate())
-        || transaction.getRenewalCount() >= policy.maxRenewals()
-        || today.isBefore(transaction.getDueDate().minusDays(policy.renewalWindowDays()))) {
-      throw new AppException(ErrorCode.CANNOT_RENEW_TRANSACTION);
-    }
+    ErrorCode failure = RenewalRules.basicFailure(transaction.getStatus(), transaction.getDueDate(),
+        transaction.getRenewalCount(), policy, today);
+    if (failure != null) throw new AppException(failure);
 
     ItemEntity item = itemRepository.findById(transaction.getItemId())
         .orElseThrow(() -> new AppException(ErrorCode.ITEM_NOT_FOUND));
     // PENDING is the persisted equivalent of WAITING_FOR_BOOK in this LMS schema.
     if (reservationRepository.countByPublicationIdAndStatus(
         item.getPublicationId(), ReservationStatus.PENDING) > 0) {
-      throw new AppException(ErrorCode.CANNOT_RENEW_TRANSACTION);
+      throw new AppException(ErrorCode.RENEWAL_HAS_RESERVATIONS);
     }
 
     if (fineRepository.existsByUserIdAndPaymentStatus(transaction.getUserId(), PaymentStatus.UNPAID)) {
-      throw new AppException(ErrorCode.CANNOT_RENEW_TRANSACTION);
+      throw new AppException(ErrorCode.RENEWAL_UNPAID_FINES);
     }
 
     transaction.setDueDate(transaction.getDueDate().plusDays(policy.defaultLoanDays()));

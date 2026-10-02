@@ -111,6 +111,13 @@ public enum ErrorCode {
   RESERVATION_BRANCH_NO_ITEMS(3012, "No items of this publication found in the selected branch", "Không có bản sao nào của ấn phẩm này tại cơ sở đã chọn", HttpStatus.BAD_REQUEST),
   RESERVATION_LIMIT_EXCEEDED(3013, "User has exceeded the maximum reservation limit", "Bạn đã đạt giới hạn số lượt đặt trước tối đa", HttpStatus.CONFLICT),
   RESERVATION_NOT_READY(3014, "Reservation is not in READY_FOR_PICKUP status", "Lượt đặt trước chưa sẵn sàng để nhận sách", HttpStatus.BAD_REQUEST),
+  RENEWAL_OVERDUE(3016, "The book is overdue and cannot be renewed", "Sách đã quá hạn mượn, không thể gia hạn", HttpStatus.CONFLICT),
+  RENEWAL_LIMIT_REACHED(3017, "The maximum number of renewals has been reached", "Đã hết lượt gia hạn theo chính sách hiện hành", HttpStatus.CONFLICT),
+  RENEWAL_NOT_IN_WINDOW(3018, "The renewal window has not opened yet", "Chưa đến thời điểm gia hạn theo chính sách hiện hành", HttpStatus.CONFLICT),
+  RENEWAL_HAS_RESERVATIONS(3019, "The publication has pending reservations", "Ấn phẩm đang có người đặt trước, không thể gia hạn", HttpStatus.CONFLICT),
+  RENEWAL_UNPAID_FINES(3020, "The reader has unpaid fines", "Độc giả còn tiền phạt chưa thanh toán, không thể gia hạn", HttpStatus.CONFLICT),
+  RENEWAL_NOT_BORROWING(3021, "Only actively borrowed books can be renewed", "Chỉ có thể gia hạn sách đang mượn", HttpStatus.CONFLICT),
+  RENEWAL_MISSING_DUE_DATE(3022, "The loan has no due date", "Giao dịch chưa có hạn trả, không thể gia hạn", HttpStatus.CONFLICT),
 
   // Security Error (2600-2699)
   USER_LOCKED(2600, "User account is locked", "Tài khoản của bạn đã bị khóa", HttpStatus.LOCKED),

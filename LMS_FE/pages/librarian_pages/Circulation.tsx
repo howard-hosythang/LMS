@@ -9,6 +9,7 @@ import {
   Hash,
   Info,
   Pencil,
+  RefreshCw,
   RotateCcw,
   Scan,
   TriangleAlert,
@@ -35,6 +36,8 @@ import transactionsService, {
 import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 import CurrencyInput from '../../components/CurrencyInput';
 import FineAdjustmentDialog from '../../components/librarian_pages/FineAdjustmentDialog';
+import { useAppDialog } from '../../contexts/AppDialogContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 type MainTab = 'pickup' | 'direct' | 'return' | 'restoreLost' | 'fines';
 type LookupMode = 'qr' | 'manual';
@@ -370,7 +373,10 @@ const IssueFineGuide = () => (
 type ActiveItem = StudentActiveTransactionsResponse['data']['items'][0];
 type ActionType = 'return' | 'damaged' | 'lost';
 
-const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
+export const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
+  const dialog = useAppDialog();
+  const { language } = useLanguage();
+  const [renewingTransactionId, setRenewingTransactionId] = useState<string | null>(null);
   // MSSV search
   const [mssvInput, setMssvInput] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -388,7 +394,7 @@ const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
   const [issueSuccess, setIssueSuccess] = useState<ReportIssueResponse['data'] | null>(null);
 
   const handleSearch = async () => {
-    if (!mssvInput.trim()) return;
+    if (!mssvInput.trim() || renewingTransactionId || isSearching) return;
     setIsSearching(true);
     setSearchError(null);
     setStudent(null);
@@ -411,6 +417,37 @@ const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
     setActionError(null);
     setReturnSuccess(null);
     setIssueSuccess(null);
+  };
+
+  const renewItem = async (item: ActiveItem) => {
+    if (!student || item.canRenew !== true || renewingTransactionId) return;
+    const studentId = student.studentId;
+    setRenewingTransactionId(item.transactionId);
+    try {
+      const confirmed = await dialog.confirm({
+        title: language === 'en' ? 'Confirm book renewal' : 'Xác nhận gia hạn sách',
+        message: language === 'en'
+          ? `Renew "${item.publicationTitle}" for ${policy.defaultLoanDays} more days from the current due date? Eligibility will be checked again.`
+          : `Gia hạn "${item.publicationTitle}" thêm ${policy.defaultLoanDays} ngày kể từ hạn trả hiện tại? Hệ thống sẽ kiểm tra lại điều kiện gia hạn.`,
+        confirmText: language === 'en' ? 'Renew' : 'Gia hạn',
+        variant: 'warning',
+      });
+      if (!confirmed) return;
+      const response = await transactionsService.renew(item.transactionId);
+      const newDueDate = new Date(response.data.dueDate).toLocaleDateString(language === 'en' ? 'en-US' : 'vi-VN');
+      toast.success(language === 'en' ? `Renewed successfully. New due date: ${newDueDate}` : `Gia hạn thành công. Hạn trả mới: ${newDueDate}`);
+      const refreshed = await transactionsService.getStudentActive(studentId);
+      if (refreshed.code === 200) setStudent(refreshed.data);
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error, language));
+      // Refresh eligibility after a rejection as queues/fines may have changed.
+      try {
+        const refreshed = await transactionsService.getStudentActive(studentId);
+        if (refreshed.code === 200) setStudent(refreshed.data);
+      } catch { /* Keep the current list if the network is unavailable. */ }
+    } finally {
+      setRenewingTransactionId(null);
+    }
   };
 
   const closeAction = () => { setSelectedItem(null); setAction(null); setActionError(null); };
@@ -472,7 +509,7 @@ const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
               placeholder="Nhập MSSV rồi nhấn Enter..."
               className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
           </div>
-          <button onClick={handleSearch} disabled={isSearching || !mssvInput.trim()}
+          <button onClick={handleSearch} disabled={isSearching || !!renewingTransactionId || !mssvInput.trim()}
             className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50 transition-colors">
             {isSearching ? 'Đang tra...' : 'Tìm kiếm'}
           </button>
@@ -516,7 +553,7 @@ const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
                 return (
                   <div key={item.transactionId}
                     className={`border rounded-xl p-4 ${isOverdue ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900 truncate">{item.publicationTitle}</p>
                         <p className="text-xs font-mono text-slate-500">{item.barcode} · {item.branch}</p>
@@ -535,8 +572,23 @@ const ReturnTab = ({ policy }: { policy: CirculationPolicy }) => {
                             </span>
                           )}
                         </div>
+                        <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">
+                          {language === 'en' ? 'Renewals' : 'Gia hạn'}: {item.renewalCount}/{item.maxRenewals}
+                        </p>
+                        {item.canRenew === false && item.cannotRenewReason && (
+                          <span id={`renew-reason-${item.transactionId}`} className="mt-1 inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                            {item.cannotRenewReason}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex gap-1.5 flex-shrink-0">
+                      <div className="flex flex-wrap gap-1.5 flex-shrink-0">
+                        <button type="button" onClick={() => void renewItem(item)}
+                          disabled={item.canRenew !== true || !!renewingTransactionId || isSubmitting}
+                          aria-describedby={item.canRenew === false && item.cannotRenewReason ? `renew-reason-${item.transactionId}` : undefined}
+                          className="flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400">
+                          <RefreshCw size={13} aria-hidden="true" className={renewingTransactionId === item.transactionId ? 'animate-spin motion-reduce:animate-none' : ''} />
+                          {language === 'en' ? 'Renew' : 'Gia hạn'}
+                        </button>
                         <button onClick={() => openAction(item, 'return')}
                           className="flex items-center gap-1 bg-purple-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-purple-700 font-medium transition-colors">
                           <RotateCcw size={13} /> Trả

@@ -28,5 +28,9 @@ public class StudentActiveTransactionsResponse {
         private Instant borrowedDate;
         private LocalDate dueDate;
         private TransactionStatus status;
+        private Integer renewalCount;
+        private Integer maxRenewals;
+        private Boolean canRenew;
+        private String cannotRenewReason;
     }
 }

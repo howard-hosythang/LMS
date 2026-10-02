@@ -137,6 +137,10 @@ export interface StudentActiveTransactionsResponse {
       borrowedDate: string;
       dueDate: string;
       status: 'BORROWING' | 'OVERDUE';
+      renewalCount: number;
+      maxRenewals: number;
+      canRenew: boolean;
+      cannotRenewReason: string | null;
       depositAmount: number | null;
       depositStatus: string | null;
     }[];

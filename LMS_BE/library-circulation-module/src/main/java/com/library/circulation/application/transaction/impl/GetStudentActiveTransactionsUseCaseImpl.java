@@ -1,12 +1,20 @@
 package com.library.circulation.application.transaction.impl;
 
 import com.library.circulation.application.transaction.GetStudentActiveTransactionsUseCase;
+import com.library.circulation.application.transaction.RenewalRules;
+import com.library.circulation.application.policy.CirculationPolicyService;
+import com.library.circulation.domain.enums.PaymentStatus;
+import com.library.circulation.domain.enums.ReservationStatus;
+import com.library.circulation.infrastructure.persistence.repository.FineJpaRepository;
+import com.library.circulation.infrastructure.persistence.repository.ReservationJpaRepository;
 import com.library.circulation.domain.enums.TransactionStatus;
 import com.library.circulation.dto.response.StudentActiveTransactionsResponse;
 import com.library.circulation.dto.response.StudentActiveTransactionsResponse.ActiveItem;
 import com.library.shared.exception.AppException;
 import com.library.shared.exception.ErrorCode;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +35,8 @@ public class GetStudentActiveTransactionsUseCaseImpl implements GetStudentActive
         SELECT t.id AS transaction_id,
                p.title AS publication_title,
                i.barcode, i.branch, i.location,
-               t.borrowed_date, t.due_date, t.status
+               t.borrowed_date, t.due_date, t.status, t.renewal_count,
+               p.id AS publication_id
         FROM borrowing_transactions t
         JOIN items i        ON i.id = t.item_id
         JOIN publications p ON p.id = i.publication_id
@@ -37,6 +46,9 @@ public class GetStudentActiveTransactionsUseCaseImpl implements GetStudentActive
         """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final CirculationPolicyService policyService;
+    private final ReservationJpaRepository reservationRepository;
+    private final FineJpaRepository fineRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -51,7 +63,25 @@ public class GetStudentActiveTransactionsUseCaseImpl implements GetStudentActive
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
             FIND_ACTIVE_SQL, Map.of("userId", userId));
 
-        List<ActiveItem> items = rows.stream().map(row -> ActiveItem.builder()
+        var policy = policyService.getPolicy();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        boolean hasUnpaidFines = !rows.isEmpty()
+            && fineRepository.existsByUserIdAndPaymentStatus(userId, PaymentStatus.UNPAID);
+        Map<Long, Boolean> reservationCache = new HashMap<>();
+        List<ActiveItem> items = rows.stream().map(row -> {
+            LocalDate dueDate = row.get("due_date") != null
+                ? ((java.sql.Date) row.get("due_date")).toLocalDate() : null;
+            TransactionStatus status = TransactionStatus.valueOf((String) row.get("status"));
+            int renewalCount = row.get("renewal_count") == null ? 0 : ((Number) row.get("renewal_count")).intValue();
+            ErrorCode failure = RenewalRules.basicFailure(status, dueDate, renewalCount, policy, today);
+            if (failure == null) {
+                Long publicationId = ((Number) row.get("publication_id")).longValue();
+                boolean reserved = reservationCache.computeIfAbsent(publicationId, id ->
+                    reservationRepository.countByPublicationIdAndStatus(id, ReservationStatus.PENDING) > 0);
+                if (reserved) failure = ErrorCode.RENEWAL_HAS_RESERVATIONS;
+                else if (hasUnpaidFines) failure = ErrorCode.RENEWAL_UNPAID_FINES;
+            }
+            return ActiveItem.builder()
             .transactionId(((Number) row.get("transaction_id")).longValue())
             .publicationTitle((String) row.get("publication_title"))
             .barcode((String) row.get("barcode"))
@@ -59,11 +89,14 @@ public class GetStudentActiveTransactionsUseCaseImpl implements GetStudentActive
             .location((String) row.get("location"))
             .borrowedDate(row.get("borrowed_date") != null
                 ? ((java.sql.Timestamp) row.get("borrowed_date")).toInstant() : null)
-            .dueDate(row.get("due_date") != null
-                ? ((java.sql.Date) row.get("due_date")).toLocalDate() : null)
-            .status(TransactionStatus.valueOf((String) row.get("status")))
-            .build()
-        ).toList();
+            .dueDate(dueDate)
+            .status(status)
+            .renewalCount(renewalCount)
+            .maxRenewals(policy.maxRenewals())
+            .canRenew(failure == null)
+            .cannotRenewReason(RenewalRules.describe(failure, renewalCount, policy))
+            .build();
+        }).toList();
 
         return StudentActiveTransactionsResponse.builder()
             .studentId(studentId)

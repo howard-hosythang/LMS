@@ -84,7 +84,7 @@ class RenewBookUseCaseTest {
     when(itemRepository.findById(ITEM_ID)).thenReturn(Optional.of(item()));
     when(reservationRepository.countByPublicationIdAndStatus(PUBLICATION_ID, ReservationStatus.PENDING)).thenReturn(1L);
 
-    assertCannotRenew();
+    assertCannotRenew(ErrorCode.RENEWAL_HAS_RESERVATIONS);
     verify(transactionRepository, never()).save(any());
   }
 
@@ -94,7 +94,7 @@ class RenewBookUseCaseTest {
     when(transactionRepository.findById(TRANSACTION_ID)).thenReturn(Optional.of(
         borrowingTransaction(LocalDate.now(ZONE).plusDays(1), 1)));
 
-    assertCannotRenew();
+    assertCannotRenew(ErrorCode.RENEWAL_LIMIT_REACHED);
     verify(itemRepository, never()).findById(any());
   }
 
@@ -104,7 +104,7 @@ class RenewBookUseCaseTest {
     when(transactionRepository.findById(TRANSACTION_ID)).thenReturn(Optional.of(
         borrowingTransaction(LocalDate.now(ZONE).plusDays(3), 0)));
 
-    assertCannotRenew();
+    assertCannotRenew(ErrorCode.RENEWAL_NOT_IN_WINDOW);
     verify(itemRepository, never()).findById(any());
   }
 
@@ -114,15 +114,47 @@ class RenewBookUseCaseTest {
     when(transactionRepository.findById(TRANSACTION_ID)).thenReturn(Optional.of(
         borrowingTransaction(LocalDate.now(ZONE).minusDays(1), 0)));
 
-    assertCannotRenew();
+    assertCannotRenew(ErrorCode.RENEWAL_OVERDUE);
     verify(itemRepository, never()).findById(any());
   }
 
-  private void assertCannotRenew() {
+  @Test
+  void rejectsUnpaidFines() {
+    when(transactionRepository.findById(TRANSACTION_ID)).thenReturn(Optional.of(
+        borrowingTransaction(LocalDate.now(ZONE), 0)));
+    when(itemRepository.findById(ITEM_ID)).thenReturn(Optional.of(item()));
+    when(fineRepository.existsByUserIdAndPaymentStatus(USER_ID, PaymentStatus.UNPAID)).thenReturn(true);
+    assertCannotRenew(ErrorCode.RENEWAL_UNPAID_FINES);
+    verify(transactionRepository, never()).save(any());
+  }
+
+  @Test
+  void rejectsOverdueStatusEvenIfDueDateIsInTheFuture() {
+    var transaction = borrowingTransaction(LocalDate.now(ZONE).plusDays(1), 0);
+    transaction.setStatus(TransactionStatus.OVERDUE);
+    when(transactionRepository.findById(TRANSACTION_ID)).thenReturn(Optional.of(transaction));
+    assertCannotRenew(ErrorCode.RENEWAL_OVERDUE);
+  }
+
+  @Test
+  void rejectsMissingDueDate() {
+    when(transactionRepository.findById(TRANSACTION_ID)).thenReturn(Optional.of(borrowingTransaction(null, 0)));
+    assertCannotRenew(ErrorCode.RENEWAL_MISSING_DUE_DATE);
+  }
+
+  @Test
+  void rejectsReturnedBook() {
+    var transaction = borrowingTransaction(LocalDate.now(ZONE).plusDays(1), 0);
+    transaction.setStatus(TransactionStatus.RETURNED);
+    when(transactionRepository.findById(TRANSACTION_ID)).thenReturn(Optional.of(transaction));
+    assertCannotRenew(ErrorCode.RENEWAL_NOT_BORROWING);
+  }
+
+  private void assertCannotRenew(ErrorCode expected) {
     assertThatThrownBy(() -> useCase.execute(TRANSACTION_ID, USER_ID, false))
         .isInstanceOf(AppException.class)
         .satisfies(exception -> assertThat(((AppException) exception).getErrorCode())
-            .isEqualTo(ErrorCode.CANNOT_RENEW_TRANSACTION));
+            .isEqualTo(expected));
   }
 
   private BorrowingTransactionEntity borrowingTransaction(LocalDate dueDate, int renewalCount) {
