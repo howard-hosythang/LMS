@@ -91,7 +91,7 @@ public interface BorrowingTransactionJpaRepository extends
               t.pickedUpDeadline, t.borrowedDate, t.dueDate, t.returnedDate, t.status, COALESCE(SUM(f.fineAmount), 0),
               t.depositGrossFineAmount, t.depositAmount, t.depositStatus, t.depositAppliedAmount,
               t.depositRefundAmount, t.depositAdditionalAmountDue,
-              CASE WHEN r.id IS NOT NULL THEN true ELSE false END
+              CASE WHEN r.id IS NOT NULL THEN true ELSE false END, t.renewalCount
           )
           FROM BorrowingTransactionEntity t
           JOIN ItemEntity i ON t.itemId = i.id

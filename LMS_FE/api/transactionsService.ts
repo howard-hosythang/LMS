@@ -20,6 +20,8 @@ export interface BorrowResponse {
     status: string;
     depositAmount: number;
     depositStatus: string;
+    renewalCount: number;
+    maxRenewals: number;
   };
 }
 
@@ -65,6 +67,10 @@ export interface UserTransaction {
   depositRefundAmount: number | null;
   additionalAmountDue: number | null;
   reviewed?: boolean;
+  renewalCount: number;
+  maxRenewals: number;
+  canRenew: boolean;
+  cannotRenewReason: 'HAS_RESERVATIONS' | 'NOT_IN_WINDOW' | 'RENEWAL_LIMIT_REACHED' | 'OVERDUE' | 'UNPAID_FINES' | 'NOT_BORROWING' | null;
 }
 
 export interface MyTransactionsResponse {
@@ -308,6 +314,10 @@ const transactionsService = {
   },
   confirmPickup: async (transactionId: string): Promise<ConfirmPickupResponse> => {
     const response = await axiosInstance.post(`/transactions/${transactionId}/confirm-pickup`);
+    return response as any;
+  },
+  renew: async (transactionId: string | number): Promise<BorrowResponse> => {
+    const response = await axiosInstance.post(`/transactions/${transactionId}/renew`);
     return response as any;
   },
   getMyTransactions: async (page: number = 0, size: number = 10): Promise<MyTransactionsResponse> => {

@@ -13,6 +13,7 @@ import com.library.circulation.application.transaction.LookupLostBookRecoveryPre
 import com.library.circulation.application.transaction.ReportIssueUseCase;
 import com.library.circulation.application.transaction.RestoreLostBookUseCase;
 import com.library.circulation.application.transaction.ReturnBookUseCase;
+import com.library.circulation.application.transaction.RenewBookUseCase;
 import com.library.circulation.dto.request.BorrowRequestCommand;
 import com.library.circulation.dto.request.DirectBorrowCommand;
 import com.library.circulation.dto.request.ReportIssueCommand;
@@ -66,6 +67,7 @@ public class BorrowingTransactionController {
   private final ReturnBookUseCase returnBookUseCase;
   private final ReportIssueUseCase reportIssueUseCase;
   private final RestoreLostBookUseCase restoreLostBookUseCase;
+  private final RenewBookUseCase renewBookUseCase;
   private final com.library.shared.util.SecurityEvaluator security;
 
   @RequiresRole(RoleConstants.LIBRARIAN)
@@ -105,6 +107,17 @@ public class BorrowingTransactionController {
       @RequestParam(value = "size", defaultValue = "10") int size) {
     Long userId = security.getCurrentUserId();
     return ApiResponseApp.success(getMyTransactionsUseCase.execute(userId, page, size));
+  }
+
+  @PostMapping("/{id}/renew")
+  @RequiresAuthentication
+  @Operation(summary = "Renew a borrowing transaction")
+  public ApiResponseApp<BorrowTransactionResponse> renewTransaction(
+      @PathVariable("id") Long transactionId) {
+    Long currentUserId = security.getCurrentUserId();
+    boolean isLibrarian = security.hasRole(RoleConstants.LIBRARIAN);
+    return ApiResponseApp.success("Gia hạn sách thành công",
+        renewBookUseCase.execute(transactionId, currentUserId, isLibrarian));
   }
 
   @PostMapping("/borrow")

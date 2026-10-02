@@ -1,17 +1,7 @@
 import axiosInstance from './axiosInstance';
+import type { CirculationPolicy } from '../types';
 
-export interface CirculationPolicy {
-  pickupDeadlineHours: number;
-  defaultLoanDays: number;
-  maxActiveBorrows: number;
-  maxActiveReservations: number;
-  overdueFinePerDay: number;
-  defaultDepositAmount: number;
-  blockBorrowWhenUnpaidFines: boolean;
-  updatedByAdminId: string | null;
-  updatedByAdminName: string | null;
-  updatedAt: string | null;
-}
+export type { CirculationPolicy } from '../types';
 
 export interface LibrarianAccount {
   id: string;

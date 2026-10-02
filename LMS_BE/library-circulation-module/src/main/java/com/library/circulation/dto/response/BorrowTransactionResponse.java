@@ -27,4 +27,6 @@ public class BorrowTransactionResponse {
     private TransactionStatus status;
     private BigDecimal depositAmount;
     private String depositStatus;
+    private Integer renewalCount;
+    private Integer maxRenewals;
 }

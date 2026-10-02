@@ -11,6 +11,7 @@ import {
   MapPin,
   PenLine,
   Printer,
+  RefreshCw,
   Search,
   XCircle,
 } from 'lucide-react';
@@ -20,7 +21,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 import { Button } from '../../components/ui';
 import transactionsService, { UserTransaction } from '../../api/transactionsService';
+import circulationPolicyService from '../../api/circulationPolicyService';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { toast } from 'sonner';
 
 type BookShelfTab = 'all' | 'waiting' | 'borrowing' | 'returned' | 'cancelled';
 type SortOrder = 'newest' | 'oldest';
@@ -53,6 +56,12 @@ const daysUntil = (dueDate: string) => {
   return diff;
 };
 
+const addDays = (date: string, days: number) => {
+  const result = new Date(`${date}T00:00:00`);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
 const canReviewTransaction = (tx: UserTransaction) => {
   if (tx.status !== 'RETURNED' || tx.reviewed || !tx.returnedDate) return false;
   const returnedAt = new Date(tx.returnedDate).getTime();
@@ -83,6 +92,10 @@ const MyBooksPage = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [qrModal, setQrModal] = useState<UserTransaction | null>(null);
   const [detailModal, setDetailModal] = useState<UserTransaction | null>(null);
+  const [renewModal, setRenewModal] = useState<UserTransaction | null>(null);
+  const [isRenewing, setIsRenewing] = useState(false);
+  const [defaultLoanDays, setDefaultLoanDays] = useState(14);
+  const [renewalWindowDays, setRenewalWindowDays] = useState(2);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [listPage, setListPage] = useState(0);
@@ -93,25 +106,68 @@ const MyBooksPage = () => {
     navigate(`/publicpage/book/${tx.publicationId}?review=1&transaction=${tx.transactionId}`);
   };
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      setIsLoading(true);
-      try {
-        const firstPage = await transactionsService.getMyTransactions(0, 1);
-        const total = firstPage.code === 200 ? firstPage.data.totalElements : 0;
-        const res = await transactionsService.getMyTransactions(0, Math.max(total, 1));
-        if (res.code === 200) {
-          setTransactions(res.data.content);
-          setTotalElements(res.data.totalElements);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
+  const fetchTransactions = async () => {
+    setIsLoading(true);
+    try {
+      const firstPage = await transactionsService.getMyTransactions(0, 1);
+      const total = firstPage.code === 200 ? firstPage.data.totalElements : 0;
+      const res = await transactionsService.getMyTransactions(0, Math.max(total, 1));
+      if (res.code === 200) {
+        setTransactions(res.data.content);
+        setTotalElements(res.data.totalElements);
       }
-    };
-    fetchAll();
+    } catch (e) {
+      console.error(e);
+      toast.error(t('myBooks.loadError', 'Không thể tải danh sách sách đang mượn'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchTransactions();
+    circulationPolicyService.getPolicy()
+      .then((response) => {
+        setDefaultLoanDays(response.data.defaultLoanDays ?? 14);
+        setRenewalWindowDays(response.data.renewalWindowDays ?? 2);
+      })
+      .catch(() => {
+        setDefaultLoanDays(14);
+        setRenewalWindowDays(2);
+      });
   }, []);
+
+  const confirmRenewal = async () => {
+    if (!renewModal) return;
+    setIsRenewing(true);
+    try {
+      const response = await transactionsService.renew(renewModal.transactionId);
+      toast.success(response.message || t('myBooks.renewSuccess', 'Gia hạn sách thành công'));
+      setRenewModal(null);
+      await fetchTransactions();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || t('myBooks.renewError', 'Không thể gia hạn sách. Vui lòng thử lại.'));
+    } finally {
+      setIsRenewing(false);
+    }
+  };
+
+  const renewalReason = (tx: UserTransaction) => {
+    switch (tx.cannotRenewReason) {
+      case 'HAS_RESERVATIONS':
+        return <span className="text-xs font-medium text-rose-500">{t('myBooks.renewBlockedReservation', 'Sách có người đặt trước, không thể gia hạn')}</span>;
+      case 'NOT_IN_WINDOW':
+        return <span className="text-xs text-amber-600">{t('myBooks.renewWindowHint', `Chỉ mở gia hạn trước hạn ${renewalWindowDays} ngày`)}</span>;
+      case 'RENEWAL_LIMIT_REACHED':
+        return <span className="text-xs text-slate-400">{t('myBooks.renewalLimitReached', `Đã hết lượt gia hạn (${tx.renewalCount}/${tx.maxRenewals})`)}</span>;
+      case 'UNPAID_FINES':
+        return <span className="text-xs font-medium text-rose-500">{t('myBooks.renewBlockedFine', 'Cần thanh toán phí phạt trước khi gia hạn')}</span>;
+      case 'OVERDUE':
+        return <span className="text-xs font-medium text-rose-500">{t('myBooks.renewBlockedOverdue', 'Sách đã quá hạn, vui lòng trả sách tại quầy')}</span>;
+      default:
+        return null;
+    }
+  };
 
   // Auto-switch tab and scroll to highlighted transaction
   useEffect(() => {
@@ -315,6 +371,7 @@ const MyBooksPage = () => {
             const cfg = statusConfig[tx.status];
             const days = tx.status === 'BORROWING' ? daysUntil(tx.dueDate) : null;
             const canReview = canReviewTransaction(tx);
+            const isRenewableTransaction = tx.status === 'BORROWING';
 
             return (
               <div
@@ -394,18 +451,43 @@ const MyBooksPage = () => {
                     </>
                   )}
                 </div>
-                {canReview && (
-                  <button
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      goToReview(tx);
-                    }}
-                    className="inline-flex h-10 flex-shrink-0 items-center rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
-                  >
-                    <PenLine size={16} className="mr-2" />
-                    {t('myBooks.reviewAction', 'Đánh giá')}
-                  </button>
-                )}
+                <div className="flex w-full flex-col items-stretch gap-2 md:w-auto md:min-w-[190px]">
+                  {isRenewableTransaction && (
+                    <div className="flex flex-col items-stretch gap-1.5">
+                      <span className="text-center text-xs font-semibold text-slate-500">
+                        {t('myBooks.renewalUsage', `Lượt gia hạn: ${tx.renewalCount}/${tx.maxRenewals}`)}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!tx.canRenew}
+                        aria-disabled={!tx.canRenew}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (tx.canRenew) setRenewModal(tx);
+                        }}
+                        className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none"
+                      >
+                        <RefreshCw size={16} className="mr-2" aria-hidden="true" />
+                        {t('myBooks.renewAction', 'Gia hạn sách')}
+                      </button>
+                      {!tx.canRenew && (
+                        <div className="min-h-4 text-center leading-tight">{renewalReason(tx)}</div>
+                      )}
+                    </div>
+                  )}
+                  {canReview && (
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goToReview(tx);
+                      }}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                    >
+                      <PenLine size={16} className="mr-2" aria-hidden="true" />
+                      {t('myBooks.reviewAction', 'Đánh giá')}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -452,6 +534,46 @@ const MyBooksPage = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {renewModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm" role="presentation">
+          <div role="dialog" aria-modal="true" aria-labelledby="renew-book-title" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <RefreshCw size={21} aria-hidden="true" />
+              </div>
+              <div>
+                <h2 id="renew-book-title" className="text-lg font-bold text-slate-900">{t('myBooks.renewConfirmTitle', 'Xác nhận gia hạn sách')}</h2>
+                <p className="mt-1 text-sm text-slate-600">{t('myBooks.renewConfirmIntro', 'Bạn có muốn gia hạn cuốn sách này?')}</p>
+              </div>
+            </div>
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="font-semibold text-slate-900">{renewModal.publicationTitle}</p>
+              <dl className="mt-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-slate-500">{t('myBooks.currentDueDate', 'Hạn trả hiện tại')}</dt>
+                  <dd className="font-semibold text-slate-800">{formatDate(renewModal.dueDate)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-slate-500">{t('myBooks.newDueDate', 'Hạn trả mới dự kiến')}</dt>
+                  <dd className="font-semibold text-indigo-700">{formatDate(addDays(renewModal.dueDate, defaultLoanDays).toISOString())}</dd>
+                </div>
+              </dl>
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-amber-700">{t('myBooks.renewReservationNotice', 'Không thể gia hạn nếu sách đã có độc giả khác đặt trước.')}</p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" disabled={isRenewing} onClick={() => setRenewModal(null)} className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60">
+                {t('common.cancel', 'Hủy')}
+              </button>
+              <button type="button" disabled={isRenewing} onClick={() => void confirmRenewal()} className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
+                <RefreshCw size={16} className={`mr-2 ${isRenewing ? 'animate-spin' : ''}`} aria-hidden="true" />
+                {isRenewing ? t('myBooks.renewing', 'Đang gia hạn...') : t('myBooks.renewConfirmAction', 'Xác nhận gia hạn')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Detail Modal — tất cả trạng thái trừ WAITING_FOR_PICKUP */}

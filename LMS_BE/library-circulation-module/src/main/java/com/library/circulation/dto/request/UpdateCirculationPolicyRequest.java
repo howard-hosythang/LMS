@@ -19,6 +19,12 @@ public record UpdateCirculationPolicyRequest(
     @NotNull @Min(0) @Max(50)
     Integer maxActiveReservations,
 
+    @NotNull @Min(0) @Max(20)
+    Integer maxRenewals,
+
+    @NotNull @Min(1) @Max(30)
+    Integer renewalWindowDays,
+
     @NotNull @DecimalMin("0")
     BigDecimal overdueFinePerDay,
 

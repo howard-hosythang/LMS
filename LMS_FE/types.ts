@@ -55,6 +55,21 @@ export interface LibraryItem {
   returnDate?: string;
 }
 
+export interface CirculationPolicy {
+  pickupDeadlineHours: number;
+  defaultLoanDays: number;
+  maxActiveBorrows: number;
+  maxActiveReservations: number;
+  maxRenewals: number;
+  renewalWindowDays: number;
+  overdueFinePerDay: number;
+  defaultDepositAmount: number;
+  blockBorrowWhenUnpaidFines: boolean;
+  updatedByAdminId: string | null;
+  updatedByAdminName: string | null;
+  updatedAt: string | null;
+}
+
 // --- New Types for Protected Pages ---
 
 export interface UserProfile {

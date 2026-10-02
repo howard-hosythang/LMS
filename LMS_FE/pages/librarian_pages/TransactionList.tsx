@@ -25,7 +25,9 @@ import transactionsService, {
   TransactionStatus,
 } from '../../api/transactionsService';
 import ReaderProfileDrawer, { ReaderRef } from '../../components/librarian_pages/ReaderProfileDrawer';
+import { useAppDialog } from '../../contexts/AppDialogContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { toast } from 'sonner';
 
 const copyText = {
   vi: {
@@ -98,6 +100,11 @@ const copyText = {
     overdueReturn: 'Quá hạn',
     damagedBook: 'Hỏng sách',
     lostBook: 'Mất sách',
+    renew: 'Gia hạn',
+    renewConfirmTitle: 'Xác nhận gia hạn sách',
+    renewConfirmMessage: 'Hạn trả sẽ được cộng thêm theo chính sách hiện hành. Hệ thống sẽ tự kiểm tra hàng đợi đặt trước và phí phạt.',
+    renewSuccess: 'Đã gia hạn giao dịch thành công',
+    renewFailed: 'Không thể gia hạn giao dịch này',
   },
   en: {
     saveNoteFailed: 'Unable to save note. Please try again.',
@@ -169,6 +176,11 @@ const copyText = {
     overdueReturn: 'Overdue',
     damagedBook: 'Damaged book',
     lostBook: 'Lost book',
+    renew: 'Renew',
+    renewConfirmTitle: 'Confirm book renewal',
+    renewConfirmMessage: 'The due date will be extended using the current policy. The system will verify reservation queues and unpaid fines.',
+    renewSuccess: 'Transaction renewed successfully',
+    renewFailed: 'This transaction cannot be renewed',
   },
 };
 
@@ -289,6 +301,7 @@ const settlementStatus = (
 const TransactionList = () => {
   const { language } = useLanguage();
   const c = copyText[language];
+  const dialog = useAppDialog();
   const [searchParams] = useSearchParams();
   const [summary, setSummary] = useState<DashboardSummaryResponse['data'] | null>(null);
   const [transactions, setTransactions] = useState<LibrarianTransaction[]>([]);
@@ -312,6 +325,7 @@ const TransactionList = () => {
   const [noteError, setNoteError] = useState('');
   const [noteThreads, setNoteThreads] = useState<Record<string, TransactionNote[]>>({});
   const [selectedReader, setSelectedReader] = useState<ReaderRef | null>(null);
+  const [renewingTransactionId, setRenewingTransactionId] = useState<string | null>(null);
   const highlightedTransactionId = searchParams.get('highlight');
 
   const fetchSummary = async () => {
@@ -496,6 +510,26 @@ const TransactionList = () => {
       setNoteError(c.deleteNoteFailedMigration);
     } finally {
       setSavingNoteId(null);
+    }
+  };
+
+  const renewTransaction = async (tx: LibrarianTransaction) => {
+    const confirmed = await dialog.confirm({
+      title: c.renewConfirmTitle,
+      message: c.renewConfirmMessage,
+      confirmText: c.renew,
+      variant: 'warning',
+    });
+    if (!confirmed) return;
+    setRenewingTransactionId(tx.transactionId);
+    try {
+      const response = await transactionsService.renew(tx.transactionId);
+      toast.success(response.message || c.renewSuccess);
+      await fetchData();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || c.renewFailed);
+    } finally {
+      setRenewingTransactionId(null);
     }
   };
 
@@ -843,9 +877,22 @@ const TransactionList = () => {
                         </div>
                       </td>
                       <td className="px-3 py-4 align-top">
-                        <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full border text-xs font-semibold ${statusCfg.className}`}>
-                          {statusCfg.label[language]}
-                        </span>
+                        <div className="flex flex-col items-start gap-2">
+                          <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full border text-xs font-semibold ${statusCfg.className}`}>
+                            {statusCfg.label[language]}
+                          </span>
+                          {tx.status === 'BORROWING' && (
+                            <button
+                              type="button"
+                              onClick={() => void renewTransaction(tx)}
+                              disabled={renewingTransactionId === tx.transactionId}
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <RefreshCcw size={14} aria-hidden="true" className={renewingTransactionId === tx.transactionId ? 'animate-spin' : ''} />
+                              {c.renew}
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-4 align-top">
                         <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full border text-xs font-semibold ${paymentStatusCfg.className}`}>

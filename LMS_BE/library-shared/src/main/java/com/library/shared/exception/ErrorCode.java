@@ -98,7 +98,7 @@ public enum ErrorCode {
   TRANSACTION_NOT_FOUND(3000, "Borrowing transaction not found", "Không tìm thấy giao dịch mượn sách", HttpStatus.NOT_FOUND),
   TRANSACTION_NOT_RETURNABLE(3001, "Transaction cannot be returned in its current status", "Giao dịch hiện không thể được trả sách", HttpStatus.CONFLICT),
   USER_BORROW_LIMIT_EXCEEDED(3002, "User has exceeded the maximum borrow limit", "Bạn đã đạt giới hạn số sách mượn tối đa", HttpStatus.CONFLICT),
-  CANNOT_RENEW_TRANSACTION(3003, "Cannot renew transaction - renewal limit reached or transaction is overdue", "Không thể gia hạn: đã hết lượt hoặc sách đang quá hạn", HttpStatus.CONFLICT),
+  CANNOT_RENEW_TRANSACTION(3003, "Cannot renew transaction - conditions are not met", "Không thể gia hạn: sách đã quá hạn, chưa đến thời điểm gia hạn, đã hết lượt, còn phí chưa thanh toán hoặc đã có độc giả đặt trước", HttpStatus.CONFLICT),
   RESERVATION_NOT_FOUND(3004, "Reservation not found", "Không tìm thấy lượt đặt trước", HttpStatus.NOT_FOUND),
   RESERVATION_ALREADY_EXISTS(3005, "User already has a pending reservation for this publication", "Bạn đã có lượt đặt trước đang chờ cho ấn phẩm này", HttpStatus.CONFLICT),
   FINE_NOT_FOUND(3006, "Fine not found", "Không tìm thấy khoản phí phạt", HttpStatus.NOT_FOUND),

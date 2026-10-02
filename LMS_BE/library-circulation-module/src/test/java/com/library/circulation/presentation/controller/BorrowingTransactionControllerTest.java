@@ -22,6 +22,7 @@ import com.library.circulation.application.transaction.LookupActiveTransactionUs
 import com.library.circulation.application.transaction.LookupForPickupUseCase;
 import com.library.circulation.application.transaction.ReportIssueUseCase;
 import com.library.circulation.application.transaction.ReturnBookUseCase;
+import com.library.circulation.application.transaction.RenewBookUseCase;
 import com.library.circulation.domain.enums.TransactionStatus;
 import com.library.circulation.dto.request.BorrowRequestCommand;
 import com.library.circulation.dto.request.ReportIssueCommand;
@@ -65,6 +66,7 @@ class BorrowingTransactionControllerTest {
     @Mock private LookupActiveTransactionUseCase lookupActiveTransactionUseCase;
     @Mock private ReturnBookUseCase returnBookUseCase;
     @Mock private ReportIssueUseCase reportIssueUseCase;
+    @Mock private RenewBookUseCase renewBookUseCase;
     @Mock private SecurityEvaluator security;
 
     @InjectMocks private BorrowingTransactionController controller;
@@ -116,6 +118,28 @@ class BorrowingTransactionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /transactions/{id}/renew forwards current actor and librarian permission")
+    void renewTransaction_shouldUseCurrentActorAndLibrarianPermission() throws Exception {
+        when(security.getCurrentUserId()).thenReturn(LIBRARIAN_ID);
+        when(security.hasRole(com.library.shared.constant.RoleConstants.LIBRARIAN)).thenReturn(true);
+        when(renewBookUseCase.execute(99L, LIBRARIAN_ID, true))
+            .thenReturn(BorrowTransactionResponse.builder()
+                .transactionId(99L)
+                .dueDate(LocalDate.of(2026, 6, 2))
+                .status(TransactionStatus.BORROWING)
+                .renewalCount(1)
+                .maxRenewals(1)
+                .build());
+
+        mockMvc.perform(post("/api/v1/transactions/{id}/renew", 99L))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Gia hạn sách thành công"))
+            .andExpect(jsonPath("$.data.renewalCount").value(1));
+
+        verify(renewBookUseCase).execute(99L, LIBRARIAN_ID, true);
     }
 
     @Test

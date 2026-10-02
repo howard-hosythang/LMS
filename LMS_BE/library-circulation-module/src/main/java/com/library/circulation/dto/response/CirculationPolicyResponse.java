@@ -12,6 +12,8 @@ public record CirculationPolicyResponse(
     Integer defaultLoanDays,
     Integer maxActiveBorrows,
     Integer maxActiveReservations,
+    Integer maxRenewals,
+    Integer renewalWindowDays,
     BigDecimal overdueFinePerDay,
     BigDecimal defaultDepositAmount,
     Boolean blockBorrowWhenUnpaidFines,
