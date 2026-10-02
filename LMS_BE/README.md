@@ -10,7 +10,7 @@ Backend cho hệ thống quản lý thư viện thông minh, xây dựng bằng 
 - Luồng mượn, trả, đặt trước, xác nhận nhận sách, báo sự cố, ghi chú giao dịch và phí phạt.
 - Tích hợp AI Gateway cho semantic search, recommendation và xử lý metadata PDF.
 - Tích hợp PayOS cho thanh toán phí phạt.
-- OpenAPI/Swagger UI phục vụ kiểm thử và báo cáo API.
+- OpenAPI/Swagger UI phục vụ kiểm thử và báo cáo API....
 
 ## Công nghệ
 

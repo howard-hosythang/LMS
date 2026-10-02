@@ -401,8 +401,8 @@
 ### Câu 37: Kỹ thuật phân mảnh văn bản (Sliding Window Chunking) được cấu hình như thế nào và vì sao phải có Overlap?
 - **Ý đồ giám khảo:** Đánh giá hiểu biết sâu sắc về kỹ thuật tiền xử lý văn bản cho các tác vụ NLP/RAG.
 - **Trả lời:**  
-  - *Cấu hình tham số:* Hệ thống chia văn bản theo kích thước `chunk_size = 500` từ (hoặc ~800 tokens) và độ gối đầu `chunk_overlap = 100` từ.
-  - *Ý nghĩa của Overlap:* Nếu cắt văn bản theo ranh giới cứng (Fixed-size without overlap), một câu hoặc một luận điểm khoa học có thể bị cắt làm đôi ở giữa hai chunk liền kề. Điều này làm mất ngữ nghĩa của cả hai nửa câu, khiến mô hình embedding không thể nắm bắt được trọn vẹn thông điệp của tác giả. Khoảng gối đầu 100 từ đảm bảo mọi khái niệm hoặc mối liên kết ngữ nghĩa nằm ở biên phân đoạn đều xuất hiện trọn vẹn trong ít nhất một chunk.
+  - *Cấu hình tham số:* Trong mã nguồn (`config.py`), hệ thống cấu hình `chunk_size = 1500` ký tự (tương đương khoảng 300 từ / ~450–500 tokens) và độ gối đầu `chunk_overlap = 150` ký tự (tỷ lệ gối đầu chuẩn 10%).
+  - *Ý nghĩa của Overlap:* Nếu cắt văn bản theo ranh giới cứng (Fixed-size without overlap), một câu hoặc một luận điểm khoa học có thể bị cắt làm đôi ở giữa hai chunk liền kề. Điều này làm mất ngữ nghĩa của cả hai nửa câu, khiến mô hình embedding không thể nắm bắt được trọn vẹn thông điệp của tác giả. Khoảng gối đầu 150 ký tự đảm bảo các câu ở ranh giới phân đoạn luôn xuất hiện trọn vẹn trong ít nhất một chunk liền kề mà không làm đứt đoạn ngữ cảnh.
 
 ---
 
