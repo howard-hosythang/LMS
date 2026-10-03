@@ -1566,7 +1566,7 @@ const Circulation = () => {
 
   if (!policy) {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-8 max-w-5xl mx-auto">
         <div className={`rounded-xl border p-5 text-sm ${policyError ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-500'}`}>
           {policyError || 'Đang tải quy định mượn trả từ cấu hình Admin...'}
         </div>
@@ -1575,7 +1575,7 @@ const Circulation = () => {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6">
+    <div className="p-8 max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Quản lý mượn sách</h1>
         <p className="text-slate-500 text-sm mt-1">Xác nhận giao sách, mượn trực tiếp và xử lý trả sách tại thư viện.</p>
