@@ -59,6 +59,10 @@ test.each(['vi', 'en'])('reader AI recommendations show publication details and 
   const link = within(section).getByRole('link', { name: language === 'vi' ? /Chi tiết đầu sách/ : /Book details/ });
   expect(link).toHaveAttribute('href', '#/librarianpage/books/88'); expect(link).toHaveAttribute('target', '_blank');
   expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  const titleLink = within(section).getByRole('link', { name: 'AI Book' });
+  expect(titleLink).toHaveAttribute('href', '#/librarianpage/transactions?tab=lifecycle&pubId=88');
+  const coverLink = within(section).getByRole('link', { name: language === 'vi' ? 'Xem vòng đời sách: AI Book' : 'View book lifecycle: AI Book' });
+  expect(coverLink).toHaveAttribute('href', '#/librarianpage/transactions?tab=lifecycle&pubId=88');
   const returnedHeading = screen.getByText(language === 'vi' ? 'Lịch sử sách đã trả' : 'Returned books');
   expect(returnedHeading.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
