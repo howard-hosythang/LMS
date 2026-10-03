@@ -8,19 +8,20 @@ import BookQuickViewDrawer from './BookQuickViewDrawer';
 import ReaderHistory from './ReaderHistory';
 import BookLifecycle from './BookLifecycle';
 import { buttonClass, fieldClass, label, LoadState, Pager, useCopy, useResource } from './shared';
-import { idValue, pageNumber, useDebounced, useInquiryUrl } from './useInquiryUrl';
+import { idValue, pageNumber, useSearchInput, useInquiryUrl } from './useInquiryUrl';
 
 export default function TransactionInquiry() {
   const t = useCopy(); const { language } = useLanguage(); const en = language === 'en'; const { params, update } = useInquiryUrl();
   const tab = ['transactions', 'reader', 'lifecycle'].includes(params.get('tab') || '') ? params.get('tab')! : 'transactions';
-  const keyword = params.get('keyword') || '', debounced = useDebounced(keyword), page = pageNumber(params.get('page'));
+  const keyword = params.get('keyword') || '', page = pageNumber(params.get('page'));
+  const [searchTerm, setSearchTerm] = useSearchInput('keyword', { page: 0 });
   const status = ['WAITING_FOR_PICKUP', 'BORROWING', 'OVERDUE', 'RETURNED', 'CANCELLED'].includes(params.get('status') || '') ? params.get('status') as TransactionStatus : 'ALL';
   const fineStatus = ['UNPAID', 'PAID'].includes(params.get('fineStatus') || '') ? params.get('fineStatus') as FinePaymentStatus : 'ALL';
   const dateType = params.get('dateType') === 'RETURNED' ? 'RETURNED' : 'BORROWED', dateFrom = params.get('dateFrom') || '', dateTo = params.get('dateTo') || '';
   const sortBy = ['createdAt', 'borrowedDate', 'returnedDate', 'dueDate', 'fineAmount'].includes(params.get('sortBy') || '') ? params.get('sortBy')! : 'createdAt', sortDir = params.get('sortDir') === 'ASC' ? 'ASC' : 'DESC';
   const [refresh, setRefresh] = useState(0);
-  const list = useResource(tab === 'transactions' ? JSON.stringify([page, debounced, status, fineStatus, dateType, dateFrom, dateTo, sortBy, sortDir, refresh]) : null,
-    async () => (await transactions.getAllTransactions(page, 15, debounced, status, fineStatus, dateFrom, dateTo, sortBy, sortDir, dateType)).data);
+  const list = useResource(tab === 'transactions' ? JSON.stringify([page, keyword, status, fineStatus, dateType, dateFrom, dateTo, sortBy, sortDir, refresh]) : null,
+    async () => (await transactions.getAllTransactions(page, 15, keyword, status, fineStatus, dateFrom, dateTo, sortBy, sortDir, dateType)).data);
   const selectedTx = idValue(params.get('transactionId')) || idValue(params.get('highlight')), quickPubId = idValue(params.get('quickPubId')), quickItemId = idValue(params.get('quickItemId'));
   const actions: TableActions = {
     onTransaction: id => update({ transactionId: id, highlight: undefined, quickPubId: undefined, quickItemId: undefined }),
@@ -34,7 +35,7 @@ export default function TransactionInquiry() {
       ['transactions', t('Nhật ký giao dịch', 'Transactions log'), History], ['reader', t('Tra cứu bạn đọc', 'Reader history'), Users], ['lifecycle', t('Vòng đời sách', 'Book & copy lifecycle'), BookOpen],
     ].map(([key, name, Icon]) => { const ViewIcon = Icon as typeof History; return <button key={key as string} aria-current={tab === key ? 'page' : undefined} className={`${buttonClass} ${tab === key ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : ''}`} onClick={() => update({ tab: key as string })}><ViewIcon size={17} aria-hidden="true" />{name as string}</button>; })}</nav>
     {tab === 'transactions' && <><section className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="text-xs font-semibold sm:col-span-2">{t('Tìm kiếm giao dịch', 'Search transactions')}<input type="search" className={`${fieldClass} mt-1`} value={keyword} onChange={event => filter('keyword', event.target.value)} placeholder={t('Tên sách, họ tên, MSSV, barcode, mã giao dịch…', 'Book title, reader name, student ID, barcode, transaction ID…')} /></label>
+      <label className="text-xs font-semibold sm:col-span-2">{t('Tìm kiếm giao dịch', 'Search transactions')}<input type="search" className={`${fieldClass} mt-1`} value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder={t('Tên sách, họ tên, MSSV, barcode, mã giao dịch…', 'Book title, reader name, student ID, barcode, transaction ID…')} /></label>
       <label className="text-xs font-semibold">{t('Trạng thái mượn trả', 'Loan status')}<select className={`${fieldClass} mt-1`} value={status} onChange={event => filter('status', event.target.value)}><option value="ALL">{t('Tất cả trạng thái', 'All statuses')}</option>{['WAITING_FOR_PICKUP', 'BORROWING', 'OVERDUE', 'RETURNED', 'CANCELLED'].map(code => <option key={code} value={code}>{label(code, en)}</option>)}</select></label>
       <label className="text-xs font-semibold">{t('Trạng thái phí phạt', 'Fine status')}<select className={`${fieldClass} mt-1`} value={fineStatus} onChange={event => filter('fineStatus', event.target.value)}><option value="ALL">{t('Tất cả phí phạt', 'All fines')}</option>{['UNPAID', 'PAID'].map(code => <option key={code} value={code}>{label(code, en)}</option>)}</select></label>
       <label className="text-xs font-semibold">{t('Loại ngày', 'Date type')}<select className={`${fieldClass} mt-1`} value={dateType} onChange={event => filter('dateType', event.target.value)}><option value="BORROWED">{t('Ngày mượn', 'Borrowed date')}</option><option value="RETURNED">{t('Ngày trả', 'Returned date')}</option></select></label>

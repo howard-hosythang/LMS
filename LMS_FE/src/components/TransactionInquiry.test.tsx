@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import TransactionList from '../../pages/librarian_pages/TransactionList';
 import transactions from '../../api/transactionsService';
 import inquiry from '../../api/circulationInquiryService';
@@ -15,7 +15,10 @@ jest.mock('../../api/librarianDashboardService', () => ({ __esModule: true, defa
 const tx = { transactionId: '1', userId: '9', fullName: 'Reader A', studentId: '00123', publicationId: '22', publicationTitle: 'Book A', itemId: '5', barcode: 'BC5', authors: 'Author A', status: 'RETURNED', fineAmount: 100000, depositAmount: 50000, depositAppliedAmount: 50000, depositRefundAmount: 0, additionalAmountDue: 50000, note: 'Handover', important: true };
 const copy = { itemId: '5', publicationId: '22', publicationTitle: 'Book A', barcode: 'BC5', branch: 'Cơ sở 2 - Dĩ An', location: 'A1', status: 'AVAILABLE', condition: 'NEW', waitingReshelving: true };
 const page = (content: unknown[] = [], currentPage = 0) => ({ content, currentPage, pageSize: 15, totalPages: 3, totalElements: 40, isFirst: currentPage === 0, isLast: false });
-function Location() { return <output data-testid="url">{useLocation().search}</output>; }
+function Location() {
+  const location = useLocation(); const navigate = useNavigate();
+  return <><output data-testid="url">{location.search}</output><button onClick={() => navigate(-1)}>Test Back</button><button onClick={() => navigate(1)}>Test Forward</button></>;
+}
 function open(url = '/librarianpage/transactions') { return render(<MemoryRouter initialEntries={[url]}><TransactionList /><Location /></MemoryRouter>); }
 beforeEach(() => {
   jest.clearAllMocks(); mockLanguage = 'vi';
@@ -38,6 +41,7 @@ test('restores all log filters and pagination from the URL and keeps unrelated p
   expect(transactions.getAllTransactions).toHaveBeenCalledWith(2, 15, 'Java', 'RETURNED', 'UNPAID', '2026-10-01', '2026-10-03', 'returnedDate', 'ASC', 'RETURNED');
   expect(screen.getByLabelText('Loại ngày')).toHaveValue('RETURNED');
   fireEvent.change(screen.getByLabelText('Trạng thái mượn trả'), { target: { value: 'BORROWING' } });
+  await act(async () => {});
   const params = new URLSearchParams(screen.getByTestId('url').textContent || '');
   expect(params.get('page')).toBe('0'); expect(params.get('source')).toBe('dashboard');
 });
@@ -49,6 +53,8 @@ test('book click opens only quick view and external links preserve the inquiry t
   await within(drawer).findByText('Author A');
   expect(inquiry.transaction).not.toHaveBeenCalled();
   expect(within(drawer).getByRole('link', { name: /Mở chi tiết đầu sách/ })).toHaveAttribute('target', '_blank');
+  expect(within(drawer).getByRole('link', { name: /Mở chi tiết đầu sách/ })).toHaveAttribute('href', '#/librarianpage/books/22');
+  expect(screen.getByRole('link', { name: /Bản sao/ })).toHaveAttribute('href', '#/librarianpage/copies/5');
   fireEvent.keyDown(drawer, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
@@ -130,4 +136,89 @@ test('finishing a barcode request after leaving lifecycle cannot change the acti
   await act(async () => { resolveScan(copy); });
   const params = new URLSearchParams(screen.getByTestId('url').textContent || '');
   expect(params.get('tab')).toBe('reader'); expect(params.get('itemId')).toBeNull();
+});
+
+test.each([
+  ['transactions', 'Tìm kiếm giao dịch', 'keyword', 'page'],
+  ['reader', 'Tra cứu MSSV hoặc họ tên', 'readerKeyword', 'activePage'],
+  ['lifecycle', 'Tìm theo tên sách', 'bookKeyword', 'itemPage'],
+  ['lifecycle', 'Quét hoặc nhập barcode', 'barcode', 'timelinePage'],
+])('%s input %s keeps focus and only commits after 350ms', async (tab, label, key, pageKey) => {
+  jest.useFakeTimers();
+  try {
+    open(`/librarianpage/transactions?tab=${tab}&${pageKey}=2`);
+    await act(async () => {});
+    const input = screen.getByLabelText(label);
+    input.focus();
+    const callsBefore = [transactions.getAllTransactions, inquiry.readers, inquiry.publications].map(mock => jest.mocked(mock).mock.calls.length);
+    for (const value of ['B', 'Bo', 'Book']) {
+      fireEvent.change(input, { target: { value } });
+      await act(async () => { jest.advanceTimersByTime(100); });
+      expect(input).toHaveFocus();
+      expect(screen.getByLabelText(label)).toBe(input);
+      expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get(key)).toBeNull();
+    }
+    expect([transactions.getAllTransactions, inquiry.readers, inquiry.publications].map(mock => jest.mocked(mock).mock.calls.length)).toEqual(callsBefore);
+    await act(async () => { jest.advanceTimersByTime(249); });
+    expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get(key)).toBeNull();
+    await act(async () => { jest.advanceTimersByTime(1); });
+    const params = new URLSearchParams(screen.getByTestId('url').textContent || '');
+    expect(params.get(key)).toBe('Book'); expect(params.get(pageKey)).toBe('0');
+    expect(input).toHaveFocus(); expect(input).toHaveValue('Book');
+    if (key === 'keyword') expect(transactions.getAllTransactions).toHaveBeenCalledTimes(callsBefore[0] + 1);
+    if (key === 'readerKeyword') expect(inquiry.readers).toHaveBeenCalledTimes(1);
+    if (key === 'bookKeyword') expect(inquiry.publications).toHaveBeenCalledTimes(1);
+  } finally { jest.useRealTimers(); }
+});
+
+test.each(['', '&keyword=Old'])('clearing filters cancels pending input even with initial keyword %s', async keyword => {
+  jest.useFakeTimers();
+  try {
+    open(`/librarianpage/transactions?tab=transactions${keyword}`);
+    await act(async () => {});
+    const input = screen.getByLabelText('Tìm kiếm giao dịch');
+    fireEvent.change(input, { target: { value: 'Pending' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }));
+    expect(input).toHaveValue('');
+    await act(async () => { jest.advanceTimersByTime(500); });
+    expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get('keyword')).toBeNull();
+    expect(input).toHaveValue('');
+  } finally { jest.useRealTimers(); }
+});
+
+test.each([
+  ['transactions', 'Tìm kiếm giao dịch', 'keyword'],
+  ['reader', 'Tra cứu MSSV hoặc họ tên', 'readerKeyword'],
+  ['lifecycle', 'Tìm theo tên sách', 'bookKeyword'],
+  ['lifecycle', 'Quét hoặc nhập barcode', 'barcode'],
+])('Back/Forward restores %s input %s and cancels pending drafts', async (tab, label, key) => {
+  jest.useFakeTimers();
+  try {
+    render(<MemoryRouter initialEntries={[
+      `/librarianpage/transactions?tab=${tab}&${key}=Old`,
+      `/librarianpage/transactions?tab=${tab}&${key}=Current`,
+    ]}><TransactionList /><Location /></MemoryRouter>);
+    await act(async () => {});
+    const input = screen.getByLabelText(label);
+    expect(input).toHaveValue('Current');
+    fireEvent.change(input, { target: { value: 'Pending' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Test Back' }));
+    expect(input).toHaveValue('Old');
+    await act(async () => { jest.advanceTimersByTime(500); });
+    expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get(key)).toBe('Old');
+    fireEvent.click(screen.getByRole('button', { name: 'Test Forward' }));
+    expect(input).toHaveValue('Current');
+    await act(async () => {});
+  } finally { jest.useRealTimers(); }
+});
+
+test('barcode Enter submits the local input immediately without waiting for debounce', async () => {
+  open('/librarianpage/transactions?tab=lifecycle');
+  const input = screen.getByLabelText('Quét hoặc nhập barcode');
+  fireEvent.change(input, { target: { value: 'BC5' } });
+  fireEvent.submit(input.closest('form')!);
+  await screen.findByText('Xác nhận cất kệ');
+  expect(inquiry.barcode).toHaveBeenCalledWith('BC5');
+  expect(input).toHaveValue('BC5');
+  expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get('barcode')).toBe('BC5');
 });
