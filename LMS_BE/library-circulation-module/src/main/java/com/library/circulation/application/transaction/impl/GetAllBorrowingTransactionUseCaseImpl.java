@@ -37,23 +37,51 @@ public class GetAllBorrowingTransactionUseCaseImpl implements GetAllBorrowingTra
         String sortBy,
         String sortDir
     ) {
+        return search(page, size, keyword, status, fineStatus, dateFrom, dateTo, sortBy, sortDir,
+            "BORROWED", null, null, null, null);
+    }
+
+    @Override
+    public com.library.shared.dto.PageResponse<TransactionListResponse> search(
+        int page, int size, String keyword, String status, String fineStatus,
+        String dateFrom, String dateTo, String sortBy, String sortDir,
+        String dateType, Long userId, Long itemId, Long transactionId, String scope) {
+        String dateColumn = switch (dateType == null ? "BORROWED" : dateType.toUpperCase()) {
+            case "BORROWED" -> "t.borrowed_date";
+            case "RETURNED" -> "t.returned_date";
+            default -> throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid dateType");
+        };
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
         String normalizedKeyword = keyword == null ? "" : keyword.trim();
         String normalizedStatus = normalizeEnum(status);
         String normalizedFineStatus = normalizeEnum(fineStatus);
 
-        Instant fromInstant = parseDateStart(dateFrom);
-        Instant toInstantExclusive = parseDateEndExclusive(dateTo);
+        Instant fromInstant;
+        Instant toInstantExclusive;
+        try {
+            fromInstant = parseDateStart(dateFrom);
+            toInstantExclusive = parseDateEndExclusive(dateTo);
+        } catch (java.time.format.DateTimeParseException error) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid date", error);
+        }
+        if (fromInstant != null && toInstantExclusive != null && !fromInstant.isBefore(toInstantExclusive))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid date range");
 
         MapSqlParameterSource params = new MapSqlParameterSource()
             .addValue("keyword", normalizedKeyword, Types.VARCHAR)
             .addValue("limit", safeSize)
-            .addValue("offset", safePage * safeSize);
+            .addValue("offset", (long) safePage * safeSize);
 
         StringBuilder baseFromWhere = new StringBuilder("""
             FROM borrowing_transactions t
             LEFT JOIN items i ON i.id = t.item_id
+            LEFT JOIN publications p ON p.id = i.publication_id
+            LEFT JOIN LATERAL (
+              SELECT STRING_AGG(a.name, ', ' ORDER BY a.name, a.id) AS authors
+              FROM publication_authors pa JOIN authors a ON a.id = pa.author_id
+              WHERE pa.publication_id = p.id
+            ) pa ON TRUE
             LEFT JOIN users u ON u.id = t.user_id
             LEFT JOIN users issue_librarian ON issue_librarian.id = t.librarian_id_issue
             LEFT JOIN users return_librarian ON return_librarian.id = t.librarian_id_return
@@ -89,6 +117,7 @@ public class GetAllBorrowingTransactionUseCaseImpl implements GetAllBorrowingTra
                 OR LOWER(u.full_name) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(u.student_id) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(i.barcode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR CAST(t.id AS TEXT) LIKE CONCAT('%', :keyword, '%'))
             """);
 
@@ -97,13 +126,20 @@ public class GetAllBorrowingTransactionUseCaseImpl implements GetAllBorrowingTra
             params.addValue("status", normalizedStatus, Types.VARCHAR);
         }
         if (fromInstant != null) {
-            baseFromWhere.append(" AND t.borrowed_date >= :dateFrom");
+            baseFromWhere.append(" AND " + dateColumn + " >= :dateFrom");
             params.addValue("dateFrom", Timestamp.from(fromInstant));
         }
         if (toInstantExclusive != null) {
-            baseFromWhere.append(" AND t.borrowed_date < :dateTo");
+            baseFromWhere.append(" AND " + dateColumn + " < :dateTo");
             params.addValue("dateTo", Timestamp.from(toInstantExclusive));
         }
+
+        if (userId != null) { baseFromWhere.append(" AND t.user_id = :userId"); params.addValue("userId", userId); }
+        if (itemId != null) { baseFromWhere.append(" AND t.item_id = :itemId"); params.addValue("itemId", itemId); }
+        if (transactionId != null) { baseFromWhere.append(" AND t.id = :transactionId"); params.addValue("transactionId", transactionId); }
+        if ("ACTIVE".equals(scope)) baseFromWhere.append(" AND t.status IN ('BORROWING', 'OVERDUE')");
+        else if ("RETURNED".equals(scope)) baseFromWhere.append(" AND t.status = 'RETURNED'");
+        else if (scope != null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid scope");
         if ("UNPAID".equals(normalizedFineStatus)) {
             baseFromWhere.append(" AND COALESCE(fa.unpaid_count, 0) > 0");
         } else if ("PAID".equals(normalizedFineStatus)) {
@@ -119,6 +155,8 @@ public class GetAllBorrowingTransactionUseCaseImpl implements GetAllBorrowingTra
               u.email,
               u.phone_number,
               i.barcode,
+              i.id AS item_id, p.id AS publication_id, p.title AS publication_title,
+              p.cover_image_url, pa.authors, i.branch, i.location,
               COALESCE(fa.fine_amount, 0) AS fine_amount,
               COALESCE(t.deposit_gross_fine_amount, COALESCE(fa.fine_amount, 0)) AS gross_fine_amount,
               COALESCE(t.deposit_amount, 0) AS deposit_amount,
@@ -145,7 +183,7 @@ public class GetAllBorrowingTransactionUseCaseImpl implements GetAllBorrowingTra
               fine_librarian.full_name AS fine_paid_by_librarian_name,
               fine_librarian.student_id AS fine_paid_by_librarian_code,
               t.status
-            """ + baseFromWhere + " ORDER BY " + resolveSort(sortBy) + " " + resolveDirection(sortDir) + " LIMIT :limit OFFSET :offset";
+            """ + baseFromWhere + " ORDER BY " + resolveSort(sortBy) + " " + resolveDirection(sortDir) + " NULLS LAST, t.id DESC LIMIT :limit OFFSET :offset";
 
         String countSql = "SELECT COUNT(*) FROM (SELECT t.id " + baseFromWhere + ") counted";
 
@@ -158,6 +196,13 @@ public class GetAllBorrowingTransactionUseCaseImpl implements GetAllBorrowingTra
                 .email(rs.getString("email"))
                 .phoneNumber(rs.getString("phone_number"))
                 .barcode(rs.getString("barcode"))
+                .itemId((Long) rs.getObject("item_id"))
+                .publicationId((Long) rs.getObject("publication_id"))
+                .publicationTitle(rs.getString("publication_title"))
+                .coverImageUrl(rs.getString("cover_image_url"))
+                .authors(rs.getString("authors"))
+                .branch(rs.getString("branch"))
+                .location(rs.getString("location"))
                 .fineAmount((BigDecimal) rs.getObject("fine_amount"))
                 .grossFineAmount((BigDecimal) rs.getObject("gross_fine_amount"))
                 .finePaymentStatus(toPaymentStatus(rs.getString("fine_payment_status")))

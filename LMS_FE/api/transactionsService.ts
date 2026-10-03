@@ -198,6 +198,13 @@ export interface LibrarianTransaction {
   email: string | null;
   phoneNumber: string | null;
   barcode: string | null;
+  itemId?: string | null;
+  publicationId?: string | null;
+  publicationTitle?: string | null;
+  coverImageUrl?: string | null;
+  authors?: string | null;
+  branch?: string | null;
+  location?: string | null;
   fineAmount: number | null;
   grossFineAmount: number | null;
   finePaymentStatus: FinePaymentStatus | null;
@@ -375,6 +382,9 @@ const transactionsService = {
     dateTo?: string,
     sortBy?: string,
     sortDir?: 'ASC' | 'DESC',
+    dateType?: 'BORROWED' | 'RETURNED',
+    userId?: string,
+    scope?: 'ACTIVE' | 'RETURNED',
   ): Promise<AllTransactionsResponse> => {
     const response = await axiosInstance.get('/transactions', {
       params: {
@@ -387,6 +397,9 @@ const transactionsService = {
         dateTo: dateTo || undefined,
         sortBy,
         sortDir,
+        dateType,
+        userId,
+        scope,
       },
     });
     return response as any;

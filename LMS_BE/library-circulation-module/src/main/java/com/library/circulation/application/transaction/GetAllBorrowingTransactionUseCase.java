@@ -14,4 +14,9 @@ public interface GetAllBorrowingTransactionUseCase {
         String sortBy,
         String sortDir
     );
+
+    com.library.shared.dto.PageResponse<TransactionListResponse> search(
+        int page, int size, String keyword, String status, String fineStatus,
+        String dateFrom, String dateTo, String sortBy, String sortDir,
+        String dateType, Long userId, Long itemId, Long transactionId, String scope);
 }

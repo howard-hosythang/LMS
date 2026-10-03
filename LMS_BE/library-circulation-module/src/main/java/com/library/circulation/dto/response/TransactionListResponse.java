@@ -13,6 +13,7 @@ import java.time.LocalDate;
 
 @Data
 @Builder
+@lombok.AllArgsConstructor
 public class TransactionListResponse {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long transactionId;
@@ -23,6 +24,15 @@ public class TransactionListResponse {
     private String email;
     private String phoneNumber;
     private String barcode;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long itemId;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long publicationId;
+    private String publicationTitle;
+    private String coverImageUrl;
+    private String authors;
+    private String branch;
+    private String location;
     private BigDecimal fineAmount;
     private BigDecimal grossFineAmount;
     private PaymentStatus finePaymentStatus;

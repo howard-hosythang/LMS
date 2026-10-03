@@ -82,10 +82,13 @@ public class BorrowingTransactionController {
       @RequestParam(value = "dateFrom", required = false) String dateFrom,
       @RequestParam(value = "dateTo", required = false) String dateTo,
       @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
-      @RequestParam(value = "sortDir", defaultValue = "DESC") String sortDir) {
+      @RequestParam(value = "sortDir", defaultValue = "DESC") String sortDir,
+      @RequestParam(value = "dateType", defaultValue = "BORROWED") String dateType,
+      @RequestParam(value = "userId", required = false) Long userId,
+      @RequestParam(value = "scope", required = false) String scope) {
     return ApiResponseApp.success("All transactions",
-        getAllBorrowingTransactionUseCase.execute(
-            page, size, keyword, status, fineStatus, dateFrom, dateTo, sortBy, sortDir));
+        getAllBorrowingTransactionUseCase.search(
+            page, size, keyword, status, fineStatus, dateFrom, dateTo, sortBy, sortDir, dateType, userId, null, null, scope));
   }
 
   @RequiresRole(RoleConstants.LIBRARIAN)
