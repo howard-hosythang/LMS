@@ -45,6 +45,9 @@ Các nghiệp vụ tài chính và lưu thông vẫn ở trang Lưu thông.
 - Bảng đang mượn gồm `BORROWING`/`OVERDUE`, lọc theo ngày mượn.
 - Bảng đã trả gồm `RETURNED`, lọc theo ngày trả.
 - Hai bảng có khoảng ngày và trang riêng, đều truy vấn/phân trang phía server.
+- Bên dưới hai bảng có Gợi ý sách AI, tải qua `getReaderRecommendationsForLibrarian(userId, faculty, 4)` sau khi hồ sơ đã có dữ liệu.
+  Thẻ sách hiển thị ảnh bìa, tên, tác giả, năm xuất bản, bản sao có sẵn, đánh giá nếu có và link chi tiết mở tab mới.
+  Hỗ trợ Việt/Anh, light/dark, trạng thái tải/lỗi/rỗng; bỏ qua kết quả cũ khi chuyển bạn đọc.
 
 ## 3. Vòng đời đầu sách và bản sao
 

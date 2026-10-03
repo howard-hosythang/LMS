@@ -4,6 +4,7 @@ import TransactionList from '../../pages/librarian_pages/TransactionList';
 import transactions from '../../api/transactionsService';
 import inquiry from '../../api/circulationInquiryService';
 import dashboard from '../../api/librarianDashboardService';
+import recommendationService, { RecommendedPublication } from '../../api/recommendationService';
 import { Badge, InquiryDrawer } from '../../components/librarian_pages/inquiry/shared';
 
 let mockLanguage = 'vi';
@@ -12,6 +13,7 @@ jest.mock('../../contexts/AppDialogContext', () => ({ useAppDialog: () => ({ con
 jest.mock('../../api/transactionsService', () => ({ __esModule: true, default: { getAllTransactions: jest.fn(), getNotes: jest.fn(), upsertNote: jest.fn(), deleteNote: jest.fn() } }));
 jest.mock('../../api/circulationInquiryService', () => ({ __esModule: true, default: { transaction: jest.fn(), publication: jest.fn(), readers: jest.fn(), publications: jest.fn(), item: jest.fn(), barcode: jest.fn(), timeline: jest.fn() } }));
 jest.mock('../../api/librarianDashboardService', () => ({ __esModule: true, default: { getReaderProfile: jest.fn() } }));
+jest.mock('../../api/recommendationService', () => ({ __esModule: true, default: { getReaderRecommendationsForLibrarian: jest.fn() } }));
 
 const tx = { transactionId: '1', userId: '9', fullName: 'Reader A', studentId: '00123', publicationId: '22', publicationTitle: 'Book A', itemId: '5', barcode: 'BC5', authors: 'Author A', status: 'RETURNED', fineAmount: 100000, depositAmount: 50000, depositAppliedAmount: 50000, depositRefundAmount: 0, additionalAmountDue: 50000, note: 'Handover', important: true };
 const copy = { itemId: '5', publicationId: '22', publicationTitle: 'Book A', barcode: 'BC5', branch: 'Cơ sở 2 - Dĩ An', location: 'A1', status: 'AVAILABLE', condition: 'NEW', waitingReshelving: true };
@@ -33,7 +35,84 @@ beforeEach(() => {
   jest.mocked(inquiry.timeline).mockResolvedValue(page([{ id: 'shelved-1', type: 'SHELVED', occurredAt: '2026-10-03T03:00:00Z', actorName: 'Shelver A', actorCode: 'L02' }]) as any);
   jest.mocked(inquiry.readers).mockResolvedValue([{ userId: '9', fullName: 'Reader A', studentId: '00123' }]);
   jest.mocked(inquiry.publications).mockResolvedValue([]);
-  jest.mocked(dashboard.getReaderProfile).mockResolvedValue({ data: { userId: '9', fullName: 'Reader A', creditScore: 80, activeBorrows: 2, unpaidFineAmount: 100000 } } as any);
+  jest.mocked(dashboard.getReaderProfile).mockResolvedValue({ data: { userId: '9', fullName: 'Reader A', faculty: 'CS', creditScore: 80, activeBorrows: 2, unpaidFineAmount: 100000 } } as any);
+  jest.mocked(recommendationService.getReaderRecommendationsForLibrarian).mockResolvedValue({ code: 200, data: [] } as any);
+});
+
+const recommendedBook: RecommendedPublication = {
+  publicationId: '88', title: 'AI Book', coverImageUrl: '/covers/ai-book.jpg', publicationYear: 2025,
+  availableItems: 3, ratingAverage: 4.6, ratingCount: 12, borrowCount: 20, authorNames: ['Author One', 'Author Two'],
+};
+
+test.each(['vi', 'en'])('reader AI recommendations show publication details and a hash new-tab link in %s', async language => {
+  mockLanguage = language;
+  jest.mocked(recommendationService.getReaderRecommendationsForLibrarian).mockResolvedValue({ code: 200, data: [recommendedBook] } as any);
+  open('/librarianpage/transactions?tab=reader&userId=9');
+  const section = await screen.findByRole('region', { name: language === 'vi' ? 'Gợi ý sách AI cho bạn đọc' : 'AI Recommendations' });
+  await within(section).findByText('AI Book');
+  expect(recommendationService.getReaderRecommendationsForLibrarian).toHaveBeenCalledWith('9', 'CS', 4);
+  expect(within(section).getByRole('img', { name: 'AI Book' })).toHaveAttribute('src', '/covers/ai-book.jpg');
+  expect(within(section).getByText('Author One, Author Two')).toBeInTheDocument();
+  expect(within(section).getByText('2025')).toBeInTheDocument();
+  expect(within(section).getByText('3')).toBeInTheDocument();
+  expect(within(section).getByText(/4.6\/5 \(12\)/)).toBeInTheDocument();
+  const link = within(section).getByRole('link', { name: language === 'vi' ? /Chi tiết đầu sách/ : /Book details/ });
+  expect(link).toHaveAttribute('href', '#/librarianpage/books/88'); expect(link).toHaveAttribute('target', '_blank');
+  expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  const returnedHeading = screen.getByText(language === 'vi' ? 'Lịch sử sách đã trả' : 'Returned books');
+  expect(returnedHeading.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test('recommendations show an explicit loading state until the request finishes', async () => {
+  let finish: (value: any) => void = () => {};
+  jest.mocked(recommendationService.getReaderRecommendationsForLibrarian).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  open('/librarianpage/transactions?tab=reader&userId=9');
+  expect(await screen.findByText('Đang tải gợi ý…')).toHaveAttribute('role', 'status');
+  await act(async () => { finish({ code: 200, data: [] }); });
+  expect(screen.getByText('Chưa có gợi ý phù hợp cho bạn đọc này.')).toBeInTheDocument();
+});
+
+test('recommendation errors do not hide reader profile or borrowing history', async () => {
+  jest.mocked(recommendationService.getReaderRecommendationsForLibrarian).mockRejectedValueOnce(new Error('Recommendation unavailable'));
+  open('/librarianpage/transactions?tab=reader&userId=9');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Không thể tải gợi ý sách.');
+  expect(screen.getByText('Điểm tín nhiệm')).toBeInTheDocument();
+  expect(screen.getByText('Lịch sử sách đã trả')).toBeInTheDocument();
+});
+
+test('recommendations handle missing metadata, zero availability and absent ratings', async () => {
+  jest.mocked(recommendationService.getReaderRecommendationsForLibrarian).mockResolvedValueOnce({ code: 200, data: [
+    { ...recommendedBook, coverImageUrl: null, authorNames: [], publicationYear: null, availableItems: 0, ratingCount: 0, ratingAverage: 0 },
+  ] } as any);
+  open('/librarianpage/transactions?tab=reader&userId=9');
+  const section = await screen.findByRole('region', { name: 'Gợi ý sách AI cho bạn đọc' });
+  await within(section).findByText('AI Book');
+  expect(within(section).getByText('Chưa có tác giả')).toBeInTheDocument();
+  expect(within(section).getByText('0')).toBeInTheDocument();
+  expect(within(section).getByText('—')).toBeInTheDocument();
+  expect(within(section).queryByRole('img')).not.toBeInTheDocument();
+  expect(within(section).queryByText(/Đánh giá:/)).not.toBeInTheDocument();
+});
+
+test('no recommendations are requested before selecting a reader', async () => {
+  open('/librarianpage/transactions?tab=reader');
+  await act(async () => {});
+  expect(recommendationService.getReaderRecommendationsForLibrarian).not.toHaveBeenCalled();
+  expect(screen.queryByRole('region', { name: 'Gợi ý sách AI cho bạn đọc' })).not.toBeInTheDocument();
+});
+
+test('switching readers discards the previous readers pending recommendations', async () => {
+  let finishOld: (value: any) => void = () => {};
+  jest.mocked(recommendationService.getReaderRecommendationsForLibrarian).mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve; }));
+  render(<MemoryRouter initialEntries={['/librarianpage/transactions?tab=reader&userId=9', '/librarianpage/transactions?tab=reader&userId=10']} initialIndex={0}>
+    <TransactionList /><Location />
+  </MemoryRouter>);
+  await screen.findByText('Đang tải gợi ý…');
+  fireEvent.click(screen.getByRole('button', { name: 'Test Forward' }));
+  await screen.findByText('Chưa có gợi ý phù hợp cho bạn đọc này.');
+  expect(recommendationService.getReaderRecommendationsForLibrarian).toHaveBeenLastCalledWith('10', 'CS', 4);
+  await act(async () => { finishOld({ code: 200, data: [recommendedBook] }); });
+  expect(screen.queryByText('AI Book')).not.toBeInTheDocument();
 });
 
 test('restores all log filters and pagination from the URL and keeps unrelated parameters', async () => {
