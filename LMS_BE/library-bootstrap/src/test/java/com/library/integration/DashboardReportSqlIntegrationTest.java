@@ -81,21 +81,21 @@ class DashboardReportSqlIntegrationTest {
 
     @Test void activeLoansAreNotPeriodFilteredButReturnsIncludeOnlySelectedVietnamDays() throws Exception {
         try (var book = new XSSFWorkbook(new ByteArrayInputStream(exporter.export(report, 9L)))) {
-            assertThat(book.getSheetAt(1).getLastRowNum()).isEqualTo(7); // Two active loans, both borrowed in 2020.
-            assertThat(book.getSheetAt(1).getRow(6).getCell(1).getStringCellValue()).isEqualTo("00123");
-            var returned = book.getSheetAt(2);
-            assertThat(returned.getLastRowNum()).isEqualTo(6);
-            assertThat(returned.getRow(6).getCell(6).getStringCellValue()).isEqualTo("03/10/2026 23:59");
-            assertThat(returned.getRow(6).getCell(8).getStringCellValue()).isEqualTo("Chưa ghi nhận");
-            assertThat(returned.getRow(6).getCell(9).getNumericCellValue()).isEqualTo(50000);
+            assertThat(book.getSheetAt(2).getLastRowNum()).isEqualTo(2); // Two active loans, both borrowed in 2020.
+            assertThat(book.getSheetAt(2).getRow(1).getCell(1).getStringCellValue()).isEqualTo("00123");
+            var returned = book.getSheetAt(3);
+            assertThat(returned.getLastRowNum()).isEqualTo(1);
+            assertThat(returned.getRow(1).getCell(6).getStringCellValue()).isEqualTo("03/10/2026 23:59");
+            assertThat(returned.getRow(1).getCell(8).getStringCellValue()).isEqualTo("Chưa ghi nhận");
+            assertThat(returned.getRow(1).getCell(9).getNumericCellValue()).isEqualTo(50000);
         }
     }
 
     @Test void financialAuditUsesEventDatesAndOnlyLabelsTransfersWithRecordedPaymentEvidence() throws Exception {
         try (var book = new XSSFWorkbook(new ByteArrayInputStream(exporter.export(report, 9L)))) {
-            var sheet = book.getSheetAt(3);
+            var sheet = book.getSheetAt(4);
             var receipts = new java.util.ArrayList<String>();
-            for (int row = 6; row <= sheet.getLastRowNum(); row++) {
+            for (int row = 1; row <= sheet.getLastRowNum(); row++) {
                 var entry = sheet.getRow(row);
                 receipts.add(entry.getCell(0).getStringCellValue());
                 if (entry.getCell(0).getStringCellValue().startsWith("PAID-12")) {

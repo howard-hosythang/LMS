@@ -130,7 +130,7 @@ Khi AI chạy trong Docker, tránh dùng `localhost` cho webhook callback về b
 
 ## Ghi chú triển khai
 
-Tài liệu xuất Excel 5 sheet và bản in A4: [OPERATIONAL_REPORT_EXPORT.md](docs/OPERATIONAL_REPORT_EXPORT.md).
+Tài liệu xuất Excel 6 sheet và bản in A4: [OPERATIONAL_REPORT_EXPORT.md](docs/OPERATIONAL_REPORT_EXPORT.md).
 
 - Schema do Flyway quản lý, `spring.jpa.hibernate.ddl-auto=validate`.
 - Không chạy `flyway clean` trong môi trường có dữ liệu thật.

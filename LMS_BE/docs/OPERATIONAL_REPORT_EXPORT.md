@@ -25,17 +25,20 @@ GET /api/v1/librarians/dashboard/report/print?from=2026-10-01&to=2026-10-03
 - Mỗi danh sách Excel tối đa 50.000 dòng; vượt ngưỡng thì báo lỗi, không âm thầm bỏ bớt dữ liệu. Sheet đang mượn và bạn đọc rủi ro là snapshot hiện tại, nên thu hẹp kỳ không làm giảm hai danh sách này.
 - Dùng Apache POI để tạo workbook; không thêm migration hay thay đổi schema. API CSV cũ vẫn giữ tương thích, nhưng không còn là thao tác xuất Excel của trang Báo cáo.
 
-## Năm sheet Excel
+## Sáu sheet Excel
 
 | Sheet | Nguồn và phạm vi | Nội dung |
 | --- | --- | --- |
-| 1. Tổng quan vận hành | Báo cáo theo kỳ + snapshot hiện tại | Khoảng ngày, thời điểm, người lập; lượt mượn/trả, trả đúng hạn, đang lưu hành, quá hạn trong kỳ, cọc giữ/hoàn, phạt phát sinh/thanh toán; Top 10 đầu sách |
-| 2. Đang mượn và quá hạn | Tất cả `BORROWING` / `OVERDUE` tại lúc xuất, không giới hạn ngày mượn | STT, MSSV, họ tên, barcode, tên sách, ngày mượn, hạn trả, trạng thái tính theo hạn thực tế, ngày quá hạn, cọc giữ, số lần gia hạn |
-| 3. Sách đã trả trong kỳ | `returned_date` trong khoảng ngày | STT, MSSV, họ tên, barcode, tên sách, ngày mượn/trả, người tiếp nhận, tình trạng khi trả, cọc hoàn, phí trễ/hỏng |
-| 4. Đối soát cọc và phí | Ngày sự kiện cọc, ngày tạo phạt, ngày thanh toán phạt trong kỳ | Mã biên lai/GD, thời gian, MSSV, loại sự kiện, số tiền, hình thức nếu có bằng chứng, thủ thư nếu đã ghi nhận, ghi chú |
-| 5. Bạn đọc cần theo dõi | Có sách quá hạn, nợ `UNPAID` hoặc tín nhiệm dưới 100 tại lúc xuất | MSSV, họ tên, khoa, email, SĐT, sách quá hạn, nợ phạt, tín nhiệm; không giới hạn Top 20 như dữ liệu bảng cũ |
+| 1. Tổng quan vận hành | Báo cáo theo kỳ + snapshot hiện tại | Chỉ có 9 KPI: lượt mượn/trả, trả đúng hạn, đang lưu hành, quá hạn trong kỳ, cọc giữ/hoàn, phạt phát sinh/thanh toán; không chứa bảng Top |
+| 2. Top 100 ấn phẩm mượn nhiều | SQL riêng lọc `borrowed_date >= start AND borrowed_date < end`, gom nhóm theo ấn phẩm, lượt mượn giảm dần, mã ấn phẩm tăng dần khi bằng lượt; `LIMIT 100` | STT, Mã ấn phẩm, Tên ấn phẩm, Số lượt mượn trong kỳ; không dùng danh sách Top 10 của dashboard |
+| 3. Đang mượn và quá hạn | Tất cả `BORROWING` / `OVERDUE` tại lúc xuất, không giới hạn ngày mượn | STT, MSSV, họ tên, barcode, tên sách, ngày mượn, hạn trả, trạng thái tính theo hạn thực tế, ngày quá hạn, cọc giữ, số lần gia hạn |
+| 4. Sách đã trả trong kỳ | `returned_date` trong khoảng ngày | STT, MSSV, họ tên, barcode, tên sách, ngày mượn/trả, người tiếp nhận, tình trạng khi trả, cọc hoàn, phí trễ/hỏng |
+| 5. Đối soát cọc và phí | Ngày sự kiện cọc, ngày tạo phạt, ngày thanh toán phạt trong kỳ | Mã biên lai/GD, thời gian, MSSV, loại sự kiện, số tiền, hình thức nếu có bằng chứng, thủ thư nếu đã ghi nhận, ghi chú |
+| 6. Bạn đọc cần theo dõi | Có sách quá hạn, nợ `UNPAID` hoặc tín nhiệm dưới 100 tại lúc xuất | MSSV, họ tên, khoa, email, SĐT, sách quá hạn, nợ phạt, tín nhiệm; không giới hạn Top 20 như dữ liệu bảng cũ |
 
-Workbook có header màu, border, wrap text, tự điều chỉnh độ rộng có giới hạn, freeze header, auto-filter, A4 ngang, lặp dòng header và không ép toàn bộ dữ liệu vào một trang in. Số tiền là cell số để cộng/lọc; MSSV, barcode và mã định danh là text để giữ số 0 đầu và tránh mất độ chính xác TSID. Nội dung người dùng bắt đầu bằng `=` vẫn là text, không trở thành công thức Excel.
+Toàn bộ cell của cả 6 sheet dùng **Times New Roman**: font mặc định, body, numeric và header. Dòng tiêu đề bảng có nền xanh lá **#15803D**, chữ trắng đậm, border và wrap text. Tự điều chỉnh độ rộng có giới hạn, auto-filter, A4 ngang và không ép toàn bộ dữ liệu vào một trang in. Số tiền là cell số để cộng/lọc; MSSV, barcode và mã định danh là text để giữ số 0 đầu và tránh mất độ chính xác TSID. Nội dung người dùng bắt đầu bằng `=` vẫn là text, không trở thành công thức Excel.
+
+**Chỉ ghim dòng tiêu đề cột:** tiêu đề cột nằm ngay dòng 1, dữ liệu từ dòng 2, `createFreezePane(0, 1)`. Không còn 5 dòng thông tin chung phía trên chiếm chỗ khi cuộn. Tiêu đề báo cáo, kỳ ngày, thời điểm xuất và người lập chuyển vào **Header trang in**; ghi chú nghiệp vụ chuyển vào **Footer trang in**, đều dùng Times New Roman. Để xem các thông tin này, dùng Page Layout / Print Preview (không hiển thị ở chế độ Normal). Dòng tiêu đề cột lặp lại khi in, auto-filter bắt đầu tại dòng 1.
 
 ### Định nghĩa KPI và giới hạn lịch sử
 
@@ -43,11 +46,11 @@ Workbook có header màu, border, wrap text, tự điều chỉnh độ rộng c
 - **Quá hạn trong kỳ** = giao dịch đã giao sách, hạn trả thuộc kỳ, hạn đã qua tại lúc xuất và không trả hoặc trả muộn. Không có nghĩa “đang quá hạn hiện tại” hay “số khoản phạt quá hạn tạo trong kỳ”.
 - **Cọc giữ** = tổng `deposit_amount` của giao dịch còn `deposit_status = COLLECTED` tại lúc xuất.
 - Công nợ và số sách quá hạn được tổng hợp độc lập theo bạn đọc để không nhân số tiền phạt lên theo số sách đang mượn.
-- Hệ thống hiện **chưa lưu snapshot tình trạng sách khi trả**. Sheet 3 ghi **Chưa ghi nhận**, không lấy tình trạng hiện tại của bản sao để giả định lịch sử. Chưa phân biệt được “Mất trang” với các hư hỏng khác.
+- Hệ thống hiện **chưa lưu snapshot tình trạng sách khi trả**. Sheet 4 ghi **Chưa ghi nhận**, không lấy tình trạng hiện tại của bản sao để giả định lịch sử. Chưa phân biệt được “Mất trang” với các hư hỏng khác.
 - Chưa có trường lớp trong hồ sơ: xuất khoa, không tự tạo lớp.
 - Chưa lưu hình thức tiền mặt/chuyển khoản của từng thao tác thu/hoàn cọc và thu phạt tại quầy. Chỉ ghi **Chuyển khoản (PAYOS)** khi có order `PAID` liên kết khoản phạt; cấn cọc ghi **Trừ cọc**; các trường hợp còn lại ghi rõ chưa ghi nhận. Thủ thư của sự kiện chỉ lấy ID thực đã lưu.
 - `fine_amount` có thể bị chỉnh sửa hoặc giảm khi cấn cọc một phần; hệ thống chưa có snapshot số phạt gốc và phân bổ cấn cọc theo từng fine. Vì vậy “Phạt phát sinh” và cột phí đã trả phản ánh **số tiền hiện đang lưu**, không bảo đảm tái dựng chính xác số tiền gốc tại thời điểm phát sinh.
-- **Phí đã thanh toán có thể bao gồm cấn cọc**, không đồng nghĩa tiền mặt mới thu. Sheet 4 là nhật ký đối soát, chứa cả phát sinh công nợ, thanh toán và cấn cọc; **không cộng toàn bộ các dòng thành doanh thu**. Ghi chú này có trên file xuất.
+- **Phí đã thanh toán có thể bao gồm cấn cọc**, không đồng nghĩa tiền mặt mới thu. Sheet 5 là nhật ký đối soát, chứa cả phát sinh công nợ, thanh toán và cấn cọc; **không cộng toàn bộ các dòng thành doanh thu**. Ghi chú này có trên file xuất.
 
 ## Bản in A4
 
@@ -69,7 +72,7 @@ npx tsc --noEmit
 npm run build
 ```
 
-Unit test kiểm tra workbook 5 sheet, tiền dạng số, TSID text, header/freeze/lặp dòng, tỷ lệ đúng hạn, khoảng ngày, giới hạn dòng, MIME/tên file và danh tính người lập. FE kiểm tra tải Excel/preview, lỗi API không sinh báo cáo giả, đóng preview không tải lại trang, A4/ký tên, giới hạn Top 10 và escape HTML.
+Unit test kiểm tra workbook 6 sheet, Times New Roman cho mọi cell, nền xanh #15803D/chữ trắng đậm, chỉ ghim/lặp dòng 1, metadata/ghi chú trong Header/Footer trang in, KPI không chứa Top, truy vấn Top 100 riêng với khoảng ngày và 100 dòng, tiền dạng số, TSID text, tỷ lệ đúng hạn, giới hạn dòng, MIME/tên file và danh tính người lập. FE kiểm tra tải Excel/preview, lỗi API không sinh báo cáo giả, đóng preview không tải lại trang, A4/ký tên, giới hạn Top 10 và escape HTML. **PDF vẫn giữ Top 10** để bản in gọn; nâng lên Top 100 chỉ áp dụng cho Excel.
 
 `DashboardReportSqlIntegrationTest` kiểm tra biên 23:59–00:00 theo giờ Việt Nam, sách đang mượn từ kỳ cũ, công nợ không nhân theo số sách, lọc ngày sự kiện và bằng chứng chuyển khoản. Test dùng Testcontainers `disabledWithoutDocker`: tự **skip** nếu Docker không hoạt động, không kết nối cơ sở dữ liệu thật.
 

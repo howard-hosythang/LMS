@@ -18,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -99,10 +102,20 @@ public class DashboardExcelExporter {
             writer.row(summary, "Tiền cọc đã hoàn (VNĐ)", report.finance().depositsRefunded(), "Sự kiện hoàn cọc trong kỳ");
             writer.row(summary, "Phí phạt phát sinh (VNĐ)", report.finance().finesCreated(), "Số tiền lưu hiện tại của khoản phạt tạo trong kỳ");
             writer.row(summary, "Phí phạt đã thanh toán (VNĐ)", report.finance().finesCollected(), "Có thể gồm cấn cọc; không coi toàn bộ là tiền mặt mới thu");
-            writer.row(summary, "Top 10 ấn phẩm", "Lượt mượn", "Mã ấn phẩm");
-            for (var item : report.topBorrowedPublications()) writer.row(summary, item.title(), item.borrowCount(), item.publicationId().toString());
+            var top = writer.sheet("2. Top 100 ấn phẩm mượn nhiều", snapshot,
+                "Top 100 theo ngày giao sách trong kỳ, gom nhóm theo ấn phẩm.",
+                "STT", "Mã ấn phẩm", "Tên ấn phẩm", "Số lượt mượn trong kỳ");
+            var topRows = rows("""
+                SELECT p.id AS publication_id, p.title, COUNT(*) AS borrow_count
+                FROM borrowing_transactions t JOIN items i ON i.id = t.item_id
+                JOIN publications p ON p.id = i.publication_id
+                WHERE t.borrowed_date >= :start AND t.borrowed_date < :end
+                GROUP BY p.id, p.title ORDER BY borrow_count DESC, p.id ASC LIMIT 100
+                """, p);
+            int topIndex = 0;
+            for (var r : topRows) writer.row(top, ++topIndex, r.get("publication_id").toString(), r.get("title"), r.get("borrow_count"));
 
-            var active = writer.sheet("2. Đang mượn và quá hạn", snapshot, "Toàn bộ sách đang mượn tại lúc xuất, không giới hạn ngày mượn.",
+            var active = writer.sheet("3. Đang mượn và quá hạn", snapshot, "Toàn bộ sách đang mượn tại lúc xuất, không giới hạn ngày mượn.",
                 "STT", "MSSV", "Tên bạn đọc", "Barcode", "Tên sách", "Ngày mượn", "Hạn trả", "Trạng thái", "Số ngày quá hạn", "Cọc giữ (VNĐ)", "Số lần gia hạn");
             var activeRows = rows("""
                 SELECT u.student_id, u.full_name, i.barcode, p.title, t.borrowed_date, t.due_date,
@@ -117,7 +130,7 @@ public class DashboardExcelExporter {
             for (var r : activeRows) writer.row(active, ++index, r.get("student_id"), r.get("full_name"), r.get("barcode"), r.get("title"),
                 r.get("borrowed_date"), r.get("due_date"), r.get("status_label"), r.get("overdue_days"), r.get("held"), r.get("renewal_count"));
 
-            var returned = writer.sheet("3. Sách đã trả trong kỳ", snapshot, "Chưa có snapshot tình trạng khi trả; không sử dụng tình trạng hiện tại của bản sao.",
+            var returned = writer.sheet("4. Sách đã trả trong kỳ", snapshot, "Chưa có snapshot tình trạng khi trả; không sử dụng tình trạng hiện tại của bản sao.",
                 "STT", "MSSV", "Tên bạn đọc", "Barcode", "Tên sách", "Ngày mượn", "Ngày trả", "Thủ thư tiếp nhận", "Tình trạng khi trả", "Cọc đã hoàn (VNĐ)", "Phí trễ-hỏng (VNĐ)");
             var returnedRows = rows("""
                 SELECT u.student_id, u.full_name, i.barcode, p.title, t.borrowed_date, t.returned_date,
@@ -133,13 +146,13 @@ public class DashboardExcelExporter {
             for (var r : returnedRows) writer.row(returned, ++index, r.get("student_id"), r.get("full_name"), r.get("barcode"), r.get("title"),
                 r.get("borrowed_date"), r.get("returned_date"), r.get("received_by"), UNKNOWN, r.get("deposit_refund_amount"), r.get("fines"));
 
-            var audit = writer.sheet("4. Đối soát cọc và phí", snapshot,
+            var audit = writer.sheet("5. Đối soát cọc và phí", snapshot,
                 "Nhật ký gồm phát sinh nợ, thanh toán và cấn cọc: KHÔNG cộng tất cả dòng thành doanh thu. Tiền mặt chưa được ghi nhận riêng.",
                 "Mã GD - Biên lai", "Thời gian", "MSSV", "Loại giao dịch", "Số tiền (VNĐ)", "Hình thức", "Thủ thư thực hiện", "Ghi chú");
             for (var r : rows(AUDIT_SQL, p)) writer.row(audit, r.get("receipt"), r.get("occurred_at"), r.get("student_id"),
                 r.get("event"), r.get("amount"), r.get("method"), r.get("actor"), r.get("note"));
 
-            var risk = writer.sheet("5. Bạn đọc cần theo dõi", snapshot, "Toàn bộ hồ sơ có quá hạn, nợ phạt hoặc tín nhiệm dưới 100 tại lúc xuất; khoa có sẵn, lớp chưa ghi nhận.",
+            var risk = writer.sheet("6. Bạn đọc cần theo dõi", snapshot, "Toàn bộ hồ sơ có quá hạn, nợ phạt hoặc tín nhiệm dưới 100 tại lúc xuất; khoa có sẵn, lớp chưa ghi nhận.",
                 "MSSV", "Họ tên", "Khoa", "Email", "SĐT", "Sách quá hạn", "Phạt chưa thanh toán (VNĐ)", "Điểm tín nhiệm");
             var readers = risks(p, MAX_ROWS + 1);
             checkSize(readers.size());
@@ -188,29 +201,34 @@ public class DashboardExcelExporter {
         private final CellStyle header, body, numeric;
         Writer(XSSFWorkbook book) {
             this.book = book;
+            book.getFontAt(0).setFontName("Times New Roman");
+            XSSFFont bodyFont = book.createFont(); bodyFont.setFontName("Times New Roman");
             body = book.createCellStyle(); body.setWrapText(true); body.setVerticalAlignment(VerticalAlignment.TOP);
+            body.setFont(bodyFont);
             body.setBorderBottom(BorderStyle.THIN); body.setBorderTop(BorderStyle.THIN);
             body.setBorderLeft(BorderStyle.THIN); body.setBorderRight(BorderStyle.THIN);
-            header = book.createCellStyle(); header.cloneStyleFrom(body);
-            header.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex()); header.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            var font = book.createFont(); font.setBold(true); font.setColor(IndexedColors.WHITE.getIndex()); header.setFont(font);
+            var headerStyle = book.createCellStyle(); headerStyle.cloneStyleFrom(body);
+            headerStyle.setFillForegroundColor(new XSSFColor(new byte[]{0x15, (byte) 0x80, 0x3D}, new DefaultIndexedColorMap()));
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            XSSFFont font = book.createFont(); font.setFontName("Times New Roman");
+            font.setBold(true); font.setColor(IndexedColors.WHITE.getIndex()); headerStyle.setFont(font);
+            header = headerStyle;
             numeric = book.createCellStyle(); numeric.cloneStyleFrom(body); numeric.setDataFormat(book.createDataFormat().getFormat("#,##0.##"));
         }
         Sheet sheet(String name, OperationalReportPrintResponse info, String note, String... columns) {
             var sheet = book.createSheet(name);
-            row(sheet, "BÁO CÁO VẬN HÀNH VÀ LƯU THÔNG THƯ VIỆN");
-            row(sheet, "Kỳ báo cáo", info.report().dateFrom() + " — " + info.report().dateTo());
-            row(sheet, "Thời điểm xuất (Việt Nam): " + DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZONE).format(info.generatedAt())
-                + " | Người lập: " + info.preparedBy());
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, columns.length - 1));
-            sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, columns.length - 1));
-            sheet.getRow(0).setHeightInPoints(30);
-            sheet.getRow(2).setHeightInPoints(30);
-            row(sheet, note); sheet.addMergedRegion(new CellRangeAddress(3, 3, 0, columns.length - 1));
-            sheet.getRow(3).setHeightInPoints(48);
-            row(sheet, ""); row(sheet, (Object[])columns);
-            for (var cell : sheet.getRow(5)) cell.setCellStyle(header);
-            sheet.getRow(5).setHeightInPoints(36); sheet.createFreezePane(0, 6);
+            // Excel freezes every row above the split, so put the column header first.
+            // Report metadata/notes remain available in Page Layout and Print Preview.
+            String exportedAt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZONE).format(info.generatedAt());
+            sheet.getHeader().setCenter("&\"Times New Roman,Regular\"&10BÁO CÁO VẬN HÀNH VÀ LƯU THÔNG THƯ VIỆN\n"
+                + "Kỳ báo cáo: " + info.report().dateFrom() + " — " + info.report().dateTo()
+                + "\nThời điểm xuất (Việt Nam): " + exportedAt + "\nNgười lập: " + info.preparedBy().replace("&", "&&"));
+            sheet.getFooter().setCenter("&\"Times New Roman,Regular\"&9" + note.replace("&", "&&"));
+            sheet.setMargin(PageMargin.TOP, 1.0);
+            sheet.setMargin(PageMargin.BOTTOM, 0.8);
+            row(sheet, (Object[])columns);
+            for (var cell : sheet.getRow(0)) cell.setCellStyle(header);
+            sheet.getRow(0).setHeightInPoints(36); sheet.createFreezePane(0, 1);
             sheet.setDisplayGridlines(false);
             sheet.getPrintSetup().setLandscape(true);
             sheet.getPrintSetup().setPaperSize(PrintSetup.A4_PAPERSIZE);
@@ -231,10 +249,10 @@ public class DashboardExcelExporter {
         }
         void finish() {
             for (var sheet : book) {
-                int columns = sheet.getRow(5).getLastCellNum();
-                sheet.setAutoFilter(new CellRangeAddress(5, sheet.getLastRowNum(), 0, columns-1));
+                int columns = sheet.getRow(0).getLastCellNum();
+                sheet.setAutoFilter(new CellRangeAddress(0, sheet.getLastRowNum(), 0, columns-1));
                 for (int i=0; i<columns; i++) { sheet.autoSizeColumn(i); sheet.setColumnWidth(i, Math.min(60*256, Math.max(15*256, sheet.getColumnWidth(i)))); }
-                sheet.setRepeatingRows(new CellRangeAddress(5,5,-1,-1));
+                sheet.setRepeatingRows(new CellRangeAddress(0,0,-1,-1));
             }
         }
     }

@@ -37,25 +37,64 @@ class DashboardExcelExporterTest {
         when(jdbc.queryForObject(anyString(), anyMap(), eq(String.class))).thenReturn("Librarian A");
         when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of());
         when(jdbc.queryForList(anyString(), any(MapSqlParameterSource.class))).thenReturn(List.of());
+        when(jdbc.queryForList(contains("LIMIT 100"), any(MapSqlParameterSource.class))).thenReturn(List.of(
+            Map.of("publication_id", 9007199254740993L, "title", "=HYPERLINK(\"evil\")", "borrow_count", 3L)));
     }
 
-    @Test void exportsFiveStyledSheetsWithNumericMoneyAndStringIdentifiers() throws Exception {
+    @Test void exportsSixSheetsWithTimesNewRomanGreenHeadersAndOnlyColumnHeaderFrozen() throws Exception {
         byte[] bytes = exporter.export(report, 7L);
         try (var book = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
-            assertThat(book.getNumberOfSheets()).isEqualTo(5);
+            assertThat(book.getNumberOfSheets()).isEqualTo(6);
             assertThat(book.getSheetName(0)).contains("Tổng quan");
-            assertThat(book.getSheetName(4)).contains("Bạn đọc");
+            assertThat(book.getSheetName(1)).isEqualTo("2. Top 100 ấn phẩm mượn nhiều");
+            assertThat(book.getSheetName(5)).contains("Bạn đọc");
             var sheet = book.getSheetAt(0);
-            assertThat(sheet.getRow(8).getCell(1).getNumericCellValue()).isEqualTo(75);
-            assertThat(sheet.getRow(11).getCell(1).getNumericCellValue()).isEqualTo(150000);
-            assertThat(sheet.getRow(16).getCell(0).getCellType()).isEqualTo(CellType.STRING);
-            assertThat(sheet.getRow(16).getCell(2).getStringCellValue()).isEqualTo("9007199254740993");
-            assertThat(sheet.getRow(5).getCell(0).getCellStyle().getFillForegroundColor()).isNotZero();
+            assertThat(sheet.getLastRowNum()).isEqualTo(9); // Column header plus nine KPI rows; no Top table.
+            assertThat(sheet.getRow(3).getCell(1).getNumericCellValue()).isEqualTo(75);
+            assertThat(sheet.getRow(6).getCell(1).getNumericCellValue()).isEqualTo(150000);
+            var top = book.getSheetAt(1);
+            assertThat(top.getRow(1).getCell(2).getCellType()).isEqualTo(CellType.STRING);
+            assertThat(top.getRow(1).getCell(1).getStringCellValue()).isEqualTo("9007199254740993");
+            assertThat(top.getRow(1).getCell(3).getNumericCellValue()).isEqualTo(3);
             for (var s : book) {
                 assertThat(s.getPaneInformation().isFreezePane()).isTrue();
-                assertThat(s.getRepeatingRows().getFirstRow()).isEqualTo(5);
+                assertThat(s.getPaneInformation().getVerticalSplitPosition()).isZero();
+                assertThat(s.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 1);
+                assertThat(s.getPaneInformation().getHorizontalSplitTopRow()).isEqualTo((short) 1);
+                assertThat(s.getRepeatingRows().getFirstRow()).isZero();
+                assertThat(s.getRepeatingRows().getLastRow()).isZero();
+                var style = s.getRow(0).getCell(0).getCellStyle();
+                assertThat(((org.apache.poi.xssf.usermodel.XSSFCellStyle) style).getFillForegroundXSSFColor().getARGBHex()).endsWith("15803D");
+                var font = book.getFontAt(style.getFontIndex());
+                assertThat(font.getBold()).isTrue();
+                assertThat(font.getColor()).isEqualTo(org.apache.poi.ss.usermodel.IndexedColors.WHITE.getIndex());
+                assertThat(s.getHeader().getCenter()).contains("Times New Roman", "2026-10-01", "2026-10-03", "Librarian A", "Thời điểm xuất");
+                assertThat(s.getFooter().getCenter()).contains("Times New Roman");
+                for (var row : s) for (var cell : row) {
+                    assertThat(book.getFontAt(cell.getCellStyle().getFontIndex()).getFontName()).isEqualTo("Times New Roman");
+                }
             }
         }
+    }
+
+    @Test void top100UsesIndependentPeriodQueryAndCanExportMoreThanTenPublications() throws Exception {
+        var publications = java.util.stream.IntStream.range(0, 100).mapToObj(i -> Map.<String, Object>of(
+            "publication_id", 9007199254740993L + i, "title", "Publication " + i, "borrow_count", 100L - i)).toList();
+        when(jdbc.queryForList(contains("LIMIT 100"), any(MapSqlParameterSource.class))).thenReturn(publications);
+        try (var book = new XSSFWorkbook(new ByteArrayInputStream(exporter.export(report, 7L)))) {
+            var top = book.getSheetAt(1);
+            assertThat(top.getLastRowNum()).isEqualTo(100);
+            assertThat(top.getRow(100).getCell(0).getNumericCellValue()).isEqualTo(100);
+            assertThat(top.getRow(100).getCell(2).getStringCellValue()).isEqualTo("Publication 99");
+            assertThat(top.getRow(0).getCell(3).getStringCellValue()).isEqualTo("Số lượt mượn trong kỳ");
+        }
+        var sql = org.mockito.ArgumentCaptor.forClass(String.class);
+        var params = org.mockito.ArgumentCaptor.forClass(MapSqlParameterSource.class);
+        verify(jdbc, times(4)).queryForList(sql.capture(), params.capture());
+        assertThat(sql.getAllValues().get(0)).contains("COUNT(*) AS borrow_count", "t.borrowed_date >= :start",
+            "t.borrowed_date < :end", "GROUP BY p.id, p.title", "ORDER BY borrow_count DESC", "LIMIT 100");
+        assertThat(((java.sql.Timestamp) params.getAllValues().get(0).getValue("start")).toInstant().toString()).isEqualTo("2026-09-30T17:00:00Z");
+        assertThat(((java.sql.Timestamp) params.getAllValues().get(0).getValue("end")).toInstant().toString()).isEqualTo("2026-10-03T17:00:00Z");
     }
 
     @Test void snapshotUsesVietnamDateBoundariesAndTrueOnTimeReturnRate() {
@@ -87,17 +126,17 @@ class DashboardExcelExporterTest {
         var event = Map.<String, Object>of("receipt", "DEP-9007199254740993 / GD-2", "occurred_at", returned.get("returned_date"),
             "student_id", "00123", "event", "Hoàn cọc", "amount", BigDecimal.valueOf(49000), "method", "Chưa ghi nhận");
         when(jdbc.queryForList(anyString(), any(MapSqlParameterSource.class)))
-            .thenReturn(List.of(active)).thenReturn(List.of(returned)).thenReturn(List.of(event));
+            .thenReturn(List.of()).thenReturn(List.of(active)).thenReturn(List.of(returned)).thenReturn(List.of(event));
         try (var book = new XSSFWorkbook(new ByteArrayInputStream(exporter.export(report, 7L)))) {
-            var loan = book.getSheetAt(1).getRow(6);
+            var loan = book.getSheetAt(2).getRow(1);
             assertThat(loan.getCell(1).getStringCellValue()).isEqualTo("00123");
             assertThat(loan.getCell(3).getStringCellValue()).isEqualTo("000BC5");
             assertThat(loan.getCell(4).getCellType()).isEqualTo(CellType.STRING);
             assertThat(loan.getCell(5).getStringCellValue()).isEqualTo("03/10/2026 00:01");
             assertThat(loan.getCell(9).getNumericCellValue()).isEqualTo(50000);
-            assertThat(book.getSheetAt(2).getRow(6).getCell(8).getStringCellValue()).isEqualTo("Chưa ghi nhận");
-            assertThat(book.getSheetAt(2).getRow(6).getCell(9).getNumericCellValue()).isEqualTo(49000);
-            assertThat(book.getSheetAt(3).getRow(6).getCell(0).getStringCellValue()).contains("9007199254740993");
+            assertThat(book.getSheetAt(3).getRow(1).getCell(8).getStringCellValue()).isEqualTo("Chưa ghi nhận");
+            assertThat(book.getSheetAt(3).getRow(1).getCell(9).getNumericCellValue()).isEqualTo(49000);
+            assertThat(book.getSheetAt(4).getRow(1).getCell(0).getStringCellValue()).contains("9007199254740993");
         }
     }
 
