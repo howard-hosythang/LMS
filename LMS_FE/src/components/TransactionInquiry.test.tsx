@@ -80,6 +80,7 @@ test('restores reader ID with independent active and returned date ranges and pa
 test('reader suggestions select exact user ID rather than a name keyword', async () => {
   open('/librarianpage/transactions?tab=reader');
   fireEvent.change(screen.getByLabelText('Tra cứu MSSV hoặc họ tên'), { target: { value: 'Reader' } });
+  fireEvent.keyDown(screen.getByLabelText('Tra cứu MSSV hoặc họ tên'), { key: 'Enter' });
   fireEvent.click(await screen.findByRole('button', { name: 'Reader A · 00123' }));
   await waitFor(() => expect(dashboard.getReaderProfile).toHaveBeenCalledWith({ userId: '9' }));
   expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get('userId')).toBe('9');
@@ -142,8 +143,7 @@ test.each([
   ['transactions', 'Tìm kiếm giao dịch', 'keyword', 'page'],
   ['reader', 'Tra cứu MSSV hoặc họ tên', 'readerKeyword', 'activePage'],
   ['lifecycle', 'Tìm theo tên sách', 'bookKeyword', 'itemPage'],
-  ['lifecycle', 'Quét hoặc nhập barcode', 'barcode', 'timelinePage'],
-])('%s input %s keeps focus and only commits after 350ms', async (tab, label, key, pageKey) => {
+])('%s input %s keeps focus and only commits on Enter', async (tab, label, key, pageKey) => {
   jest.useFakeTimers();
   try {
     open(`/librarianpage/transactions?tab=${tab}&${pageKey}=2`);
@@ -159,9 +159,13 @@ test.each([
       expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get(key)).toBeNull();
     }
     expect([transactions.getAllTransactions, inquiry.readers, inquiry.publications].map(mock => jest.mocked(mock).mock.calls.length)).toEqual(callsBefore);
-    await act(async () => { jest.advanceTimersByTime(249); });
+    await act(async () => { jest.advanceTimersByTime(2000); });
     expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get(key)).toBeNull();
-    await act(async () => { jest.advanceTimersByTime(1); });
+    expect([transactions.getAllTransactions, inquiry.readers, inquiry.publications].map(mock => jest.mocked(mock).mock.calls.length)).toEqual(callsBefore);
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get(key)).toBeNull();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await act(async () => {});
     const params = new URLSearchParams(screen.getByTestId('url').textContent || '');
     expect(params.get(key)).toBe('Book'); expect(params.get(pageKey)).toBe('0');
     expect(input).toHaveFocus(); expect(input).toHaveValue('Book');
@@ -212,13 +216,22 @@ test.each([
   } finally { jest.useRealTimers(); }
 });
 
-test('barcode Enter submits the local input immediately without waiting for debounce', async () => {
-  open('/librarianpage/transactions?tab=lifecycle');
-  const input = screen.getByLabelText('Quét hoặc nhập barcode');
-  fireEvent.change(input, { target: { value: 'BC5' } });
-  fireEvent.submit(input.closest('form')!);
-  await screen.findByText('Xác nhận cất kệ');
-  expect(inquiry.barcode).toHaveBeenCalledWith('BC5');
-  expect(input).toHaveValue('BC5');
-  expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get('barcode')).toBe('BC5');
+test('barcode typing does not call API; submitting uses the local input', async () => {
+  jest.useFakeTimers();
+  try {
+    open('/librarianpage/transactions?tab=lifecycle');
+    const input = screen.getByLabelText('Quét hoặc nhập barcode');
+    input.focus();
+    fireEvent.change(input, { target: { value: 'BC5' } });
+    await act(async () => { jest.advanceTimersByTime(2000); });
+    expect(input).toHaveFocus();
+    expect(inquiry.barcode).not.toHaveBeenCalled();
+    expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get('barcode')).toBeNull();
+    fireEvent.submit(input.closest('form')!);
+    await act(async () => {});
+    expect(screen.getByText('Xác nhận cất kệ')).toBeInTheDocument();
+    expect(inquiry.barcode).toHaveBeenCalledWith('BC5');
+    expect(input).toHaveValue('BC5');
+    expect(new URLSearchParams(screen.getByTestId('url').textContent || '').get('barcode')).toBe('BC5');
+  } finally { jest.useRealTimers(); }
 });

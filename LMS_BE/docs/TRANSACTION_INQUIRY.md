@@ -84,8 +84,9 @@ Các bản sao cũ thiếu ngày nhập kho hoặc thiếu lịch sử cất k�
 
 F5, back/forward và link đối soát giữ đối tượng, bộ lọc và trang đang xem.
 Đổi bộ lọc reset trang của bảng tương ứng; giữ query không liên quan như `source`.
-Gõ tìm kiếm cập nhật URL bằng replace để không tạo một history entry cho mỗi ký tự;
-request tìm kiếm debounce 300 ms. Khi đổi đối tượng/bộ lọc, response cũ bị bỏ qua.
+Gõ tìm kiếm chỉ cập nhật state ô nhập, không cập nhật URL hay gửi request tự động.
+Nhấn Enter mới đồng bộ từ khóa vào URL bằng replace, reset trang và gửi request tìm kiếm;
+barcode hỗ trợ Enter hoặc nút Tra cứu. Khi đổi đối tượng/bộ lọc, response cũ bị bỏ qua.
 URL `highlight` hiện hữu vẫn mở giao dịch tương ứng; không làm mất các link từ Dashboard.
 ID giữ ở dạng chuỗi trên FE/JSON để không mất độ chính xác TSID.
 
