@@ -30,7 +30,7 @@ export function label(code?: string | null, en = false) { return code ? names[co
 export function Badge({ value }: { value?: string | null }) {
   const { language } = useLanguage();
   const warning = ['OVERDUE', 'UNPAID', 'LOST', 'IN_MAINTENANCE'].includes(value || '');
-  return <span className={`inline-block rounded-full border px-2.5 py-1 text-xs font-semibold ${warning ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200' : 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200'}`}>{label(value, language === 'en')}</span>;
+  return <span className={`inline-flex items-center justify-center text-center leading-none rounded-full border px-2.5 py-1 text-xs font-semibold ${warning ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200' : 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200'}`}>{label(value, language === 'en')}</span>;
 }
 export function useResource<T>(key: string | null, loader: () => Promise<T>) {
   const { language } = useLanguage();

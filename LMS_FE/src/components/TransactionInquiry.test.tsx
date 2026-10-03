@@ -4,7 +4,7 @@ import TransactionList from '../../pages/librarian_pages/TransactionList';
 import transactions from '../../api/transactionsService';
 import inquiry from '../../api/circulationInquiryService';
 import dashboard from '../../api/librarianDashboardService';
-import { InquiryDrawer } from '../../components/librarian_pages/inquiry/shared';
+import { Badge, InquiryDrawer } from '../../components/librarian_pages/inquiry/shared';
 
 let mockLanguage = 'vi';
 jest.mock('../../contexts/LanguageContext', () => ({ useLanguage: () => ({ language: mockLanguage }) }));
@@ -113,6 +113,7 @@ test('detail drawer itemizes collector and keeps notes there without edit-fine a
   const drawer = await screen.findByRole('dialog', { name: /Chi tiết giao dịch/ });
   await within(drawer).findByText(/Collector A/);
   expect(within(drawer).getByText('Bảng kê các khoản phạt')).toBeInTheDocument();
+  expect(within(drawer).getByText('Đã trả').parentElement).toHaveClass('flex', 'flex-wrap', 'items-center', 'gap-3');
   expect(screen.queryByText('Chỉnh sửa phí')).not.toBeInTheDocument();
   fireEvent.change(within(drawer).getByLabelText('Ghi chú mới'), { target: { value: 'Next shift note' } });
   fireEvent.click(within(drawer).getByRole('button', { name: 'Thêm ghi chú' }));
@@ -124,6 +125,13 @@ test('shared drawer supports a custom width instead of the default width', () =>
   const drawer = screen.getByRole('dialog', { name: 'Custom width' });
   expect(drawer).toHaveClass('w-full', 'max-w-3xl', 'xl:max-w-4xl');
   expect(drawer).not.toHaveClass('max-w-4xl');
+});
+
+test('shared borrowing badge centers its text while preserving border, spacing and colors', () => {
+  render(<Badge value="BORROWING" />);
+  const badge = screen.getByText('Đang mượn');
+  expect(badge).toHaveClass('inline-flex', 'items-center', 'justify-center', 'text-center', 'leading-none', 'rounded-full', 'border', 'px-2.5', 'py-1', 'text-xs', 'font-semibold', 'border-indigo-200', 'dark:border-indigo-500/30');
+  expect(badge).not.toHaveClass('inline-block');
 });
 
 test('restores reader ID with independent active and returned date ranges and pages', async () => {
