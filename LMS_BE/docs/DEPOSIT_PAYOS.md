@@ -53,7 +53,7 @@ Webhook giữ nguyên URL **`POST /api/v1/fines/payments/payos/webhook`**. Contr
 - Không cho hủy đơn PAID/CONSUMED hoặc đơn đã nhận một phần tiền. Thiếu/thừa tiền cần đối soát, không tự xóa lịch sử hoặc tự hoàn qua payOS.
 - Timeout tạo link: thử lại cùng đối tượng dùng lại mã đơn, không sinh mã mới. Nếu POST đã thành công ở provider nhưng mất response, GET lấy lại ID; khi GET không trả payload VietQR, mở checkout của **chính đơn cũ** để xem QR trên payOS. Không giả QR link là VietQR chuyển khoản ngân hàng.
 
-Tài liệu provider tham chiếu: [payOS API](https://payos.vn/docs/api/) — amountPaid, GET trạng thái, POST hủy, checkout URL và hạn chế độ dài description. Description cọc dùng `COC` + 6 chữ số (9 ký tự); MSSV/họ tên đầy đủ hiển thị trong UI/buyerName, không nhồi vào nội dung chuyển khoản.
+Tài liệu provider tham chiếu: [payOS API](https://payos.vn/docs/api/) — amountPaid, GET trạng thái, POST hủy, checkout URL và hạn chế độ dài description. Nội dung chuyển khoản cọc của đơn mới dùng `LMS COC <MSSV>` (ví dụ `LMS COC 00123`), lấy MSSV từ dữ liệu bạn đọc ở backend cho cả ba luồng giao sách. Đơn đã tạo vẫn giữ nội dung cũ khi tiếp tục xử lý. Lưu ý: tài khoản ngân hàng không liên kết qua payOS có giới hạn description 9 ký tự, không phù hợp với mẫu này; cần sử dụng tài khoản liên kết hỗ trợ nội dung dài hơn.
 
 ## Ngoại lệ và đối soát vận hành
 

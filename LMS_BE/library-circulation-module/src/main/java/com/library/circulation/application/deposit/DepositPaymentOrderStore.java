@@ -56,8 +56,7 @@ public class DepositPaymentOrderStore {
             if (debt != null && debt > 0) throw new AppException(ErrorCode.USER_HAS_UNPAID_FINES);
         }
         Long code = jdbc.queryForObject("SELECT nextval('deposit_payment_order_code_seq')", Map.of(), Long.class);
-        // Short bank-compatible description; order code and UI carry the full reader information.
-        String description = "COC" + String.format(java.util.Locale.ROOT, "%06d", code % 1000000);
+        String description = "LMS COC " + target.get("student_id");
         params.addValue("id", TsIdGenerator.next()).addValue("code", code).addValue("flow", request.flow())
             .addValue("sourceId", request.sourceId()).addValue("amount", amount).addValue("description", description).addValue("librarianId", librarianId);
         jdbc.update("""
@@ -75,7 +74,7 @@ public class DepositPaymentOrderStore {
                 if (request.sourceId() != null || request.studentId() == null || request.studentId().isBlank() || request.barcode() == null || request.barcode().isBlank()) throw new AppException(ErrorCode.INVALID_REQUEST);
                 params.addValue("studentId", request.studentId().trim()).addValue("barcode", request.barcode().trim());
                 sql = """
-                    SELECT u.id AS user_id,i.id AS item_id FROM users u CROSS JOIN items i
+                    SELECT u.id AS user_id,u.student_id,i.id AS item_id FROM users u CROSS JOIN items i
                     WHERE u.student_id=:studentId AND u.status='ACTIVE' AND i.barcode=:barcode
                     AND (i.status='AVAILABLE' OR (i.status='RESERVED' AND EXISTS (
                         SELECT 1 FROM reservations r WHERE r.user_id=u.id AND r.assigned_item_id=i.id
@@ -89,7 +88,7 @@ public class DepositPaymentOrderStore {
                 if (request.sourceId() == null) throw new AppException(ErrorCode.INVALID_REQUEST);
                 params.addValue("sourceId", request.sourceId());
                 sql = """
-                    SELECT u.id AS user_id,i.id AS item_id FROM borrowing_transactions t
+                    SELECT u.id AS user_id,u.student_id,i.id AS item_id FROM borrowing_transactions t
                     JOIN users u ON u.id=t.user_id JOIN items i ON i.id=t.item_id
                     WHERE t.id=:sourceId AND u.status='ACTIVE' AND t.status='WAITING_FOR_PICKUP'
                     AND (t.picked_up_deadline IS NULL OR t.picked_up_deadline>=NOW()) AND i.status='RESERVED'
@@ -100,7 +99,7 @@ public class DepositPaymentOrderStore {
                 if (request.sourceId() == null) throw new AppException(ErrorCode.INVALID_REQUEST);
                 params.addValue("sourceId", request.sourceId());
                 sql = """
-                    SELECT u.id AS user_id,i.id AS item_id FROM reservations r
+                    SELECT u.id AS user_id,u.student_id,i.id AS item_id FROM reservations r
                     JOIN users u ON u.id=r.user_id JOIN items i ON i.id=r.assigned_item_id
                     WHERE r.id=:sourceId AND u.status='ACTIVE' AND r.status='READY_FOR_PICKUP'
                     AND (r.hold_expiration_time IS NULL OR r.hold_expiration_time>=NOW()) AND i.status='RESERVED'

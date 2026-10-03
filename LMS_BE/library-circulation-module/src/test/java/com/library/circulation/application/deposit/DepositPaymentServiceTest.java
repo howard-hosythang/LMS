@@ -37,7 +37,7 @@ class DepositPaymentServiceTest {
         var row = new HashMap<String, Object>();
         row.putAll(Map.of("order_code", CODE, "status", status, "amount", new BigDecimal("50000"),
             "user_id", 7L, "item_id", 1L, "flow", "TRANSACTION", "source_id", 10L,
-            "description", "COC000000", "student_id", "00123", "full_name", "Reader"));
+            "description", "LMS COC 00123", "student_id", "00123", "full_name", "Reader"));
         row.put("payment_link_id", "link"); row.put("qr_code", "qr"); row.put("checkout_url", "https://pay.payos.vn/link");
         return row;
     }
@@ -121,7 +121,7 @@ class DepositPaymentServiceTest {
     @Test void createsLinkWithDepositDescriptionNotFineDescription() {
         var request = new DepositPaymentRequest("TRANSACTION", null, null, 10L);
         when(store.prepare(request, 9L)).thenReturn(order("CREATING"));
-        when(client.createPaymentLink(eq(CODE), eq(50000), eq("COC000000"), eq("Reader"), eq("Library borrowing deposit"), anyString(), anyString()))
+        when(client.createPaymentLink(eq(CODE), eq(50000), eq("LMS COC 00123"), eq("Reader"), eq("Library borrowing deposit"), anyString(), anyString()))
             .thenReturn(new PayOsClient.PayOsPaymentLink("link", "https://pay.payos.vn/link", "qr"));
         when(store.find(CODE, false)).thenReturn(order("PENDING"));
         assertThat(service.create(request, 9L).qrCode()).isEqualTo("qr");

@@ -28,7 +28,7 @@ class DepositPaymentOrderStoreTest {
     @Mock CirculationPolicyService policies;
     @InjectMocks DepositPaymentOrderStore store;
     CirculationPolicy policy(BigDecimal amount) { return new CirculationPolicy(48,14,5,3,1,2,BigDecimal.TEN,amount,false,null,null,null); }
-    Map<String,Object> target() { return Map.of("user_id",7L,"item_id",1L); }
+    Map<String,Object> target() { return Map.of("user_id",7L,"item_id",1L,"student_id","00123"); }
 
     @ParameterizedTest @ValueSource(strings={"DIRECT","TRANSACTION","RESERVATION"})
     void createsDurableOrderWithPolicyAmountAndServerResolvedIdentity(String flow) {
@@ -44,7 +44,7 @@ class DepositPaymentOrderStoreTest {
         assertThat(captured.getValue().getValue("userId")).isEqualTo(7L);
         assertThat(captured.getValue().getValue("itemId")).isEqualTo(1L);
         assertThat(captured.getValue().getValue("amount")).isEqualTo(new BigDecimal("50000"));
-        assertThat(captured.getValue().getValue("description")).isEqualTo("COC000000");
+        assertThat(captured.getValue().getValue("description")).isEqualTo("LMS COC 00123");
         assertThat(captured.getValue().getValue("flow")).isEqualTo(flow);
     }
     @Test void reusesOpenOrderInsteadOfCreatingDuplicate() {
