@@ -25,7 +25,7 @@ public interface PublicationJpaRepository extends JpaRepository<PublicationEntit
           p.coverImageUrl   AS coverImageUrl,
           p.publicationYear AS publicationYear,
           p.createdAt       AS createdAt,
-          SUM(CASE WHEN i.status = 'AVAILABLE' THEN 1 ELSE 0 END) AS availableItems,
+          COUNT(DISTINCT CASE WHEN i.status = 'AVAILABLE' THEN i.id ELSE NULL END) AS availableItems,
           AVG(r.star)       AS ratingAverage,
           COUNT(DISTINCT r.id) AS ratingCount,
           COUNT(DISTINCT bt.id) AS borrowCount
@@ -46,7 +46,7 @@ public interface PublicationJpaRepository extends JpaRepository<PublicationEntit
           p.coverImageUrl   AS coverImageUrl,
           p.publicationYear AS publicationYear,
           p.createdAt       AS createdAt,
-          SUM(CASE WHEN i.status = 'AVAILABLE' THEN 1 ELSE 0 END) AS availableItems,
+          COUNT(DISTINCT CASE WHEN i.status = 'AVAILABLE' THEN i.id ELSE NULL END) AS availableItems,
           AVG(r.star)       AS ratingAverage,
           COUNT(DISTINCT r.id) AS ratingCount,
           COUNT(DISTINCT bt.id) AS borrowCount
