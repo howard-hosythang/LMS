@@ -59,6 +59,48 @@ test('book click opens only quick view and external links preserve the inquiry t
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
+test.each(['transaction', 'book'].flatMap(kind => ['button', 'backdrop', 'Escape'].map(close => [kind, close])))('%s drawer closes via %s without navigation, refetch or scroll changes', async (kind, close) => {
+  const result = render(<MemoryRouter initialEntries={['/librarianpage/transactions?page=2&source=dashboard']}>
+    <div data-route-scroll-container data-testid="content"><TransactionList /></div><Location />
+  </MemoryRouter>);
+  const trigger = await screen.findByRole('button', { name: kind === 'transaction' ? 'Xem chi tiết' : 'Book A' });
+  const content = screen.getByTestId('content');
+  content.scrollTop = 800;
+  const url = screen.getByTestId('url').textContent;
+  trigger.focus();
+  const focus = jest.spyOn(trigger, 'focus');
+  fireEvent.click(trigger);
+  const drawer = await screen.findByRole('dialog');
+  await within(drawer).findByText(kind === 'transaction' ? /Collector A/ : 'Author A');
+  expect(screen.getByTestId('url').textContent).toBe(url);
+  expect(content.scrollTop).toBe(800);
+  if (close === 'button') fireEvent.click(within(drawer).getByRole('button', { name: 'Đóng' }));
+  else if (close === 'backdrop') fireEvent.mouseDown(drawer.parentElement!);
+  else fireEvent.keyDown(drawer, { key: 'Escape' });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByTestId('url').textContent).toBe(url);
+  expect(screen.getByTestId('content')).toBe(content);
+  expect(content.scrollTop).toBe(800);
+  expect(trigger).toHaveFocus();
+  expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  expect(transactions.getAllTransactions).toHaveBeenCalledTimes(1);
+  focus.mockRestore(); result.unmount();
+});
+
+test('quick view deep link initializes local branch and page, and closing does not change URL', async () => {
+  open('/librarianpage/transactions?quickPubId=22&quickItemId=5&quickBranch=CS2&quickPage=2&transactionId=1');
+  const drawer = await screen.findByRole('dialog', { name: 'Xem nhanh ấn phẩm' });
+  await within(drawer).findByText('Author A');
+  expect(inquiry.publication).toHaveBeenCalledWith('22', 'CS2', 2);
+  const url = screen.getByTestId('url').textContent;
+  fireEvent.click(within(drawer).getByRole('button', { name: 'Đóng' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByTestId('url').textContent).toBe(url);
+  fireEvent.change(screen.getByLabelText('Trạng thái mượn trả'), { target: { value: 'BORROWING' } });
+  await act(async () => {});
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
 test('detail drawer itemizes collector and keeps notes there without edit-fine action', async () => {
   open('/librarianpage/transactions?transactionId=1');
   const drawer = await screen.findByRole('dialog', { name: /Chi tiết giao dịch/ });

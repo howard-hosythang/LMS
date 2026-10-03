@@ -67,8 +67,8 @@ export function InquiryDrawer({ title, onClose, children }: { title: string; onC
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden'; ref.current?.focus();
-    return () => { document.body.style.overflow = overflow; previous?.focus(); };
+    document.body.style.overflow = 'hidden'; ref.current?.focus({ preventScroll: true });
+    return () => { document.body.style.overflow = overflow; previous?.focus({ preventScroll: true }); };
   }, []);
   return createPortal(<div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="flex h-full w-full max-w-2xl flex-col bg-white text-slate-900 shadow-xl dark:bg-slate-900 dark:text-slate-100" onKeyDown={event => {

@@ -75,7 +75,7 @@ export const LibrarianLayout: React.FC<{ children: React.ReactNode }> = ({
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const [isDesktopViewport, setIsDesktopViewport] = React.useState(false);
   const isPublicBrowsing = location.pathname.startsWith('/librarianpage/public');
-  const routeScrollKey = `${location.pathname}${location.search}`;
+  const routeScrollKey = location.pathname;
   const contentRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useLayoutEffect(() => {

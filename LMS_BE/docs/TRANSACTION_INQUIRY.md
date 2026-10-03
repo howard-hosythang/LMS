@@ -32,6 +32,10 @@ Các nghiệp vụ tài chính và lưu thông vẫn ở trang Lưu thông.
   Đây là hành vi thêm ghi chú của hệ thống hiện hữu, không giả định có API sửa nội dung từng note.
 - Drawer tải chi tiết và ghi chú khi mở, không nạp toàn bộ chi tiết cho tất cả dòng danh sách.
 - Đóng bằng nút, Escape hoặc nền ngoài; giữ focus trong Drawer và khôi phục focus khi đóng.
+- Đóng/mở Drawer và đổi cơ sở/trang trong Quick View dùng state nội bộ, không thay đổi URL.
+  Các tham số `transactionId`/`highlight` và `quick*` chỉ khởi tạo Drawer khi vào trang.
+  Khôi phục focus với `preventScroll`; Layout giữ nguyên DOM và vị trí cuộn khi query thay đổi.
+  Cơ chế ScrollToTop chỉ chạy khi chuyển sang pathname khác.
 
 ## 2. Tra cứu bạn đọc
 

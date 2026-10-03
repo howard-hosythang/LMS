@@ -22,10 +22,14 @@ export default function TransactionInquiry() {
   const [refresh, setRefresh] = useState(0);
   const list = useResource(tab === 'transactions' ? JSON.stringify([page, keyword, status, fineStatus, dateType, dateFrom, dateTo, sortBy, sortDir, refresh]) : null,
     async () => (await transactions.getAllTransactions(page, 15, keyword, status, fineStatus, dateFrom, dateTo, sortBy, sortDir, dateType)).data);
-  const selectedTx = idValue(params.get('transactionId')) || idValue(params.get('highlight')), quickPubId = idValue(params.get('quickPubId')), quickItemId = idValue(params.get('quickItemId'));
+  const [activeTransactionId, setActiveTransactionId] = useState(() => idValue(params.get('quickPubId')) ? undefined : idValue(params.get('transactionId')) || idValue(params.get('highlight')));
+  const [quickBook, setQuickBook] = useState<{ publicationId: string; itemId?: string; branch: string; page: number } | undefined>(() => {
+    const publicationId = idValue(params.get('quickPubId'));
+    return publicationId ? { publicationId, itemId: idValue(params.get('quickItemId')), branch: params.get('quickBranch') || '', page: pageNumber(params.get('quickPage')) } : undefined;
+  });
   const actions: TableActions = {
-    onTransaction: id => update({ transactionId: id, highlight: undefined, quickPubId: undefined, quickItemId: undefined }),
-    onBook: (publicationId, itemId) => update({ quickPubId: publicationId, quickItemId: itemId, quickPage: 0 }),
+    onTransaction: id => { setQuickBook(undefined); setActiveTransactionId(id); },
+    onBook: (publicationId, itemId) => { setActiveTransactionId(undefined); setQuickBook({ publicationId, itemId, branch: '', page: 0 }); },
     onReader: userId => update({ tab: 'reader', userId, activePage: 0, returnedPage: 0 }),
   };
   const filter = (key: string, value: string) => update({ [key]: value, page: 0 }, true);
@@ -45,7 +49,7 @@ export default function TransactionInquiry() {
     </section><section className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"><LoadState loading={list.loading} error={list.error}>{list.data && <><TransactionTable items={list.data.content} {...actions} /><Pager data={list.data} onPage={next => update({ page: next })} /></>}</LoadState></section></>}
     {tab === 'reader' && <ReaderHistory actions={actions} refresh={refresh} />}
     {tab === 'lifecycle' && <BookLifecycle actions={actions} refresh={refresh} />}
-    {quickPubId ? <BookQuickViewDrawer key={`${quickPubId}/${quickItemId || ''}`} publicationId={quickPubId} itemId={quickItemId} branch={params.get('quickBranch') || ''} page={pageNumber(params.get('quickPage'))} onBranch={branch => update({ quickBranch: branch, quickPage: 0 }, true)} onPage={page => update({ quickPage: page })} onClose={() => update({ quickPubId: undefined, quickItemId: undefined, quickPage: undefined, quickBranch: undefined })} onCopy={(itemId, pubId) => update({ tab: 'lifecycle', itemId, pubId, timelinePage: 0, quickPubId: undefined, quickItemId: undefined, transactionId: undefined, highlight: undefined })} onTransaction={actions.onTransaction} />
-      : selectedTx && <TransactionDetailDrawer key={selectedTx} id={selectedTx} onClose={() => update({ transactionId: undefined, highlight: undefined })} onUpdated={() => setRefresh(v => v + 1)} onBook={actions.onBook} />}
+    {quickBook ? <BookQuickViewDrawer key={`${quickBook.publicationId}/${quickBook.itemId || ''}`} publicationId={quickBook.publicationId} itemId={quickBook.itemId} branch={quickBook.branch} page={quickBook.page} onBranch={branch => setQuickBook(book => book && { ...book, branch, page: 0 })} onPage={page => setQuickBook(book => book && { ...book, page })} onClose={() => setQuickBook(undefined)} onCopy={(itemId, pubId) => { setQuickBook(undefined); setActiveTransactionId(undefined); update({ tab: 'lifecycle', itemId, pubId, timelinePage: 0 }); }} onTransaction={actions.onTransaction} />
+      : activeTransactionId && <TransactionDetailDrawer key={activeTransactionId} id={activeTransactionId} onClose={() => setActiveTransactionId(undefined)} onUpdated={() => setRefresh(v => v + 1)} onBook={actions.onBook} />}
   </main>;
 }

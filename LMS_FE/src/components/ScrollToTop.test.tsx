@@ -8,6 +8,8 @@ const RoutedContent = () => (
     <ScrollToTop />
     <nav>
       <Link to="/publicpage/search">Search</Link>
+      <Link to="/publicpage?transactionId=1">Open drawer</Link>
+      <Link to="/publicpage">Close drawer</Link>
     </nav>
     <main data-route-scroll-container data-testid="scroll-container">
       <Routes>
@@ -50,5 +52,21 @@ describe('ScrollToTop', () => {
     });
 
     expect(container.scrollTop).toBe(0);
+  });
+
+  it('preserves scroll for query changes and a new history entry at the same pathname', () => {
+    render(<MemoryRouter initialEntries={['/publicpage']}><RoutedContent /></MemoryRouter>);
+    act(() => { jest.advanceTimersByTime(700); });
+    const container = screen.getByTestId('scroll-container');
+    container.scrollTop = 1200;
+    jest.mocked(window.scrollTo).mockClear();
+    fireEvent.click(screen.getByText('Open drawer'));
+    act(() => { jest.advanceTimersByTime(700); });
+    expect(container.scrollTop).toBe(1200);
+    fireEvent.click(screen.getByText('Close drawer'));
+    fireEvent.click(screen.getByText('Close drawer'));
+    act(() => { jest.advanceTimersByTime(700); });
+    expect(container.scrollTop).toBe(1200);
+    expect(window.scrollTo).not.toHaveBeenCalled();
   });
 });

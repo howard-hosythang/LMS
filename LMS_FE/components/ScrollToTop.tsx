@@ -10,7 +10,7 @@ const SCROLL_CONTAINER_SELECTOR = [
 ].join(', ');
 
 export const ScrollToTop = () => {
-  const { pathname, search, key } = useLocation();
+  const { pathname } = useLocation();
 
   useLayoutEffect(() => {
     if ('scrollRestoration' in window.history) {
@@ -39,7 +39,7 @@ export const ScrollToTop = () => {
       window.cancelAnimationFrame(frame);
       timers.forEach(window.clearTimeout);
     };
-  }, [pathname, search, key]);
+  }, [pathname]);
 
   return null;
 };
