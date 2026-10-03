@@ -77,6 +77,34 @@ class DashboardExcelExporterTest {
         }
     }
 
+    @Test void integersAndMoneyHaveNoTrailingSeparatorWhileFractionalRatesKeepOneDecimal() throws Exception {
+        when(jdbc.queryForMap(anyString(), any(MapSqlParameterSource.class))).thenReturn(Map.of(
+            "returned", 11L, "on_time", 10L, "held", BigDecimal.valueOf(50000), "overdue_in_period", 90L));
+        try (var book = new XSSFWorkbook(new ByteArrayInputStream(exporter.export(report, 7L)))) {
+            var sheet = book.getSheetAt(0);
+            var integer = sheet.getRow(5).getCell(1);
+            var money = sheet.getRow(6).getCell(1);
+            var rate = sheet.getRow(3).getCell(1);
+            assertThat(integer.getCellStyle().getDataFormatString()).isEqualTo("#,##0");
+            assertThat(money.getCellStyle().getDataFormatString()).isEqualTo("#,##0");
+            assertThat(rate.getCellStyle().getDataFormatString()).isEqualTo("#,##0.0");
+            assertThat(rate.getNumericCellValue()).isEqualTo(90.9);
+            var english = new org.apache.poi.ss.usermodel.DataFormatter(java.util.Locale.US);
+            assertThat(english.formatCellValue(integer)).isEqualTo("90");
+            assertThat(english.formatCellValue(money)).isEqualTo("50,000");
+            assertThat(english.formatCellValue(rate)).isEqualTo("90.9");
+            var vietnamese = new org.apache.poi.ss.usermodel.DataFormatter(java.util.Locale.forLanguageTag("vi-VN"));
+            assertThat(vietnamese.formatCellValue(integer)).isEqualTo("90");
+            assertThat(vietnamese.formatCellValue(money)).isEqualTo("50.000");
+            assertThat(vietnamese.formatCellValue(rate)).isEqualTo("90,9");
+            assertThat(book.getFontAt(rate.getCellStyle().getFontIndex()).getFontName()).isEqualTo("Times New Roman");
+        }
+        when(jdbc.queryForMap(anyString(), any(MapSqlParameterSource.class))).thenReturn(Map.of("returned", 10L, "on_time", 9L));
+        try (var book = new XSSFWorkbook(new ByteArrayInputStream(exporter.export(report, 7L)))) {
+            assertThat(book.getSheetAt(0).getRow(3).getCell(1).getCellStyle().getDataFormatString()).isEqualTo("#,##0");
+        }
+    }
+
     @Test void top100UsesIndependentPeriodQueryAndCanExportMoreThanTenPublications() throws Exception {
         var publications = java.util.stream.IntStream.range(0, 100).mapToObj(i -> Map.<String, Object>of(
             "publication_id", 9007199254740993L + i, "title", "Publication " + i, "borrow_count", 100L - i)).toList();

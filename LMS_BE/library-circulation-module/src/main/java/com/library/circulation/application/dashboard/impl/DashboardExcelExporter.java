@@ -205,7 +205,7 @@ public class DashboardExcelExporter {
 
     private static class Writer {
         private final XSSFWorkbook book;
-        private final CellStyle header, body, numeric;
+        private final CellStyle header, body, numeric, decimalStyle;
         Writer(XSSFWorkbook book) {
             this.book = book;
             book.getFontAt(0).setFontName("Times New Roman");
@@ -220,7 +220,8 @@ public class DashboardExcelExporter {
             XSSFFont font = book.createFont(); font.setFontName("Times New Roman");
             font.setBold(true); font.setColor(IndexedColors.WHITE.getIndex()); headerStyle.setFont(font);
             header = headerStyle;
-            numeric = book.createCellStyle(); numeric.cloneStyleFrom(body); numeric.setDataFormat(book.createDataFormat().getFormat("#,##0.##"));
+            numeric = book.createCellStyle(); numeric.cloneStyleFrom(body); numeric.setDataFormat(book.createDataFormat().getFormat("#,##0"));
+            decimalStyle = book.createCellStyle(); decimalStyle.cloneStyleFrom(body); decimalStyle.setDataFormat(book.createDataFormat().getFormat("#,##0.0"));
         }
         Sheet sheet(String name, OperationalReportPrintResponse info, String note, String... columns) {
             var sheet = book.createSheet(name);
@@ -248,7 +249,11 @@ public class DashboardExcelExporter {
             var row = sheet.createRow(sheet.getPhysicalNumberOfRows());
             for (int i=0; i<values.length; i++) {
                 var cell = row.createCell(i); Object value=values[i]; cell.setCellStyle(body);
-                if (value instanceof Number n) { cell.setCellValue(n.doubleValue()); cell.setCellStyle(numeric); }
+                if (value instanceof Number n) {
+                    double number = n.doubleValue();
+                    cell.setCellValue(number);
+                    cell.setCellStyle(number == Math.floor(number) ? numeric : decimalStyle);
+                }
                 else if (value instanceof java.sql.Timestamp ts) cell.setCellValue(ts.toInstant().atZone(ZONE).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
                 else if (value instanceof java.util.Date d) cell.setCellValue(d.toString());
                 else cell.setCellValue(value == null ? UNKNOWN : value.toString()); // Never formula cells, including user text starting with '='.
