@@ -4,15 +4,18 @@ import Circulation from '../../pages/librarian_pages/Circulation';
 import transactions from '../../api/transactionsService';
 import { confirmReservationPickup, lookupReservation } from '../../api/reservationService';
 import policyService from '../../api/circulationPolicyService';
+import depositPayments from '../../api/depositPaymentService';
 
 jest.mock('../../contexts/LanguageContext', () => ({ useLanguage: () => ({ language: 'vi' }) }));
 jest.mock('../../api/axiosInstance', () => ({ __esModule: true, default: {} }));
+jest.mock('../../api/depositPaymentService', () => ({ __esModule: true, default: { create: jest.fn(), sync: jest.fn(), cancel: jest.fn() } }));
 jest.mock('../../api/transactionsService', () => ({ __esModule: true, default: { borrowDirect: jest.fn(), lookup: jest.fn(), confirmPickup: jest.fn() } }));
 jest.mock('../../api/reservationService', () => ({ confirmReservationPickup: jest.fn(), lookupReservation: jest.fn() }));
 jest.mock('../../api/circulationPolicyService', () => ({ __esModule: true, default: { getPolicy: jest.fn() } }));
 jest.mock('../../api/reshelvingService', () => ({ __esModule: true, RESHELVING_CHANGED: 'test-reshelving', default: { getDefaultBranch: jest.fn().mockResolvedValue({ data: { branch: 'ALL' } }), getCount: jest.fn().mockResolvedValue({ data: { count: 0 } }) } }));
 
 const data = { transactionId: '10', reservationId: '20', dueDate: '2026-10-20', fullName: 'Reader', publicationTitle: 'Book', depositAmount: 50000, depositStatus: 'COLLECTED', barcode: 'BC1', depositPaymentMethod: 'BANK_TRANSFER' };
+const order = { orderCode: 2000000000000000, status: 'PENDING', amount: 50000, description: 'COC000000', paymentLinkId: 'link', checkoutUrl: 'https://pay.payos.vn/link', qrCode: 'deposit-qr', studentId: '00123', fullName: 'Reader', barcode: 'BC1', publicationTitle: 'Book' };
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(policyService.getPolicy).mockResolvedValue({ code: 200, data: { defaultDepositAmount: 50000, defaultLoanDays: 14, maxActiveBorrows: 5 } } as any);
@@ -21,6 +24,8 @@ beforeEach(() => {
   jest.mocked(transactions.confirmPickup).mockResolvedValue({ code: 200, data } as any);
   jest.mocked(lookupReservation).mockResolvedValue({ code: 200, data });
   jest.mocked(confirmReservationPickup).mockResolvedValue(data as any);
+  jest.mocked(depositPayments.create).mockResolvedValue({ code: 200, data: order } as any);
+  jest.mocked(depositPayments.sync).mockResolvedValue({ code: 200, data: { ...order, status: 'PAID' } } as any);
 });
 function open(tab: string) { render(<MemoryRouter initialEntries={[`/librarianpage/circulation?tab=${tab}`]}><Circulation /></MemoryRouter>); }
 
@@ -30,8 +35,12 @@ test('direct borrow defaults to cash, sends transfer and resets for next reader'
   fireEvent.click(screen.getByRole('radio', { name: 'Chuyển khoản / QR' }));
   fireEvent.change(screen.getByPlaceholderText('Nhập MSSV...'), { target: { value: '00123' } });
   fireEvent.change(screen.getByPlaceholderText('Quét hoặc nhập barcode...'), { target: { value: 'BC1' } });
+  expect(screen.getByRole('button', { name: 'Cho mượn ngay' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Tạo QR thu cọc' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Cho mượn ngay' })).toBeEnabled());
+  expect(depositPayments.create).toHaveBeenCalledWith({ flow: 'DIRECT', studentId: '00123', barcode: 'BC1' });
   fireEvent.click(screen.getByRole('button', { name: 'Cho mượn ngay' }));
-  await waitFor(() => expect(transactions.borrowDirect).toHaveBeenCalledWith({ studentId: '00123', barcode: 'BC1', paymentMethod: 'BANK_TRANSFER' }));
+  await waitFor(() => expect(transactions.borrowDirect).toHaveBeenCalledWith({ studentId: '00123', barcode: 'BC1', paymentMethod: 'BANK_TRANSFER', depositOrderCode: order.orderCode }));
   expect(await screen.findByText(/50\.000đ \(Chuyển khoản\)/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Giao dịch tiếp theo' }));
   expect(screen.getByRole('radio', { name: 'Tiền mặt' })).toBeChecked();
@@ -45,10 +54,13 @@ test.each(['direct', 'reservation'])('pickup %s sends selected method and shows 
   fireEvent.click(screen.getByRole('button', { name: 'Tra cứu' }));
   expect(await screen.findByRole('radio', { name: 'Tiền mặt' })).toBeChecked();
   fireEvent.click(screen.getByRole('radio', { name: 'Chuyển khoản / QR' }));
+  expect(screen.getAllByRole('button', { name: 'Xác nhận giao sách' })[1]).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Tạo QR thu cọc' }));
+  await waitFor(() => expect(screen.getAllByRole('button', { name: 'Xác nhận giao sách' })[1]).toBeEnabled());
   fireEvent.click(screen.getAllByRole('button', { name: 'Xác nhận giao sách' })[1]);
   expect(await screen.findByText(/50\.000đ \(Chuyển khoản\)/)).toBeInTheDocument();
-  if (type === 'direct') expect(transactions.confirmPickup).toHaveBeenCalledWith('10', 'BANK_TRANSFER');
-  else expect(confirmReservationPickup).toHaveBeenCalledWith('20', 'BANK_TRANSFER');
+  if (type === 'direct') expect(transactions.confirmPickup).toHaveBeenCalledWith('10', 'BANK_TRANSFER', order.orderCode);
+  else expect(confirmReservationPickup).toHaveBeenCalledWith('20', 'BANK_TRANSFER', order.orderCode);
 });
 
 test('no deposit hides payment choice and sends CASH for backward compatibility', async () => {

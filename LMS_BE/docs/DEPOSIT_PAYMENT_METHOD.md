@@ -4,7 +4,7 @@
 
 Thủ thư chọn **Tiền mặt** (`CASH`, mặc định) hoặc **Chuyển khoản / QR** (`BANK_TRANSFER`) tại Mượn trực tiếp và Xác nhận giao sách, gồm phiếu mượn chờ lấy và đặt trước. Chỉ hiển thị lựa chọn khi chính sách có thu cọc > 0. Kết quả giao sách hiển thị số tiền và hình thức backend đã ghi nhận. Giao dịch tiếp theo mặc định lại tiền mặt.
 
-Đây là ghi nhận phương thức thu, không tạo QR thanh toán, không tích hợp xác minh chuyển khoản. Thủ thư phải kiểm tra nhận tiền trước khi giao sách. Không thay đổi cách tính, cấn trừ, hoàn cọc hoặc thu phí phạt.
+V60 ban đầu chỉ ghi nhận phương thức thu. **Từ V61 đã bổ sung QR và xác minh cọc qua payOS**; khi có thu cọc, BANK_TRANSFER bắt buộc có đơn PAID khớp bạn đọc/bản sao/phiếu. Xem [DEPOSIT_PAYOS.md](DEPOSIT_PAYOS.md) để biết API, guardrails và kiểm thử. Không thay đổi cách tính, cấn trừ, hoàn cọc hoặc thu phí phạt.
 
 ## API
 

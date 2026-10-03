@@ -61,10 +61,11 @@ public class ReservationController {
   @RequiresRole(RoleConstants.LIBRARIAN)
   public ApiResponseApp<com.library.circulation.dto.response.BorrowTransactionResponse> confirmPickup(
       @PathVariable("id") Long reservationId,
-      @RequestParam(name = "paymentMethod", defaultValue = "CASH", required = false) String paymentMethod) {
+      @RequestParam(name = "paymentMethod", defaultValue = "CASH", required = false) String paymentMethod,
+      @RequestParam(name = "depositOrderCode", required = false) Long depositOrderCode) {
     Long librarianId = security.getCurrentUserId();
     return ApiResponseApp.success(
-        confirmReservationPickupUseCase.execute(reservationId, librarianId, paymentMethod));
+        confirmReservationPickupUseCase.execute(reservationId, librarianId, paymentMethod, depositOrderCode));
   }
 
   @DeleteMapping("/{id}")

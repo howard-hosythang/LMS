@@ -47,8 +47,8 @@ export async function cancelReservation(reservationId: string): Promise<void> {
   await axiosInstance.delete(`/reservations/${reservationId}`);
 }
 
-export async function confirmReservationPickup(reservationId: string, paymentMethod: DepositPaymentMethod = 'CASH'): Promise<DirectBorrowResponse['data']> {
-  const res: any = await axiosInstance.post(`/reservations/${reservationId}/confirm-pickup`, undefined, { params: { paymentMethod } });
+export async function confirmReservationPickup(reservationId: string, paymentMethod: DepositPaymentMethod = 'CASH', depositOrderCode?: number): Promise<DirectBorrowResponse['data']> {
+  const res: any = await axiosInstance.post(`/reservations/${reservationId}/confirm-pickup`, undefined, { params: { paymentMethod, ...(depositOrderCode !== undefined ? { depositOrderCode } : {}) } });
   return res.data;
 }
 

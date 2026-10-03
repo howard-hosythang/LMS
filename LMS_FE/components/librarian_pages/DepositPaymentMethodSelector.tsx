@@ -31,7 +31,7 @@ export default function DepositPaymentMethodSelector({ value, onChange, disabled
         })}
       </div>
       {value === 'BANK_TRANSFER' && <p className="text-xs text-slate-500 dark:text-slate-400">
-        {language === 'en' ? 'Verify that the transfer has been received before handing over the book.' : 'Kiểm tra đã nhận được chuyển khoản trước khi xác nhận giao sách.'}
+        {language === 'en' ? 'Create the payOS QR below and wait for payment confirmation before handing over the book.' : 'Tạo QR payOS bên dưới và đợi xác nhận nhận tiền cọc trước khi giao sách.'}
       </p>}
     </fieldset>
   );

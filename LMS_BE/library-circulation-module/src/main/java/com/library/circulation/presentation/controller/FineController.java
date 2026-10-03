@@ -42,6 +42,7 @@ public class FineController {
     private final PayFineUseCase payFineUseCase;
     private final PayAllFinesUseCase payAllFinesUseCase;
     private final FinePaymentService finePaymentService;
+    private final com.library.circulation.application.deposit.DepositPaymentService depositPaymentService;
     private final UpdateFineAmountUseCase updateFineAmountUseCase;
     private final com.library.shared.util.SecurityEvaluator security;
 
@@ -111,6 +112,7 @@ public class FineController {
     public ApiResponseApp<Map<String, Integer>> handlePayOsFineWebhook(@RequestBody String rawBody) {
         try {
             int paidCount = finePaymentService.confirmPayOsWebhook(rawBody);
+            depositPaymentService.webhook(rawBody);
             return ApiResponseApp.success(Map.of("paidCount", paidCount));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid payOS webhook");

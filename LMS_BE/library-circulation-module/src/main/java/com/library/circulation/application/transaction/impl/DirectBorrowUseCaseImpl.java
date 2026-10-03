@@ -62,6 +62,7 @@ public class DirectBorrowUseCaseImpl implements DirectBorrowUseCase {
     private final CirculationPolicyService policyService;
     private final LibrarianNotificationService librarianNotificationService;
     private final BorrowDepositService borrowDepositService;
+    private final com.library.circulation.application.deposit.DepositPaymentService depositPaymentService;
 
     @Override
     @Transactional
@@ -139,8 +140,10 @@ public class DirectBorrowUseCaseImpl implements DirectBorrowUseCase {
         BorrowingTransactionEntity entity = toEntity(transaction);
         transactionJpaRepository.save(entity);
         transactionJpaRepository.flush();
+        var depositAmount = depositPaymentService.resolveForHandover(method, command.depositOrderCode(), "DIRECT", null,
+            entity.getId(), userId, item.id(), policy.defaultDepositAmount(), librarianId);
         BorrowDepositService.DepositSnapshot deposit = borrowDepositService.collectForBorrow(
-            entity.getId(), librarianId, policy.defaultDepositAmount(), method);
+            entity.getId(), librarianId, depositAmount, method);
 
         kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(
             userId,

@@ -13,6 +13,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -30,7 +31,10 @@ public class PayOsClient {
         @Value("${payos.api-key:}") String apiKey,
         @Value("${payos.checksum-key:}") String checksumKey
     ) {
-        this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+        var requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(10000);
+        requestFactory.setReadTimeout(15000);
+        this.restClient = RestClient.builder().baseUrl(baseUrl).requestFactory(requestFactory).build();
         this.clientId = clientId;
         this.apiKey = apiKey;
         this.checksumKey = checksumKey;
@@ -45,6 +49,12 @@ public class PayOsClient {
         String cancelUrl,
         String returnUrl
     ) {
+        return createPaymentLink(orderCode, amount, description, buyerName,
+            "Library fine payment (" + fineCount + " fines)", cancelUrl, returnUrl);
+    }
+
+    public PayOsPaymentLink createPaymentLink(Long orderCode, int amount, String description, String buyerName,
+        String itemName, String cancelUrl, String returnUrl) {
         requireConfigured();
         Map<String, Object> signatureData = new LinkedHashMap<>();
         signatureData.put("amount", amount);
@@ -58,7 +68,7 @@ public class PayOsClient {
             amount,
             description,
             buyerName,
-            java.util.List.of(new PayOsItem("Library fine payment (" + fineCount + " fines)", 1, amount)),
+            java.util.List.of(new PayOsItem(itemName, 1, amount)),
             cancelUrl,
             returnUrl,
             sign(signatureData)
@@ -87,6 +97,11 @@ public class PayOsClient {
     }
 
     public PayOsPaymentStatus getPaymentStatus(Long orderCode) {
+        var details = getPaymentDetails(orderCode);
+        return new PayOsPaymentStatus(details.orderCode(), details.paymentLinkId(), details.amount(), details.status());
+    }
+
+    public PayOsPaymentDetails getPaymentDetails(Long orderCode) {
         requireConfigured();
         PayOsCreatePaymentResponse response = restClient.get()
             .uri("/v2/payment-requests/{orderCode}", orderCode)
@@ -103,13 +118,25 @@ public class PayOsClient {
             throw new IllegalStateException("payOS get payment failed");
         }
         PayOsPaymentData data = response.data();
-        return new PayOsPaymentStatus(
+        return new PayOsPaymentDetails(
             data.orderCode() != null ? data.orderCode() : orderCode,
-            data.paymentLinkId(),
+            data.paymentLinkId() != null ? data.paymentLinkId() : data.id(),
             data.amount(),
-            data.status()
+            data.status(), data.amountPaid(), data.checkoutUrl(), data.qrCode()
         );
     }
+
+    public void cancelPayment(Long orderCode) {
+        requireConfigured();
+        var response = restClient.post().uri("/v2/payment-requests/{orderCode}/cancel", orderCode)
+            .contentType(MediaType.APPLICATION_JSON).header("x-client-id", clientId).header("x-api-key", apiKey)
+            .body(Map.of("cancellationReason", "Librarian cancelled deposit payment"))
+            .retrieve().body(PayOsCreatePaymentResponse.class);
+        if (response == null || !"00".equals(response.code())) throw new IllegalStateException("payOS cancel payment failed");
+    }
+
+    public record PayOsPaymentDetails(Long orderCode, String paymentLinkId, Integer amount, String status,
+        Integer amountPaid, String checkoutUrl, String qrCode) {}
 
     public boolean verifyWebhook(Map<String, Object> payload) {
         requireChecksumKey();
@@ -128,6 +155,8 @@ public class PayOsClient {
             throw new IllegalStateException("payOS credentials are not configured");
         }
     }
+
+    public void ensureConfigured() { requireConfigured(); }
 
     private void requireChecksumKey() {
         if (checksumKey.isBlank()) {
@@ -207,11 +236,13 @@ public class PayOsClient {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record PayOsPaymentData(
+        @JsonProperty("id") String id,
         @JsonProperty("paymentLinkId") String paymentLinkId,
         @JsonProperty("checkoutUrl") String checkoutUrl,
         @JsonProperty("qrCode") String qrCode,
         @JsonProperty("orderCode") Long orderCode,
         @JsonProperty("amount") Integer amount,
+        @JsonProperty("amountPaid") Integer amountPaid,
         @JsonProperty("status") String status
     ) {
     }

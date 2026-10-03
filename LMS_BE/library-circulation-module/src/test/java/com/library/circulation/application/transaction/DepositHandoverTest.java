@@ -50,6 +50,7 @@ class DepositHandoverTest {
     @Mock CirculationPolicyService policyService;
     @Mock LibrarianNotificationService librarianNotificationService;
     @Mock BorrowDepositService borrowDepositService;
+    @Mock com.library.circulation.application.deposit.DepositPaymentService depositPaymentService;
     @Mock EntityManager entityManager;
     @InjectMocks DirectBorrowUseCaseImpl direct;
     @InjectMocks ConfirmPickupUseCaseImpl pickup;
@@ -59,6 +60,10 @@ class DepositHandoverTest {
     @CsvSource({"direct,CASH", "direct,BANK_TRANSFER", "pickup,CASH", "pickup,BANK_TRANSFER", "reservation,CASH", "reservation,BANK_TRANSFER"})
     void everyHandoverPassesChosenMethodToCollection(String flow, String method) {
         var amount = new BigDecimal("50000");
+        Long code = method.equals("BANK_TRANSFER") ? 2000000000000000L : null;
+        String paymentFlow = flow.equals("pickup") ? "TRANSACTION" : flow.toUpperCase(java.util.Locale.ROOT);
+        Long sourceId = flow.equals("direct") ? null : flow.equals("pickup") ? 10L : 20L;
+        when(depositPaymentService.resolveForHandover(eq(method), eq(code), eq(paymentFlow), eq(sourceId), anyLong(), eq(7L), eq(1L), eq(amount), eq(9L))).thenReturn(amount);
         when(policyService.getPolicy()).thenReturn(new CirculationPolicy(48, 14, 5, 3, 1, 2,
             BigDecimal.TEN, amount, false, null, null, null));
         when(borrowDepositService.collectForBorrow(anyLong(), eq(9L), eq(amount), eq(method)))
@@ -69,7 +74,7 @@ class DepositHandoverTest {
         if (flow.equals("direct")) {
             when(jdbcTemplate.queryForList(anyString(), anyMap())).thenReturn(List.of(Map.of("id", 7L, "student_id", "00123", "full_name", "Reader")));
             when(itemStatusPort.lockAndGetByBarcode("BC1")).thenReturn(new ItemSnapshot(1L, "AVAILABLE", 2L, "Book", "BC1", "CS1", "A1"));
-            result = direct.execute(9L, new DirectBorrowCommand("00123", "BC1", method));
+            result = direct.execute(9L, new DirectBorrowCommand("00123", "BC1", method, code));
         } else {
             when(itemStatusPort.lockAndGet(1L)).thenReturn(held);
             when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(Map.of("full_name", "Reader", "student_id", "00123"));
@@ -79,17 +84,18 @@ class DepositHandoverTest {
                     .dueDate(LocalDate.now().plusDays(14)).pickedUpDeadline(Instant.now().plusSeconds(3600)).build();
                 transaction.setId(10L);
                 when(transactionJpaRepository.findById(10L)).thenReturn(Optional.of(transaction));
-                result = pickup.execute(10L, 9L, method);
+                result = pickup.execute(10L, 9L, method, code);
             } else {
                 var hold = ReservationEntity.builder()
                     .userId(7L).publicationId(2L).assignedItemId(1L).status(ReservationStatus.READY_FOR_PICKUP)
                     .holdExpirationTime(Instant.now().plusSeconds(3600)).build();
                 hold.setId(20L);
                 when(reservationJpaRepository.findById(20L)).thenReturn(Optional.of(hold));
-                result = reservation.execute(20L, 9L, method);
+                result = reservation.execute(20L, 9L, method, code);
             }
         }
         verify(borrowDepositService).collectForBorrow(anyLong(), eq(9L), eq(amount), eq(method));
+        verify(depositPaymentService).resolveForHandover(eq(method), eq(code), eq(paymentFlow), eq(sourceId), anyLong(), eq(7L), eq(1L), eq(amount), eq(9L));
         assertThat(result.getDepositPaymentMethod()).isEqualTo(method);
         assertThat(result.getDepositAmount()).isEqualByComparingTo(amount);
         assertThat(result.getStatus()).isEqualTo(TransactionStatus.BORROWING);

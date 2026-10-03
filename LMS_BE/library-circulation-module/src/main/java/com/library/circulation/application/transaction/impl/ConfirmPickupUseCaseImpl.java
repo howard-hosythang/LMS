@@ -48,6 +48,7 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final LibrarianNotificationService librarianNotificationService;
     private final BorrowDepositService borrowDepositService;
+    private final com.library.circulation.application.deposit.DepositPaymentService depositPaymentService;
     private final EntityManager entityManager;
 
     @Override
@@ -59,6 +60,12 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
     @Override
     @Transactional
     public BorrowTransactionResponse execute(Long transactionId, Long librarianId, String paymentMethod) {
+        return execute(transactionId, librarianId, paymentMethod, null);
+    }
+
+    @Override
+    @Transactional
+    public BorrowTransactionResponse execute(Long transactionId, Long librarianId, String paymentMethod, Long depositOrderCode) {
         String method = BorrowDepositService.normalizePaymentMethod(paymentMethod);
         // Infrastructure: load JPA entity
         BorrowingTransactionEntity entity = transactionJpaRepository.findById(transactionId)
@@ -86,8 +93,10 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
         applyToEntity(transaction, entity);
         transactionJpaRepository.save(entity);
         transactionJpaRepository.flush();
+        var depositAmount = depositPaymentService.resolveForHandover(method, depositOrderCode, "TRANSACTION", transactionId,
+            transactionId, entity.getUserId(), entity.getItemId(), policyService.getPolicy().defaultDepositAmount(), librarianId);
         BorrowDepositService.DepositSnapshot deposit = borrowDepositService.collectForBorrow(
-            entity.getId(), librarianId, policyService.getPolicy().defaultDepositAmount(), method);
+            entity.getId(), librarianId, depositAmount, method);
 
         // Publish in-app notification
         kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(

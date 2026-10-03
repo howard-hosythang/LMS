@@ -43,6 +43,7 @@ import reshelvingService, { RESHELVING_CHANGED } from '../../api/reshelvingServi
 import { useAppDialog } from '../../contexts/AppDialogContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import DepositPaymentMethodSelector, { depositPaymentMethodLabel } from '../../components/librarian_pages/DepositPaymentMethodSelector';
+import DepositPayOsPayment, { useDepositPayOs } from '../../components/librarian_pages/DepositPayOsPayment';
 
 type MainTab = 'pickup' | 'direct' | 'return' | 'reshelving' | 'restoreLost' | 'fines';
 type LookupMode = 'qr' | 'manual';
@@ -68,10 +69,16 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
     dueDate: string; fullName: string; publicationTitle: string; depositAmount?: number | null; depositStatus?: string | null; depositPaymentMethod?: DepositPaymentMethod;
   } | null>(null);
   const qrRef = useRef<HTMLInputElement>(null);
+  const needsPayOs = paymentMethod === 'BANK_TRANSFER' && Number(policy.defaultDepositAmount) > 0;
+  const depositPayment = useDepositPayOs(needsPayOs && lookupResult ? {
+    flow: pickupType === 'direct' ? 'TRANSACTION' : 'RESERVATION',
+    sourceId: String(pickupType === 'direct' ? lookupResult.transactionId : lookupResult.reservationId),
+  } : null);
 
-  const reset = () => { setLookupResult(null); setLookupError(null); setSuccessData(null); setPaymentMethod('CASH'); };
+  const reset = () => { setLookupResult(null); setLookupError(null); setSuccessData(null); setPaymentMethod('CASH'); depositPayment.reset(); };
 
   const handleLookup = async () => {
+    if (isLookingUp || isConfirming || depositPayment.locked) return;
     const params =
       mode === 'qr'
         ? (pickupType === 'direct' ? { transactionId: qrInput.trim() } : { reservationId: qrInput.trim() })
@@ -101,13 +108,13 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
   };
 
   const handleConfirm = async () => {
-    if (!lookupResult || isConfirming) return;
+    if (!lookupResult || isConfirming || (needsPayOs && !depositPayment.paid)) return;
     const method = Number(policy.defaultDepositAmount) > 0 ? paymentMethod : 'CASH';
     setIsConfirming(true);
     try {
       const resData = pickupType === 'direct'
-        ? (await transactionsService.confirmPickup(lookupResult.transactionId, method)).data
-        : await import('../../api/reservationService').then(m => m.confirmReservationPickup(lookupResult.reservationId, method));
+        ? (await transactionsService.confirmPickup(lookupResult.transactionId, method, needsPayOs ? depositPayment.order?.orderCode : undefined)).data
+        : await import('../../api/reservationService').then(m => m.confirmReservationPickup(lookupResult.reservationId, method, needsPayOs ? depositPayment.order?.orderCode : undefined));
 
       setSuccessData({
         dueDate: resData.dueDate,
@@ -118,11 +125,12 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
         depositPaymentMethod: resData.depositPaymentMethod ?? method,
       });
       setLookupResult(null);
+      depositPayment.reset();
       setQrInput(''); setMssvInput(''); setBarcodeInput('');
       setTimeout(() => qrRef.current?.focus(), 100);
     } catch (err: any) {
       setLookupError(getFriendlyErrorMessage(err));
-      setLookupResult(null);
+      // Keep the paid order and target available to retry a failed handover, without collecting again.
     } finally {
       setIsConfirming(false);
     }
@@ -135,11 +143,11 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
     <div className="space-y-5">
       {/* Type switcher */}
       <div className="flex gap-4 border-b border-slate-100 mb-2">
-        <button onClick={() => switchType('direct')}
+        <button disabled={isConfirming || depositPayment.locked} onClick={() => switchType('direct')}
           className={`pb-2 px-1 text-sm font-medium transition-all border-b-2 ${pickupType === 'direct' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           Từ mượn ngay
         </button>
-        <button onClick={() => switchType('reservation')}
+        <button disabled={isConfirming || depositPayment.locked} onClick={() => switchType('reservation')}
           className={`pb-2 px-1 text-sm font-medium transition-all border-b-2 ${pickupType === 'reservation' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           Từ đặt trước
         </button>
@@ -147,11 +155,11 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
 
       {/* Mode switcher */}
       <div className="flex gap-2 bg-slate-100 p-1 rounded-lg w-fit">
-        <button onClick={() => switchMode('qr')}
+        <button disabled={isConfirming || depositPayment.locked} onClick={() => switchMode('qr')}
           className={`flex items-center gap-2 px-5 py-2 rounded-md text-sm font-medium transition-all ${mode === 'qr' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
           <Scan size={16} /> Quét QR
         </button>
-        <button onClick={() => switchMode('manual')}
+        <button disabled={isConfirming || depositPayment.locked} onClick={() => switchMode('manual')}
           className={`flex items-center gap-2 px-5 py-2 rounded-md text-sm font-medium transition-all ${mode === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
           <UserIcon size={16} /> Nhập thủ công
         </button>
@@ -167,13 +175,13 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Hash className="absolute left-3 top-3 text-slate-400" size={18} />
-              <input ref={qrRef} type="text" autoFocus value={qrInput}
+              <input ref={qrRef} type="text" autoFocus value={qrInput} disabled={isConfirming || depositPayment.locked}
                 onChange={(e) => setQrInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
                 placeholder={pickupType === 'direct' ? "Quét QR hoặc nhập mã giao dịch..." : "Quét QR hoặc nhập mã đặt trước..."}
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
             </div>
-            <button onClick={handleLookup} disabled={isLookingUp || !qrInput.trim()}
+            <button onClick={handleLookup} disabled={isLookingUp || isConfirming || depositPayment.locked || !qrInput.trim()}
               className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 transition-colors">
               {isLookingUp ? 'Đang tra...' : 'Tra cứu'}
             </button>
@@ -186,7 +194,7 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
               <label className="block text-sm font-medium text-slate-700 mb-1.5">MSSV độc giả</label>
               <div className="relative">
                 <UserIcon className="absolute left-3 top-3 text-slate-400" size={18} />
-                <input type="text" autoFocus value={mssvInput}
+                <input type="text" autoFocus value={mssvInput} disabled={isConfirming || depositPayment.locked}
                   onChange={(e) => setMssvInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
                   placeholder="Nhập MSSV..."
@@ -197,7 +205,7 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Barcode bản sao</label>
               <div className="relative">
                 <Scan className="absolute left-3 top-3 text-slate-400" size={18} />
-                <input type="text" value={barcodeInput}
+                <input type="text" value={barcodeInput} disabled={isConfirming || depositPayment.locked}
                   onChange={(e) => setBarcodeInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
                   placeholder="Quét hoặc nhập barcode..."
@@ -205,7 +213,7 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
               </div>
             </div>
           </div>
-          <button onClick={handleLookup} disabled={isLookingUp || !mssvInput.trim() || !barcodeInput.trim()}
+          <button onClick={handleLookup} disabled={isLookingUp || isConfirming || depositPayment.locked || !mssvInput.trim() || !barcodeInput.trim()}
             className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 transition-colors">
             {isLookingUp ? 'Đang tra cứu...' : pickupType === 'direct' ? 'Tra cứu phiếu mượn' : 'Tra cứu đặt trước'}
           </button>
@@ -219,6 +227,9 @@ const PickupTab = ({ policy }: { policy: CirculationPolicy }) => {
         successData={successData} lookupResult={lookupResult} lookupError={lookupError}
         isConfirming={isConfirming}
         paymentMethod={paymentMethod} onPaymentMethodChange={setPaymentMethod}
+        paymentLocked={depositPayment.locked}
+        paymentReady={!needsPayOs || depositPayment.paid}
+        payOsPanel={needsPayOs ? <DepositPayOsPayment payment={depositPayment} disabled={isConfirming} /> : null}
         onConfirm={handleConfirm}
         onCancel={() => { reset(); setQrInput(''); }}
         onNext={() => { reset(); qrRef.current?.focus(); }}
@@ -239,17 +250,24 @@ const DirectBorrowTab = ({ policy }: { policy: CirculationPolicy }) => {
   const [successData, setSuccessData] = useState<DirectBorrowResponse['data'] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const mssvRef = useRef<HTMLInputElement>(null);
+  const needsPayOs = paymentMethod === 'BANK_TRANSFER' && Number(policy.defaultDepositAmount) > 0;
+  const depositPayment = useDepositPayOs(needsPayOs && mssvInput.trim() && barcodeInput.trim() ? {
+    flow: 'DIRECT', studentId: mssvInput.trim(), barcode: barcodeInput.trim(),
+  } : null);
 
   const handleBorrow = async () => {
-    if (isBorrowing || !mssvInput.trim() || !barcodeInput.trim()) return;
+    if (isBorrowing || !mssvInput.trim() || !barcodeInput.trim() || (needsPayOs && !depositPayment.paid)) return;
     const method = Number(policy.defaultDepositAmount) > 0 ? paymentMethod : 'CASH';
     setIsBorrowing(true);
     setError(null);
     setSuccessData(null);
     try {
-      const res = await transactionsService.borrowDirect({ studentId: mssvInput.trim(), barcode: barcodeInput.trim(), paymentMethod: method });
+      const res = await transactionsService.borrowDirect({ studentId: mssvInput.trim(), barcode: barcodeInput.trim(), paymentMethod: method,
+        ...(needsPayOs ? { depositOrderCode: depositPayment.order?.orderCode } : {}) });
       if (res.code === 201) {
         setSuccessData({ ...res.data, depositPaymentMethod: res.data.depositPaymentMethod ?? method });
+        depositPayment.reset();
+        setPaymentMethod('CASH');
         setMssvInput('');
         setBarcodeInput('');
       }
@@ -279,7 +297,7 @@ const DirectBorrowTab = ({ policy }: { policy: CirculationPolicy }) => {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">MSSV độc giả</label>
             <div className="relative">
               <UserIcon className="absolute left-3 top-3 text-slate-400" size={18} />
-              <input ref={mssvRef} type="text" autoFocus value={mssvInput}
+              <input ref={mssvRef} type="text" autoFocus value={mssvInput} disabled={isBorrowing || depositPayment.locked}
                 onChange={(e) => setMssvInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleBorrow()}
                 placeholder="Nhập MSSV..."
@@ -290,7 +308,7 @@ const DirectBorrowTab = ({ policy }: { policy: CirculationPolicy }) => {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Barcode sách</label>
             <div className="relative">
               <Scan className="absolute left-3 top-3 text-slate-400" size={18} />
-              <input type="text" value={barcodeInput}
+              <input type="text" value={barcodeInput} disabled={isBorrowing || depositPayment.locked}
                 onChange={(e) => setBarcodeInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleBorrow()}
                 placeholder="Quét hoặc nhập barcode..."
@@ -298,8 +316,9 @@ const DirectBorrowTab = ({ policy }: { policy: CirculationPolicy }) => {
             </div>
           </div>
         </div>
-        {Number(policy.defaultDepositAmount) > 0 && <DepositPaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} disabled={isBorrowing} />}
-        <button onClick={handleBorrow} disabled={isBorrowing || !mssvInput.trim() || !barcodeInput.trim()}
+        {Number(policy.defaultDepositAmount) > 0 && <DepositPaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} disabled={isBorrowing || depositPayment.locked} />}
+        {needsPayOs && !successData && <DepositPayOsPayment payment={depositPayment} disabled={isBorrowing || !mssvInput.trim() || !barcodeInput.trim()} />}
+        <button onClick={handleBorrow} disabled={isBorrowing || !mssvInput.trim() || !barcodeInput.trim() || (needsPayOs && !depositPayment.paid)}
           className="w-full bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50 transition-colors">
           {isBorrowing ? 'Đang xử lý...' : 'Cho mượn ngay'}
         </button>
@@ -805,12 +824,15 @@ const ActionPanel = ({ item, action, fineAmount, setFineAmount, isSubmitting, er
 
 // ─── Shared result area (dùng cho PickupTab) ────────────────────────────────
 
-const ResultArea = ({ pickupType, policy, successData, lookupResult, lookupError, isConfirming, paymentMethod, onPaymentMethodChange, onConfirm, onCancel, onNext, idleText }: {
+const ResultArea = ({ pickupType, policy, successData, lookupResult, lookupError, isConfirming, paymentMethod, onPaymentMethodChange, paymentLocked, paymentReady, payOsPanel, onConfirm, onCancel, onNext, idleText }: {
   pickupType: PickupType;
   policy: CirculationPolicy;
   successData: { dueDate: string; fullName: string; publicationTitle: string; depositAmount?: number | null; depositStatus?: string | null; depositPaymentMethod?: DepositPaymentMethod } | null;
   paymentMethod: DepositPaymentMethod;
   onPaymentMethodChange: (method: DepositPaymentMethod) => void;
+  paymentLocked: boolean;
+  paymentReady: boolean;
+  payOsPanel: React.ReactNode;
   lookupResult: any | null;
   lookupError: string | null;
   isConfirming: boolean;
@@ -885,13 +907,15 @@ const ResultArea = ({ pickupType, policy, successData, lookupResult, lookupError
           <p className="font-semibold text-slate-900">{formatVND(Number(policy.defaultDepositAmount || 0))}</p>
         </div>
       </div>
-      {Number(policy.defaultDepositAmount) > 0 && <DepositPaymentMethodSelector value={paymentMethod} onChange={onPaymentMethodChange} disabled={isConfirming} />}
+      {lookupError && <p role="alert" className="mb-3 text-sm text-red-700 dark:text-red-300">{lookupError}</p>}
+      {Number(policy.defaultDepositAmount) > 0 && <DepositPaymentMethodSelector value={paymentMethod} onChange={onPaymentMethodChange} disabled={isConfirming || paymentLocked} />}
+      {payOsPanel}
       <div className="flex gap-3">
-        <button onClick={onConfirm} disabled={isConfirming}
+        <button onClick={onConfirm} disabled={isConfirming || !paymentReady}
           className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50">
           {isConfirming ? 'Đang xử lý...' : 'Xác nhận giao sách'}
         </button>
-        <button onClick={onCancel} disabled={isConfirming}
+        <button onClick={onCancel} disabled={isConfirming || paymentLocked}
           className="px-5 py-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg font-medium hover:bg-slate-50 transition-colors">
           Huỷ
         </button>

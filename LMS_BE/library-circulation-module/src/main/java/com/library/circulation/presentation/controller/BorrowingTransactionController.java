@@ -158,9 +158,10 @@ public class BorrowingTransactionController {
   @Operation(summary = "Confirm book handover to user (librarian)")
   public ApiResponseApp<BorrowTransactionResponse> confirmPickup(
       @PathVariable("id") Long transactionId,
-      @RequestParam(name = "paymentMethod", defaultValue = "CASH", required = false) String paymentMethod) {
+      @RequestParam(name = "paymentMethod", defaultValue = "CASH", required = false) String paymentMethod,
+      @RequestParam(name = "depositOrderCode", required = false) Long depositOrderCode) {
     Long librarianId = security.getCurrentUserId();
-    return ApiResponseApp.success(confirmPickupUseCase.execute(transactionId, librarianId, paymentMethod));
+    return ApiResponseApp.success(confirmPickupUseCase.execute(transactionId, librarianId, paymentMethod, depositOrderCode));
   }
 
   @GetMapping("/student-active")

@@ -25,3 +25,10 @@ test('legacy pickup calls default to CASH', async () => {
   expect(axios.post).toHaveBeenCalledWith('/transactions/1/confirm-pickup', undefined, { params: { paymentMethod: 'CASH' } });
   expect(axios.post).toHaveBeenCalledWith('/reservations/2/confirm-pickup', undefined, { params: { paymentMethod: 'CASH' } });
 });
+
+test('pickup forwards the paid deposit order code', async () => {
+  await transactions.confirmPickup('1', 'BANK_TRANSFER', 2000000000000000);
+  await confirmReservationPickup('2', 'BANK_TRANSFER', 2000000000000000);
+  expect(axios.post).toHaveBeenCalledWith('/transactions/1/confirm-pickup', undefined, { params: { paymentMethod: 'BANK_TRANSFER', depositOrderCode: 2000000000000000 } });
+  expect(axios.post).toHaveBeenCalledWith('/reservations/2/confirm-pickup', undefined, { params: { paymentMethod: 'BANK_TRANSFER', depositOrderCode: 2000000000000000 } });
+});

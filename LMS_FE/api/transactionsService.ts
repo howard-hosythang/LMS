@@ -92,6 +92,7 @@ export interface DirectBorrowRequest {
   studentId: string;
   barcode: string;
   paymentMethod?: DepositPaymentMethod;
+  depositOrderCode?: number;
 }
 
 export type DepositPaymentMethod = 'CASH' | 'BANK_TRANSFER';
@@ -329,8 +330,8 @@ const transactionsService = {
     const response = await axiosInstance.get('/transactions/lookup', { params });
     return response as any;
   },
-  confirmPickup: async (transactionId: string, paymentMethod: DepositPaymentMethod = 'CASH'): Promise<ConfirmPickupResponse> => {
-    const response = await axiosInstance.post(`/transactions/${transactionId}/confirm-pickup`, undefined, { params: { paymentMethod } });
+  confirmPickup: async (transactionId: string, paymentMethod: DepositPaymentMethod = 'CASH', depositOrderCode?: number): Promise<ConfirmPickupResponse> => {
+    const response = await axiosInstance.post(`/transactions/${transactionId}/confirm-pickup`, undefined, { params: { paymentMethod, ...(depositOrderCode !== undefined ? { depositOrderCode } : {}) } });
     notifyReshelvingChanged();
     return response as any;
   },

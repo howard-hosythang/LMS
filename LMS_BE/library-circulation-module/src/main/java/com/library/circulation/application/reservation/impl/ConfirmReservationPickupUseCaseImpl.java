@@ -48,6 +48,7 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final LibrarianNotificationService librarianNotificationService;
     private final BorrowDepositService borrowDepositService;
+    private final com.library.circulation.application.deposit.DepositPaymentService depositPaymentService;
     private final EntityManager entityManager;
 
     @Override
@@ -59,6 +60,12 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
     @Override
     @Transactional
     public BorrowTransactionResponse execute(Long reservationId, Long librarianId, String paymentMethod) {
+        return execute(reservationId, librarianId, paymentMethod, null);
+    }
+
+    @Override
+    @Transactional
+    public BorrowTransactionResponse execute(Long reservationId, Long librarianId, String paymentMethod, Long depositOrderCode) {
         String method = BorrowDepositService.normalizePaymentMethod(paymentMethod);
         // 1. Load reservation
         ReservationEntity reservation = reservationJpaRepository.findById(reservationId)
@@ -110,8 +117,10 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
 
         // 6. Update Item Status
         itemStatusPort.updateStatus(reservation.getAssignedItemId(), "BORROWED");
+        var depositAmount = depositPaymentService.resolveForHandover(method, depositOrderCode, "RESERVATION", reservationId,
+            transaction.getId(), reservation.getUserId(), reservation.getAssignedItemId(), policy.defaultDepositAmount(), librarianId);
         BorrowDepositService.DepositSnapshot deposit = borrowDepositService.collectForBorrow(
-            transaction.getId(), librarianId, policy.defaultDepositAmount(), method);
+            transaction.getId(), librarianId, depositAmount, method);
 
         // 7. Notify User
         kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(

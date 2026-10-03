@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.library.circulation.application.fine.FinePaymentService;
+import org.springframework.http.MediaType;
 import com.library.circulation.application.fine.GetMyFinesUseCase;
 import com.library.circulation.application.fine.GetStudentFinesUseCase;
 import com.library.circulation.application.fine.PayAllFinesUseCase;
@@ -48,6 +49,7 @@ class FineControllerTest {
     @Mock private PayFineUseCase payFineUseCase;
     @Mock private PayAllFinesUseCase payAllFinesUseCase;
     @Mock private FinePaymentService finePaymentService;
+    @Mock private com.library.circulation.application.deposit.DepositPaymentService depositPaymentService;
     @Mock private UpdateFineAmountUseCase updateFineAmountUseCase;
     @Mock private SecurityEvaluator security;
 
@@ -190,6 +192,14 @@ class FineControllerTest {
             .type(ViolationType.OVERDUE_RETURN)
             .status(status)
             .build();
+    }
+
+    @Test
+    void sharedWebhookDispatchesToBothFineAndDepositPayments() throws Exception {
+        when(finePaymentService.confirmPayOsWebhook("signed-body")).thenReturn(0);
+        mockMvc.perform(post("/api/v1/fines/payments/payos/webhook")
+            .contentType(MediaType.APPLICATION_JSON).content("signed-body")).andExpect(status().isOk());
+        verify(depositPaymentService).webhook("signed-body");
     }
 
     @Test
