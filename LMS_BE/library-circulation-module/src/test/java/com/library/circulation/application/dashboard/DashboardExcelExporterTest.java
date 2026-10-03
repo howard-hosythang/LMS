@@ -77,6 +77,14 @@ class DashboardExcelExporterTest {
         }
     }
 
+    @Test void depositAuditUsesStoredMethodAndPrioritizesOffset() {
+        exporter.export(report, 7L);
+        verify(jdbc).queryForList(argThat(sql -> sql.contains("e.payment_method='BANK_TRANSFER'")
+            && sql.contains("e.payment_method='CASH'")
+            && sql.indexOf("e.event_type='APPLIED_TO_FINE'") < sql.indexOf("e.payment_method='BANK_TRANSFER'")),
+            any(MapSqlParameterSource.class));
+    }
+
     @Test void integersAndMoneyHaveNoTrailingSeparatorWhileFractionalRatesKeepOneDecimal() throws Exception {
         when(jdbc.queryForMap(anyString(), any(MapSqlParameterSource.class))).thenReturn(Map.of(
             "returned", 11L, "on_time", 10L, "held", BigDecimal.valueOf(50000), "overdue_in_period", 90L));

@@ -121,6 +121,21 @@ class BorrowingTransactionControllerTest {
     }
 
     @Test
+    void pickupDefaultsToCash() throws Exception {
+        when(security.getCurrentUserId()).thenReturn(LIBRARIAN_ID);
+        mockMvc.perform(post("/api/v1/transactions/99/confirm-pickup")).andExpect(status().isOk());
+        verify(confirmPickupUseCase).execute(99L, LIBRARIAN_ID, "CASH");
+    }
+
+    @Test
+    void pickupPassesBankTransfer() throws Exception {
+        when(security.getCurrentUserId()).thenReturn(LIBRARIAN_ID);
+        mockMvc.perform(post("/api/v1/transactions/99/confirm-pickup").param("paymentMethod", "BANK_TRANSFER"))
+            .andExpect(status().isOk());
+        verify(confirmPickupUseCase).execute(99L, LIBRARIAN_ID, "BANK_TRANSFER");
+    }
+
+    @Test
     @DisplayName("POST /transactions/{id}/renew forwards current actor and librarian permission")
     void renewTransaction_shouldUseCurrentActorAndLibrarianPermission() throws Exception {
         when(security.getCurrentUserId()).thenReturn(LIBRARIAN_ID);

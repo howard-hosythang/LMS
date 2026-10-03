@@ -66,6 +66,7 @@ public class DirectBorrowUseCaseImpl implements DirectBorrowUseCase {
     @Override
     @Transactional
     public BorrowTransactionResponse execute(Long librarianId, DirectBorrowCommand command) {
+        String method = BorrowDepositService.normalizePaymentMethod(command.paymentMethod());
         CirculationPolicy policy = policyService.getPolicy();
 
         // 1. Find user by studentId
@@ -139,7 +140,7 @@ public class DirectBorrowUseCaseImpl implements DirectBorrowUseCase {
         transactionJpaRepository.save(entity);
         transactionJpaRepository.flush();
         BorrowDepositService.DepositSnapshot deposit = borrowDepositService.collectForBorrow(
-            entity.getId(), librarianId, policy.defaultDepositAmount());
+            entity.getId(), librarianId, policy.defaultDepositAmount(), method);
 
         kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(
             userId,
@@ -186,6 +187,7 @@ public class DirectBorrowUseCaseImpl implements DirectBorrowUseCase {
             .status(entity.getStatus())
             .depositAmount(deposit.depositAmount())
             .depositStatus(deposit.depositStatus())
+            .depositPaymentMethod(deposit.depositPaymentMethod())
             .build();
     }
 

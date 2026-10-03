@@ -173,7 +173,9 @@ public class DashboardExcelExporter {
           SELECT 'DEP-' || e.id::text || ' / GD-' || e.transaction_id::text AS receipt, e.created_at AS occurred_at,
             u.student_id, CASE e.event_type WHEN 'COLLECTED' THEN 'Thu cọc' WHEN 'REFUNDED' THEN 'Hoàn cọc'
               WHEN 'APPLIED_TO_FINE' THEN 'Cấn cọc vào phạt' ELSE 'Nợ phạt vượt cọc (không phải thu tiền)' END AS event,
-            e.amount, CASE WHEN e.event_type='APPLIED_TO_FINE' THEN 'Trừ cọc' ELSE 'Chưa ghi nhận' END AS method,
+            e.amount, CASE WHEN e.event_type='APPLIED_TO_FINE' THEN 'Trừ cọc'
+                WHEN e.payment_method='BANK_TRANSFER' THEN 'Chuyển khoản'
+                WHEN e.payment_method='CASH' THEN 'Tiền mặt' ELSE 'Chưa ghi nhận' END AS method,
             staff.full_name AS actor, e.note
           FROM borrow_deposit_events e JOIN users u ON u.id=e.user_id LEFT JOIN users staff ON staff.id=e.librarian_id
           WHERE e.created_at >= :start AND e.created_at < :end

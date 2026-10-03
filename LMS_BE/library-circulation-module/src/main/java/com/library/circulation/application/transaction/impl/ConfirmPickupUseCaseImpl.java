@@ -53,6 +53,13 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
     @Override
     @Transactional
     public BorrowTransactionResponse execute(Long transactionId, Long librarianId) {
+        return execute(transactionId, librarianId, "CASH");
+    }
+
+    @Override
+    @Transactional
+    public BorrowTransactionResponse execute(Long transactionId, Long librarianId, String paymentMethod) {
+        String method = BorrowDepositService.normalizePaymentMethod(paymentMethod);
         // Infrastructure: load JPA entity
         BorrowingTransactionEntity entity = transactionJpaRepository.findById(transactionId)
             .orElseThrow(() -> new AppException(ErrorCode.TRANSACTION_NOT_FOUND));
@@ -80,7 +87,7 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
         transactionJpaRepository.save(entity);
         transactionJpaRepository.flush();
         BorrowDepositService.DepositSnapshot deposit = borrowDepositService.collectForBorrow(
-            entity.getId(), librarianId, policyService.getPolicy().defaultDepositAmount());
+            entity.getId(), librarianId, policyService.getPolicy().defaultDepositAmount(), method);
 
         // Publish in-app notification
         kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(
@@ -133,6 +140,7 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
             .status(entity.getStatus())
             .depositAmount(deposit.depositAmount())
             .depositStatus(deposit.depositStatus())
+            .depositPaymentMethod(deposit.depositPaymentMethod())
             .build();
     }
 

@@ -1,6 +1,8 @@
 package com.library.circulation.application.deposit;
 
 import com.library.shared.constant.RoleConstants;
+import com.library.shared.exception.AppException;
+import com.library.shared.exception.ErrorCode;
 import com.library.shared.service.AuditLogService;
 import com.library.shared.util.TsIdGenerator;
 import java.math.BigDecimal;
@@ -22,6 +24,7 @@ public class BorrowDepositService {
         UPDATE borrowing_transactions
         SET deposit_amount = :amount,
             deposit_status = :status,
+            deposit_payment_method = :paymentMethod,
             deposit_collected_at = CASE WHEN :amount > 0 THEN NOW() ELSE NULL END,
             deposit_collected_by_librarian_id = CASE WHEN :amount > 0 THEN :librarianId ELSE NULL END
         WHERE id = :transactionId
@@ -30,11 +33,11 @@ public class BorrowDepositService {
     private static final String INSERT_EVENT_SQL = """
         INSERT INTO borrow_deposit_events (
             id, transaction_id, user_id, item_id, librarian_id, event_type,
-            amount, gross_fine_amount, deposit_balance_before, deposit_balance_after, note
+            amount, gross_fine_amount, deposit_balance_before, deposit_balance_after, note, payment_method
         )
         SELECT
             :id, t.id, t.user_id, t.item_id, :librarianId, :eventType,
-            :amount, :grossFineAmount, :balanceBefore, :balanceAfter, :note
+            :amount, :grossFineAmount, :balanceBefore, :balanceAfter, :note, :paymentMethod
         FROM borrowing_transactions t
         WHERE t.id = :transactionId
         """;
@@ -77,17 +80,31 @@ public class BorrowDepositService {
     private final AuditLogService auditLogService;
 
     public DepositSnapshot collectForBorrow(Long transactionId, Long librarianId, BigDecimal depositAmount) {
+        return collectForBorrow(transactionId, librarianId, depositAmount, "CASH");
+    }
+
+    public static String normalizePaymentMethod(String paymentMethod) {
+        if (paymentMethod == null || paymentMethod.isBlank()) return "CASH";
+        if (!"CASH".equals(paymentMethod) && !"BANK_TRANSFER".equals(paymentMethod)) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+        return paymentMethod;
+    }
+
+    public DepositSnapshot collectForBorrow(Long transactionId, Long librarianId, BigDecimal depositAmount, String paymentMethod) {
+        String method = normalizePaymentMethod(paymentMethod);
         BigDecimal amount = positive(depositAmount);
         String status = amount.signum() > 0 ? "COLLECTED" : "NOT_REQUIRED";
         jdbcTemplate.update(COLLECT_SQL, new MapSqlParameterSource()
             .addValue("transactionId", transactionId)
             .addValue("librarianId", librarianId)
             .addValue("amount", amount)
-            .addValue("status", status));
+            .addValue("status", status)
+            .addValue("paymentMethod", method));
 
         if (amount.signum() > 0) {
             insertEvent(transactionId, librarianId, "COLLECTED", amount, ZERO, ZERO, amount,
-                "Thu tiền cọc khi giao sách cho bạn đọc");
+                "Thu tiền cọc (" + ("BANK_TRANSFER".equals(method) ? "Chuyển khoản" : "Tiền mặt") + ") khi giao sách", method);
             auditLogService.log(
                 librarianId,
                 RoleConstants.LIBRARIAN,
@@ -95,12 +112,13 @@ public class BorrowDepositService {
                 "borrowing_transactions",
                 transactionId,
                 "Librarian collected borrow deposit",
-                Map.of("transactionId", transactionId, "depositAmount", amount)
+                Map.of("transactionId", transactionId, "depositAmount", amount, "paymentMethod", method)
             );
         }
         return DepositSnapshot.builder()
             .depositAmount(amount)
             .depositStatus(status)
+            .depositPaymentMethod(method)
             .build();
     }
 
@@ -229,6 +247,11 @@ public class BorrowDepositService {
         BigDecimal balanceAfter,
         String note
     ) {
+        insertEvent(transactionId, librarianId, eventType, amount, grossFineAmount, balanceBefore, balanceAfter, note, "CASH");
+    }
+
+    private void insertEvent(Long transactionId, Long librarianId, String eventType, BigDecimal amount,
+        BigDecimal grossFineAmount, BigDecimal balanceBefore, BigDecimal balanceAfter, String note, String paymentMethod) {
         jdbcTemplate.update(INSERT_EVENT_SQL, new MapSqlParameterSource()
             .addValue("id", TsIdGenerator.next())
             .addValue("transactionId", transactionId)
@@ -238,7 +261,8 @@ public class BorrowDepositService {
             .addValue("grossFineAmount", positive(grossFineAmount))
             .addValue("balanceBefore", positive(balanceBefore))
             .addValue("balanceAfter", positive(balanceAfter))
-            .addValue("note", note));
+            .addValue("note", note)
+            .addValue("paymentMethod", paymentMethod));
     }
 
     private BigDecimal positive(BigDecimal value) {
@@ -249,7 +273,8 @@ public class BorrowDepositService {
     @Builder
     public record DepositSnapshot(
         BigDecimal depositAmount,
-        String depositStatus
+        String depositStatus,
+        String depositPaymentMethod
     ) {
     }
 

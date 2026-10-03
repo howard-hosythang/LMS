@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import type { DepositPaymentMethod, DirectBorrowResponse } from './transactionsService';
 
 export type ReservationStatus = 'PENDING' | 'READY_FOR_PICKUP' | 'CANCELLED' | 'EXPIRED' | 'COMPLETED';
 
@@ -46,8 +47,8 @@ export async function cancelReservation(reservationId: string): Promise<void> {
   await axiosInstance.delete(`/reservations/${reservationId}`);
 }
 
-export async function confirmReservationPickup(reservationId: string): Promise<Reservation> {
-  const res: any = await axiosInstance.post(`/reservations/${reservationId}/confirm-pickup`);
+export async function confirmReservationPickup(reservationId: string, paymentMethod: DepositPaymentMethod = 'CASH'): Promise<DirectBorrowResponse['data']> {
+  const res: any = await axiosInstance.post(`/reservations/${reservationId}/confirm-pickup`, undefined, { params: { paymentMethod } });
   return res.data;
 }
 

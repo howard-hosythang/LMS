@@ -34,6 +34,12 @@ class PickupStateGuardTest {
     @InjectMocks ConfirmPickupUseCaseImpl pickup;
     @InjectMocks ConfirmReservationPickupUseCaseImpl reservationPickup;
 
+    @Test void invalidPaymentMethodCannotMutateEitherPickupFlow() {
+        assertThatThrownBy(() -> pickup.execute(10L, 9L, "CARD")).isInstanceOf(AppException.class);
+        assertThatThrownBy(() -> reservationPickup.execute(20L, 9L, "CARD")).isInstanceOf(AppException.class);
+        verifyNoInteractions(transactionJpaRepository, reservationJpaRepository, itemStatusPort, entityManager);
+    }
+
     void lockedCopy() {
         when(itemStatusPort.lockAndGet(1L)).thenReturn(new ItemSnapshot(1L, "RESERVED", 2L, "Book", "BC1", "CS1", "A1"));
     }

@@ -62,11 +62,12 @@ class DashboardReportSqlIntegrationTest {
             (12, 1, 'DAMAGED_BOOK', 500, 'PAID', '2026-09-01T03:00:00Z', '2026-10-03T16:59:59Z', NULL)
             """);
         jdbc.update("""
-            INSERT INTO borrow_deposit_events VALUES
+            INSERT INTO borrow_deposit_events (id, transaction_id, user_id, librarian_id, created_at, event_type, amount, note) VALUES
             (20, 1, 7, 9, '2026-10-03T16:59:59Z', 'REFUNDED', 50000, 'Within period'),
             (21, 2, 7, 9, '2026-10-03T17:00:00Z', 'REFUNDED', 50000, 'Outside period')
             """);
         jdbc.update("INSERT INTO fine_payment_orders VALUES (30, 'PAID'); INSERT INTO fine_payment_order_fines VALUES (30, 12)");
+        jdbc.execute("ALTER TABLE borrow_deposit_events ADD COLUMN payment_method VARCHAR(30) NOT NULL DEFAULT 'CASH'");
     }
 
     @Test void riskDebtIsNotMultipliedByActiveLoansAndOnTimeUsesVietnamReturnDay() {

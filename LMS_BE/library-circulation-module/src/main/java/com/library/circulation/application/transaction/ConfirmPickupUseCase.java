@@ -4,4 +4,5 @@ import com.library.circulation.dto.response.BorrowTransactionResponse;
 
 public interface ConfirmPickupUseCase {
     BorrowTransactionResponse execute(Long transactionId, Long librarianId);
+    BorrowTransactionResponse execute(Long transactionId, Long librarianId, String paymentMethod);
 }

@@ -53,6 +53,13 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
     @Override
     @Transactional
     public BorrowTransactionResponse execute(Long reservationId, Long librarianId) {
+        return execute(reservationId, librarianId, "CASH");
+    }
+
+    @Override
+    @Transactional
+    public BorrowTransactionResponse execute(Long reservationId, Long librarianId, String paymentMethod) {
+        String method = BorrowDepositService.normalizePaymentMethod(paymentMethod);
         // 1. Load reservation
         ReservationEntity reservation = reservationJpaRepository.findById(reservationId)
             .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND));
@@ -104,7 +111,7 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
         // 6. Update Item Status
         itemStatusPort.updateStatus(reservation.getAssignedItemId(), "BORROWED");
         BorrowDepositService.DepositSnapshot deposit = borrowDepositService.collectForBorrow(
-            transaction.getId(), librarianId, policy.defaultDepositAmount());
+            transaction.getId(), librarianId, policy.defaultDepositAmount(), method);
 
         // 7. Notify User
         kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(
@@ -157,6 +164,7 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
             .status(transaction.getStatus())
             .depositAmount(deposit.depositAmount())
             .depositStatus(deposit.depositStatus())
+            .depositPaymentMethod(deposit.depositPaymentMethod())
             .build();
     }
 

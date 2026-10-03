@@ -7,5 +7,10 @@ public record DirectBorrowCommand(
     String studentId,
 
     @NotBlank(message = "barcode is required")
-    String barcode
-) {}
+    String barcode,
+    String paymentMethod
+) {
+    public DirectBorrowCommand(String studentId, String barcode) {
+        this(studentId, barcode, "CASH");
+    }
+}

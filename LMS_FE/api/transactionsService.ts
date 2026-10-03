@@ -91,7 +91,10 @@ export interface MyTransactionsResponse {
 export interface DirectBorrowRequest {
   studentId: string;
   barcode: string;
+  paymentMethod?: DepositPaymentMethod;
 }
+
+export type DepositPaymentMethod = 'CASH' | 'BANK_TRANSFER';
 
 export interface DirectBorrowResponse {
   code: number;
@@ -108,6 +111,7 @@ export interface DirectBorrowResponse {
     status: string;
     depositAmount: number;
     depositStatus: string;
+    depositPaymentMethod?: DepositPaymentMethod;
   };
 }
 
@@ -120,6 +124,7 @@ export interface ConfirmPickupResponse {
     status: string;
     depositAmount: number;
     depositStatus: string;
+    depositPaymentMethod?: DepositPaymentMethod;
   };
 }
 
@@ -324,8 +329,8 @@ const transactionsService = {
     const response = await axiosInstance.get('/transactions/lookup', { params });
     return response as any;
   },
-  confirmPickup: async (transactionId: string): Promise<ConfirmPickupResponse> => {
-    const response = await axiosInstance.post(`/transactions/${transactionId}/confirm-pickup`);
+  confirmPickup: async (transactionId: string, paymentMethod: DepositPaymentMethod = 'CASH'): Promise<ConfirmPickupResponse> => {
+    const response = await axiosInstance.post(`/transactions/${transactionId}/confirm-pickup`, undefined, { params: { paymentMethod } });
     notifyReshelvingChanged();
     return response as any;
   },
@@ -338,7 +343,7 @@ const transactionsService = {
     return response as any;
   },
   borrowDirect: async (data: DirectBorrowRequest): Promise<DirectBorrowResponse> => {
-    const response = await axiosInstance.post('/transactions/borrow-direct', data);
+    const response = await axiosInstance.post('/transactions/borrow-direct', { ...data, paymentMethod: data.paymentMethod ?? 'CASH' });
     notifyReshelvingChanged();
     return response as any;
   },
