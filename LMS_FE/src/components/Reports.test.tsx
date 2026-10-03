@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import Reports from '../../pages/librarian_pages/Reports';
 import service, { OperationalPrintData } from '../../api/librarianDashboardService';
 import { buildOperationalPrintHtml, operationalReportFilename } from '../../utils/operationalReportPrint';
+import { facultyLabel, facultyOptions } from '../../utils/facultyLabels';
 import { toast } from 'sonner';
 
 jest.mock('../../contexts/LanguageContext', () => ({ useLanguage: () => ({ language: 'vi' }) }));
@@ -93,4 +94,37 @@ test('A4 document has two sections, correct metrics, bounded tables and escaped 
   expect(html).toContain('&lt;script&gt;'); expect(html).not.toContain('<script>');
   expect(html).not.toContain('Book 10'); expect(html).not.toContain('Book 11');
   expect(operationalReportFilename('2026-10-01', '2026-10-03')).toBe('Bao_Cao_Van_Hanh_LMS_2026-10-01_2026-10-03.xlsx');
+});
+
+test('faculty labels accept every enum and Vietnamese backend name without losing English translations', () => {
+  for (const faculty of facultyOptions) {
+    expect(facultyLabel(faculty.value, 'vi')).toBe(faculty.label);
+    expect(facultyLabel(`Khoa ${faculty.label}`, 'vi')).toBe(`Khoa ${faculty.label}`);
+    expect(facultyLabel(faculty.value, 'en')).toBe(faculty.labelEn);
+    expect(facultyLabel(`Khoa ${faculty.label}`, 'en')).toBe(faculty.labelEn);
+  }
+  expect(facultyLabel('UNKNOWN_FACULTY', 'vi')).toBe('UNKNOWN_FACULTY');
+});
+
+test.each(['KHOA_DIEN_DIEN_TU', 'Khoa Điện - Điện tử'])('PDF formats raw or pre-translated faculty: %s', faculty => {
+  const data = { ...printData, riskyReaders: [{ studentId: '00123', fullName: 'Reader', faculty,
+    email: null, phoneNumber: null, overdueCount: 1, totalUnpaidAmount: 1000, creditScore: 80 }] };
+  expect(buildOperationalPrintHtml(data, 'vi')).toContain('Điện - Điện tử');
+  expect(buildOperationalPrintHtml(data, 'vi')).not.toContain('KHOA_DIEN_DIEN_TU');
+  expect(buildOperationalPrintHtml(data, 'en')).toContain('Electrical and Electronics Engineering');
+});
+
+test.each([null, '', '   ', 'Chưa ghi nhận'])('PDF handles unrecorded faculties: %s', faculty => {
+  const data = { ...printData, riskyReaders: [{ studentId: '00123', fullName: 'Reader', faculty,
+    email: null, phoneNumber: null, overdueCount: 0, totalUnpaidAmount: 0, creditScore: 80 }] };
+  expect(buildOperationalPrintHtml(data, 'vi')).toContain('Chưa ghi nhận');
+  expect(buildOperationalPrintHtml(data, 'en')).toContain('Not recorded');
+});
+
+test('PDF preserves unknown faculty text but escapes its HTML', () => {
+  const data = { ...printData, riskyReaders: [{ studentId: '00123', fullName: 'Reader', faculty: '<script>unknown</script>',
+    email: null, phoneNumber: null, overdueCount: 0, totalUnpaidAmount: 0, creditScore: 80 }] };
+  const html = buildOperationalPrintHtml(data, 'vi');
+  expect(html).toContain('&lt;script&gt;unknown&lt;/script&gt;');
+  expect(html).not.toContain('<script>');
 });

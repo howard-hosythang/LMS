@@ -4,6 +4,7 @@ import com.library.circulation.dto.response.DashboardReportResponse;
 import com.library.circulation.dto.response.OperationalReportPrintResponse;
 import com.library.shared.exception.AppException;
 import com.library.shared.exception.ErrorCode;
+import com.library.user.domain.enums.FacultyEnum;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -82,8 +83,14 @@ public class DashboardExcelExporter {
             LIMIT :limit
             """, new MapSqlParameterSource(p.getValues()).addValue("limit", limit), (rs, row) ->
                 new OperationalReportPrintResponse.RiskReader(rs.getString("student_id"), rs.getString("full_name"),
-                    rs.getString("faculty"), rs.getString("email"), rs.getString("phone_number"), rs.getLong("overdue_count"),
+                    facultyName(rs.getString("faculty")), rs.getString("email"), rs.getString("phone_number"), rs.getLong("overdue_count"),
                     rs.getBigDecimal("debt"), rs.getInt("credit_score")));
+    }
+
+    private static String facultyName(String raw) {
+        if (raw == null || raw.isBlank()) return UNKNOWN;
+        try { return FacultyEnum.valueOf(raw.trim()).getName(); }
+        catch (IllegalArgumentException ex) { return raw; }
     }
 
     public byte[] export(DashboardReportResponse report, Long actor) {

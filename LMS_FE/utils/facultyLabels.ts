@@ -13,7 +13,10 @@ export const facultyOptions = [
 ];
 
 export const facultyLabel = (value?: string | null, language: 'vi' | 'en' = 'vi') => {
-  const faculty = facultyOptions.find((item) => item.value === value);
-  if (!faculty) return language === 'en' ? 'No faculty' : 'Chưa có khoa';
-  return language === 'en' ? faculty.labelEn : faculty.label;
+  const normalized = value?.trim();
+  if (!normalized) return language === 'en' ? 'No faculty' : 'Chưa có khoa';
+  if (normalized === 'Chưa ghi nhận') return language === 'en' ? 'Not recorded' : normalized;
+  const faculty = facultyOptions.find((item) => item.value === normalized || item.label === normalized || `Khoa ${item.label}` === normalized);
+  if (!faculty) return value!;
+  return language === 'en' ? faculty.labelEn : normalized === `Khoa ${faculty.label}` ? normalized : faculty.label;
 };

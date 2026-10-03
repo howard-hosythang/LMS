@@ -1,4 +1,5 @@
 import { OperationalPrintData } from '../api/librarianDashboardService';
+import { facultyLabel } from './facultyLabels';
 
 const escape = (value: unknown) => String(value ?? '—').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 export const operationalReportFilename = (from: string, to: string) => `Bao_Cao_Van_Hanh_LMS_${from}_${to}.xlsx`;
@@ -22,7 +23,7 @@ export function buildOperationalPrintHtml(data: OperationalPrintData, language: 
     [t('Phí đã thanh toán', 'Fines settled'), money(report.finance.finesCollected)],
   ];
   const top = report.topBorrowedPublications.slice(0, 10).map((book, index) => `<tr><td>${index + 1}</td><td>${escape(book.title.slice(0, 140))}</td><td>${number(book.borrowCount)}</td></tr>`).join('');
-  const risks = data.riskyReaders.slice(0, 10).map(reader => `<tr><td>${escape(reader.studentId)}<br>${escape(reader.fullName.slice(0, 70))}</td><td>${escape(reader.faculty)}<br>${escape(reader.phoneNumber || reader.email)}</td><td>${number(reader.overdueCount)}</td><td>${money(reader.totalUnpaidAmount)}</td><td>${number(reader.creditScore)}</td></tr>`).join('');
+  const risks = data.riskyReaders.slice(0, 10).map(reader => `<tr><td>${escape(reader.studentId)}<br>${escape(reader.fullName.slice(0, 70))}</td><td>${escape(facultyLabel(reader.faculty?.trim() || 'Chưa ghi nhận', language))}<br>${escape(reader.phoneNumber || reader.email)}</td><td>${number(reader.overdueCount)}</td><td>${money(reader.totalUnpaidAmount)}</td><td>${number(reader.creditScore)}</td></tr>`).join('');
   return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><title>${escape(title)} ${escape(report.dateFrom)}_${escape(report.dateTo)}</title>
   <style>
     *{box-sizing:border-box}body{margin:0;background:#e2e8f0;color:#111;font:11pt "Times New Roman",serif}

@@ -112,6 +112,34 @@ class DashboardExcelExporterTest {
         assertThat(exporter.printData(report, 7L).onTimeReturnRatePercent()).isZero();
     }
 
+    @Test void riskFacultyNamesAreVietnameseInBothPrintApiAndExcelWithSafeFallbacks() throws Exception {
+        var rawValues = new java.util.ArrayList<String>();
+        for (var faculty : com.library.user.domain.enums.FacultyEnum.values()) rawValues.add(faculty.name());
+        rawValues.add(null); rawValues.add(""); rawValues.add("   "); rawValues.add("UNKNOWN_FACULTY");
+        rawValues.add("Khoa Điện - Điện tử");
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), org.mockito.ArgumentMatchers.<RowMapper<com.library.circulation.dto.response.OperationalReportPrintResponse.RiskReader>>any()))
+            .thenAnswer(invocation -> {
+                RowMapper<com.library.circulation.dto.response.OperationalReportPrintResponse.RiskReader> mapper = invocation.getArgument(2);
+                var readers = new java.util.ArrayList<com.library.circulation.dto.response.OperationalReportPrintResponse.RiskReader>();
+                for (String raw : rawValues) {
+                    var rs = mock(java.sql.ResultSet.class);
+                    when(rs.getString("faculty")).thenReturn(raw);
+                    readers.add(mapper.mapRow(rs, readers.size()));
+                }
+                return readers;
+            });
+        var expected = new java.util.ArrayList<String>();
+        for (var faculty : com.library.user.domain.enums.FacultyEnum.values()) expected.add(faculty.getName());
+        expected.addAll(List.of("Chưa ghi nhận", "Chưa ghi nhận", "Chưa ghi nhận", "UNKNOWN_FACULTY", "Khoa Điện - Điện tử"));
+        assertThat(exporter.printData(report, 7L).riskyReaders()).extracting(reader -> reader.faculty()).containsExactlyElementsOf(expected);
+        try (var book = new XSSFWorkbook(new ByteArrayInputStream(exporter.export(report, 7L)))) {
+            var risk = book.getSheetAt(5);
+            for (int i = 0; i < expected.size(); i++) {
+                assertThat(risk.getRow(i + 1).getCell(2).getStringCellValue()).isEqualTo(expected.get(i));
+            }
+        }
+    }
+
     @Test void detailCellsKeepLeadingZerosVietnamTimesAndUnknownHistoricalFacts() throws Exception {
         var active = new java.util.HashMap<String, Object>();
         active.put("student_id", "00123"); active.put("full_name", "Reader"); active.put("barcode", "000BC5");
