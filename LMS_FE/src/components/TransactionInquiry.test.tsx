@@ -4,6 +4,7 @@ import TransactionList from '../../pages/librarian_pages/TransactionList';
 import transactions from '../../api/transactionsService';
 import inquiry from '../../api/circulationInquiryService';
 import dashboard from '../../api/librarianDashboardService';
+import { InquiryDrawer } from '../../components/librarian_pages/inquiry/shared';
 
 let mockLanguage = 'vi';
 jest.mock('../../contexts/LanguageContext', () => ({ useLanguage: () => ({ language: mockLanguage }) }));
@@ -51,6 +52,11 @@ test('book click opens only quick view and external links preserve the inquiry t
   fireEvent.click(await screen.findByRole('button', { name: 'Book A' }));
   const drawer = await screen.findByRole('dialog', { name: 'Xem nhanh ấn phẩm' });
   await within(drawer).findByText('Author A');
+  expect(drawer).toHaveClass('max-w-4xl');
+  const copiesTable = within(drawer).getByRole('table');
+  expect(copiesTable).toHaveClass('w-full', 'table-fixed', 'break-words');
+  expect(copiesTable).not.toHaveClass('min-w-[650px]');
+  within(copiesTable).getAllByRole('columnheader').forEach(header => expect(header).toHaveClass('w-1/4'));
   expect(inquiry.transaction).not.toHaveBeenCalled();
   expect(within(drawer).getByRole('link', { name: /Mở chi tiết đầu sách/ })).toHaveAttribute('target', '_blank');
   expect(within(drawer).getByRole('link', { name: /Mở chi tiết đầu sách/ })).toHaveAttribute('href', '#/librarianpage/books/22');
@@ -71,6 +77,7 @@ test.each(['transaction', 'book'].flatMap(kind => ['button', 'backdrop', 'Escape
   const focus = jest.spyOn(trigger, 'focus');
   fireEvent.click(trigger);
   const drawer = await screen.findByRole('dialog');
+  expect(drawer).toHaveClass('max-w-4xl');
   await within(drawer).findByText(kind === 'transaction' ? /Collector A/ : 'Author A');
   expect(screen.getByTestId('url').textContent).toBe(url);
   expect(content.scrollTop).toBe(800);
@@ -110,6 +117,13 @@ test('detail drawer itemizes collector and keeps notes there without edit-fine a
   fireEvent.change(within(drawer).getByLabelText('Ghi chú mới'), { target: { value: 'Next shift note' } });
   fireEvent.click(within(drawer).getByRole('button', { name: 'Thêm ghi chú' }));
   await waitFor(() => expect(transactions.upsertNote).toHaveBeenCalledWith('1', { note: 'Next shift note', important: false }));
+});
+
+test('shared drawer supports a custom width instead of the default width', () => {
+  render(<InquiryDrawer title="Custom width" widthClass="max-w-3xl xl:max-w-4xl" onClose={jest.fn()}>Content</InquiryDrawer>);
+  const drawer = screen.getByRole('dialog', { name: 'Custom width' });
+  expect(drawer).toHaveClass('w-full', 'max-w-3xl', 'xl:max-w-4xl');
+  expect(drawer).not.toHaveClass('max-w-4xl');
 });
 
 test('restores reader ID with independent active and returned date ranges and pages', async () => {

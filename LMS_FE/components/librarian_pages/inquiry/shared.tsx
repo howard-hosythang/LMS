@@ -60,7 +60,7 @@ export function Pager({ data, onPage }: { data: Pick<InquiryPage<unknown>, 'curr
   </div>;
 }
 export function NewTabLink({ to, children }: { to: string; children: ReactNode }) { const t = useCopy(); return <a href={`#${to.startsWith('/') ? to : `/${to}`}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-indigo-700 hover:underline dark:text-indigo-300" onClick={event => event.stopPropagation()}>{children}<ExternalLink size={13} aria-label={t('Mở tab mới', 'Opens in new tab')} /></a>; }
-export function InquiryDrawer({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function InquiryDrawer({ title, onClose, children, widthClass = 'max-w-4xl' }: { title: string; onClose: () => void; children: ReactNode; widthClass?: string }) {
   const t = useCopy();
   const ref = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose); closeRef.current = onClose;
@@ -71,7 +71,7 @@ export function InquiryDrawer({ title, onClose, children }: { title: string; onC
     return () => { document.body.style.overflow = overflow; previous?.focus({ preventScroll: true }); };
   }, []);
   return createPortal(<div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-    <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="flex h-full w-full max-w-2xl flex-col bg-white text-slate-900 shadow-xl dark:bg-slate-900 dark:text-slate-100" onKeyDown={event => {
+    <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className={`flex h-full w-full ${widthClass} flex-col bg-white text-slate-900 shadow-xl dark:bg-slate-900 dark:text-slate-100`} onKeyDown={event => {
       if (event.key === 'Escape') { event.stopPropagation(); closeRef.current(); }
       if (event.key === 'Tab') {
         const nodes = Array.from(ref.current?.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]') ?? []);
