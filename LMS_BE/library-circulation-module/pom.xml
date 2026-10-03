@@ -18,6 +18,17 @@
     <description>Circulation Management Module - Handles BorrowingTransaction, Reservation, Fine</description>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+        <!-- Keep POI's runtime requirement ahead of older transitive commons-io versions. -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.21.0</version>
+        </dependency>
         <!-- Internal Dependencies -->
         <dependency>
             <groupId>com.library</groupId>

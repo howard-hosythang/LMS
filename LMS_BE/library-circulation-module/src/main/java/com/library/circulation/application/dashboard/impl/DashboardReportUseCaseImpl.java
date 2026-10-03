@@ -3,6 +3,9 @@ package com.library.circulation.application.dashboard.impl;
 import com.library.circulation.application.dashboard.DashboardReportUseCase;
 import com.library.circulation.dto.enums.ReportPeriod;
 import com.library.circulation.dto.response.DashboardReportResponse;
+import com.library.circulation.dto.response.OperationalReportPrintResponse;
+import com.library.shared.exception.AppException;
+import com.library.shared.exception.ErrorCode;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +32,28 @@ public class DashboardReportUseCaseImpl implements DashboardReportUseCase {
     private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final DashboardExcelExporter excelExporter;
+
+    @Override
+    @Transactional(readOnly = true, isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public byte[] exportExcel(LocalDate from, LocalDate to, Long librarianId) {
+        validateExportRange(from, to);
+        var report = execute(ReportPeriod.CUSTOM, from, to);
+        return excelExporter.export(report, librarianId);
+    }
+
+    @Override
+    @Transactional(readOnly = true, isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public OperationalReportPrintResponse printReport(LocalDate from, LocalDate to, Long librarianId) {
+        validateExportRange(from, to);
+        return excelExporter.printData(execute(ReportPeriod.CUSTOM, from, to), librarianId);
+    }
+
+    private void validateExportRange(LocalDate from, LocalDate to) {
+        if (from == null || to == null || from.isAfter(to) || from.plusYears(5).isBefore(to)) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+    }
 
     @Override
     @Transactional(readOnly = true)

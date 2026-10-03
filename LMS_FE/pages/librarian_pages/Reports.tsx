@@ -30,7 +30,10 @@ import librarianDashboardService, {
   DashboardReportResponse,
   DashboardSummaryResponse,
   RiskyUser,
+  OperationalPrintData,
 } from '../../api/librarianDashboardService';
+import OperationalReportPreview from '../../components/librarian_pages/OperationalReportPreview';
+import { operationalReportFilename } from '../../utils/operationalReportPrint';
 
 type ReportData = DashboardReportResponse['data'];
 type SummaryData = DashboardSummaryResponse['data'];
@@ -70,8 +73,8 @@ const COPY = {
     today: 'Hôm nay',
     todayHint: 'Đối soát nhanh tài chính và vận hành trong ngày',
     refresh: 'Cập nhật báo cáo',
-    pdfButton: 'PDF báo cáo tổng hợp',
-    csvButton: 'CSV dữ liệu báo cáo',
+    pdfButton: 'In / Xuất PDF',
+    excelButton: 'Xuất Excel chi tiết',
     statusStable: 'Ổn định',
     statusWatch: 'Cần theo dõi',
     statusPriority: 'Cần ưu tiên xử lý',
@@ -179,13 +182,7 @@ const COPY = {
     overdue: 'quá hạn',
     unpaidFine: 'nợ phạt',
     damaged: 'hư hỏng',
-    pdfTitle: 'Xuất PDF báo cáo tổng hợp',
-    pdfDesc: 'Nội dung gồm kỳ báo cáo, nhận định vận hành, số liệu kho sách, lưu thông, tài chính, xu hướng mượn/trả, sách được mượn nhiều và bạn đọc cần theo dõi. Phù hợp gửi quản lý, in lưu hồ sơ hoặc họp giao ban.',
-    csvTitle: 'Xuất CSV dữ liệu báo cáo',
-    csvDesc: 'Nội dung gồm các chỉ tiêu kho sách, mượn/trả, tài chính, xu hướng theo mốc thời gian, top sách và danh sách bạn đọc rủi ro để đội dữ liệu xử lý tiếp bằng bảng tính hoặc công cụ BI.',
-    csvSuccess: 'Đã xuất CSV dữ liệu báo cáo',
-    csvFallbackSuccess: 'Đã xuất CSV dữ liệu đang hiển thị',
-    pdfPopupBlocked: 'Trình duyệt đang chặn cửa sổ in PDF. Vui lòng cho phép pop-up cho trang này.',
+    excelSuccess: 'Đã xuất Excel báo cáo chi tiết',
     customizeDashboard: 'Tùy chỉnh giao diện',
     finishCustomize: 'Hoàn tất',
     widgetLibrary: 'Kho widget',
@@ -204,8 +201,8 @@ const COPY = {
     today: 'Today',
     todayHint: 'Quick same-day finance and operations reconciliation',
     refresh: 'Refresh report',
-    pdfButton: 'Summary PDF report',
-    csvButton: 'Report data CSV',
+    pdfButton: 'Print / Export PDF',
+    excelButton: 'Export detailed Excel',
     statusStable: 'Stable',
     statusWatch: 'Needs monitoring',
     statusPriority: 'Needs priority handling',
@@ -313,13 +310,7 @@ const COPY = {
     overdue: 'overdue',
     unpaidFine: 'unpaid',
     damaged: 'damaged',
-    pdfTitle: 'Export summary PDF report',
-    pdfDesc: 'Includes the reporting period, operational review, inventory, circulation, finance, trend, top borrowed publications and reader follow-up list. Suitable for managers, filing and review meetings.',
-    csvTitle: 'Export report data CSV',
-    csvDesc: 'Includes inventory, circulation, finance, time-series trends, top publications and at-risk readers for spreadsheet or BI processing.',
-    csvSuccess: 'Report data CSV exported',
-    csvFallbackSuccess: 'CSV exported from currently displayed data',
-    pdfPopupBlocked: 'The browser blocked the PDF print window. Please allow pop-ups for this site.',
+    excelSuccess: 'Detailed Excel report exported',
     customizeDashboard: 'Customize layout',
     finishCustomize: 'Done',
     widgetLibrary: 'Widget library',
@@ -365,8 +356,7 @@ const currency = (value?: number | string | null, language: Lang = 'vi') =>
   });
 const percent = (value?: number | string | null, language: Lang = 'vi') => `${Math.round(Number(value || 0)).toLocaleString(localeFor(language))}%`;
 const dateLabel = (value?: string | null, language: Lang = 'vi') => value ? new Date(value).toLocaleDateString(localeFor(language)) : 'N/A';
-const isoToday = () => new Date().toISOString().slice(0, 10);
-const reportPeriodSlug = (report: Pick<ReportData, 'dateFrom' | 'dateTo'>) => `${report.dateFrom}-${report.dateTo}`;
+const isoToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
 const reportRange = (period: DashboardReportPeriod, dateFrom: string, dateTo: string) => {
   if (period === 'TODAY') {
@@ -387,14 +377,6 @@ const downloadBlob = (blob: Blob, filename: string) => {
   URL.revokeObjectURL(url);
 };
 
-const escapeHtml = (value: unknown) =>
-  String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-
 const healthStatus = (report: ReportData, c: ReportCopy) => {
   const warnings = [
     report.circulation.overdueCurrentCount > 0,
@@ -409,319 +391,6 @@ const healthStatus = (report: ReportData, c: ReportCopy) => {
   return { label: c.statusPriority, tone: 'red', className: 'bg-red-50 text-red-700 border-red-100 dark:border-red-500/30 dark:bg-red-500/15 dark:text-red-100' };
 };
 
-const buildCsvFallback = (report: ReportData, riskyUsers: RiskyUser[]) => {
-  const operationalPressure = report.circulation.overdueCurrentCount + report.circulation.waitingPickupCount + report.circulation.reservationPendingCount;
-  const incidentTotal = report.incidents.overdueFineCount + report.incidents.damagedFineCount + report.incidents.lostFineCount;
-  const availableRate = report.inventory.totalItems > 0 ? ((report.inventory.availableItems / report.inventory.totalItems) * 100).toFixed(1) : '0';
-  const collectionRate = Number(report.finance.finesCreated || 0) > 0
-    ? ((Number(report.finance.finesCollected || 0) / Number(report.finance.finesCreated || 0)) * 100).toFixed(1)
-    : '0';
-  const rows: (string | number)[][] = [
-    ['BÁO CÁO ĐIỀU HÀNH THƯ VIỆN'],
-    ['Từ ngày', report.dateFrom, 'Đến ngày', report.dateTo],
-    ['Thời điểm xuất', new Date().toLocaleString('vi-VN'), 'Múi giờ', Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local'],
-    ['Đơn vị tiền tệ', 'VND', 'Encoding', 'UTF-8 BOM'],
-    [],
-    ['0. TÓM TẮT ĐIỀU HÀNH'],
-    ['Chỉ tiêu', 'Giá trị', 'Ghi chú'],
-    ['Sức ép vận hành', operationalPressure, 'Quá hạn + chờ lấy + đặt trước đang chờ'],
-    ['Tỷ lệ kho khả dụng', `${availableRate}%`, 'Có sẵn / tổng bản sao'],
-    ['Tỷ lệ trả/mượn', `${report.circulation.returnRatePercent}%`, 'Lượt trả chia lượt mượn trong kỳ'],
-    ['Tỷ lệ thu phí', `${collectionRate}%`, 'Phí đã thu / phí phát sinh trong kỳ'],
-    ['Tiền cần thu', report.finance.unpaidFineOutstanding, 'Nợ phạt còn tồn hiện tại'],
-    ['Tổng sự cố trong kỳ', incidentTotal, 'Quá hạn + hư hỏng + mất sách'],
-    [],
-    ['1. TỔNG QUAN KHO SÁCH'],
-    ['Chỉ tiêu', 'Số lượng', 'Ghi chú'],
-    ['Tổng bản sao hiện có', report.inventory.totalItems, 'Tất cả trạng thái'],
-    ['Có sẵn', report.inventory.availableItems, 'Có thể cho mượn'],
-    ['Đang mượn', report.inventory.borrowedItems, 'Đang nằm ngoài kho'],
-    ['Đang đặt trước', report.inventory.reservedItems, 'Đang giữ cho bạn đọc'],
-    ['Bảo trì', report.inventory.maintenanceItems, 'Cần xử lý trước khi lưu thông'],
-    ['Mất/thất lạc', report.inventory.lostItems, 'Không thể lưu thông'],
-    ['Bản sao nhập kho trong kỳ', report.inventory.itemsAddedInPeriod, 'Theo ngày tạo bản sao'],
-    ['Đầu sách thêm trong kỳ', report.inventory.publicationsAddedInPeriod, 'Theo ngày tạo đầu sách'],
-    [],
-    ['2. MƯỢN TRẢ VÀ NHU CẦU SỬ DỤNG'],
-    ['Chỉ tiêu', 'Số lượng', 'Ghi chú'],
-    ['Lượt mượn trong kỳ', report.circulation.borrowCount, 'Theo ngày giao sách'],
-    ['Lượt trả trong kỳ', report.circulation.returnCount, 'Theo ngày trả sách'],
-    ['Tỷ lệ trả/mượn', `${report.circulation.returnRatePercent}%`, 'Lượt trả chia lượt mượn'],
-    ['Đang mượn hiện tại', report.circulation.activeBorrowCount, 'BORROWING/OVERDUE'],
-    ['Quá hạn hiện tại', report.circulation.overdueCurrentCount, 'Cần nhắc trả'],
-    ['Chờ lấy sách', report.circulation.waitingPickupCount, 'Cần xác nhận giao sách'],
-    ['Đặt trước đang chờ', report.circulation.reservationPendingCount, 'Hàng chờ đặt trước'],
-    [],
-    ['3. TÀI CHÍNH CỌC VÀ PHÍ'],
-    ['Chỉ tiêu', 'Số tiền (VND)', 'Ý nghĩa'],
-    ['Cọc đã thu', report.finance.depositsCollected, 'Tiền cọc nhận tại quầy'],
-    ['Cọc đã hoàn', report.finance.depositsRefunded, 'Tiền hoàn lại bạn đọc'],
-    ['Cọc đã cấn phạt', report.finance.depositsAppliedToFines, 'Cọc dùng bù phí'],
-    ['Thu thêm sau cấn cọc', report.finance.additionalAmountDue, 'Phần phí vượt cọc'],
-    ['Phí phạt phát sinh', report.finance.finesCreated, 'Theo ngày tạo phí'],
-    ['Phí phạt đã thu', report.finance.finesCollected, 'Theo ngày thanh toán'],
-    ['Nợ phạt còn tồn', report.finance.unpaidFineOutstanding, 'Tổng nợ hiện tại'],
-    ['Hoàn do tìm lại sách mất', report.finance.lostBookRefunds, 'Theo ghi nhận phục hồi'],
-    ['Dòng tiền ròng trong kỳ', report.finance.netCashInPeriod, 'Cọc thu + phí thu - cọc hoàn - hoàn sách mất'],
-    [],
-    ['4. SỰ CỐ VÀ VI PHẠM'],
-    ['Loại', 'Số vụ', 'Ghi chú'],
-    ['Quá hạn', report.incidents.overdueFineCount, 'Khoản phí quá hạn'],
-    ['Hư hỏng', report.incidents.damagedFineCount, 'Khoản phí hư hỏng'],
-    ['Mất sách', report.incidents.lostFineCount, 'Khoản phí mất sách'],
-    ['Tìm lại sách mất', report.incidents.recoveredLostBookCount, 'Số bản sao phục hồi'],
-  ];
-
-  rows.push([], ['5. TOP SÁCH ĐƯỢC MƯỢN'], ['STT', 'Mã ấn phẩm', 'Tên sách', 'Lượt mượn']);
-  report.topBorrowedPublications.forEach((row, index) => rows.push([index + 1, row.publicationId, row.title, row.borrowCount]));
-  rows.push([], ['6. BẠN ĐỌC RỦI RO CẦN THEO DÕI'], ['STT', 'Mã bạn đọc', 'Họ tên', 'Email', 'Số điện thoại', 'Điểm tín dụng', 'Đang quá hạn', 'Khoản phạt chưa trả', 'Tổng nợ phạt (VND)', 'Số lần hư hỏng']);
-  riskyUsers.forEach((user, index) => rows.push([
-    index + 1,
-    user.studentId || '',
-    user.fullName,
-    user.email,
-    user.phoneNumber || '',
-    user.creditScore,
-    user.riskyMetrics.overdueCount,
-    user.riskyMetrics.unpaidFineCount,
-    user.riskyMetrics.totalUnpaidAmount,
-    user.riskyMetrics.damagedCount,
-  ]));
-  rows.push([], ['7. GỢI Ý NỘI DUNG BÁO CÁO']);
-  report.librarianNotes.forEach((note) => rows.push(['-', note]));
-  rows.push([], ['8. DỮ LIỆU THEO THỜI GIAN'], ['Mốc', 'Lượt mượn', 'Lượt trả', 'Cọc thu', 'Phí thu']);
-  report.trend.forEach((row) => rows.push([row.label, row.borrowed, row.returned, row.depositsCollected, row.finesCollected]));
-  rows.push(
-    [],
-    ['9. ĐỊNH NGHĨA CHỈ SỐ'],
-    ['Chỉ số', 'Cách tính', 'Ghi chú nghiệp vụ'],
-    ['Sức ép vận hành', 'Quá hạn hiện tại + chờ lấy sách + đặt trước đang chờ', 'Dùng để ưu tiên ca trực'],
-    ['Tỷ lệ trả/mượn', 'Lượt trả trong kỳ / lượt mượn trong kỳ x 100', '0% nếu không có lượt mượn'],
-    ['Tỷ lệ kho khả dụng', 'Bản sao có sẵn / tổng bản sao x 100', 'Phản ánh năng lực phục vụ ngay'],
-    ['Tỷ lệ thu phí', 'Phí phạt đã thu / phí phạt phát sinh x 100', 'Có thể trên 100% nếu thu khoản phát sinh từ kỳ trước'],
-    ['Dòng tiền ròng', 'Cọc đã thu + phí đã thu - cọc đã hoàn - hoàn do tìm lại sách mất', 'Không trừ cọc đã cấn phạt để tránh đếm trùng dòng tiền'],
-  );
-
-  return '\uFEFF' + rows
-    .map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(','))
-    .join('\n');
-};
-
-const printReport = (report: ReportData, riskyUsers: RiskyUser[], language: Lang, c: ReportCopy) => {
-  const status = healthStatus(report, c);
-  const generatedAt = new Date().toLocaleString(localeFor(language), {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const periodSlug = reportPeriodSlug(report);
-  const reportPrintTitle = `bao-cao-dieu-hanh-${periodSlug}`;
-  const reportPrintFilename = `${reportPrintTitle}.pdf`;
-  const reportPrintFooter = `Library74-report-${periodSlug}`;
-  const operationalPressure = report.circulation.overdueCurrentCount + report.circulation.waitingPickupCount + report.circulation.reservationPendingCount;
-  const incidentTotal = report.incidents.overdueFineCount + report.incidents.damagedFineCount + report.incidents.lostFineCount;
-  const availableRate = report.inventory.totalItems > 0 ? (report.inventory.availableItems / report.inventory.totalItems) * 100 : 0;
-  const collectionRate = Number(report.finance.finesCreated || 0) > 0
-    ? (Number(report.finance.finesCollected || 0) / Number(report.finance.finesCreated || 0)) * 100
-    : 0;
-  const pdfRiskRows = (report.riskyReaders && report.riskyReaders.length > 0)
-    ? report.riskyReaders.map((user) => ({
-        fullName: user.fullName,
-        studentId: user.studentId,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        creditScore: user.creditScore,
-        overdueCount: user.overdueCount,
-        unpaidFineCount: user.unpaidFineCount,
-        totalUnpaidAmount: user.totalUnpaidAmount,
-        damagedCount: user.damagedCount,
-      }))
-    : riskyUsers.map((user) => ({
-        fullName: user.fullName,
-        studentId: user.studentId,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        creditScore: user.creditScore,
-        overdueCount: user.riskyMetrics.overdueCount,
-        unpaidFineCount: user.riskyMetrics.unpaidFineCount,
-        totalUnpaidAmount: user.riskyMetrics.totalUnpaidAmount,
-        damagedCount: user.riskyMetrics.damagedCount,
-      }));
-  const trendRows = report.trend.map((row) => `
-    <tr><td>${escapeHtml(row.label)}</td><td>${number(row.borrowed, language)}</td><td>${number(row.returned, language)}</td><td>${currency(row.depositsCollected, language)}</td><td>${currency(row.finesCollected, language)}</td></tr>
-  `).join('');
-  const topRows = report.topBorrowedPublications.map((row, index) => `
-    <tr><td>${index + 1}</td><td>${escapeHtml(String(row.publicationId))}</td><td>${escapeHtml(row.title)}</td><td>${number(row.borrowCount, language)}</td></tr>
-  `).join('');
-  const riskRows = pdfRiskRows.map((user, index) => `
-    <tr>
-      <td>${index + 1}</td>
-      <td>${escapeHtml(user.fullName)}<br><small>${escapeHtml(user.studentId || user.email || '')}</small></td>
-      <td>${escapeHtml(user.phoneNumber || '')}</td>
-      <td>${number(user.creditScore, language)}</td>
-      <td>${number(user.overdueCount, language)}</td>
-      <td>${number(user.unpaidFineCount, language)}</td>
-      <td>${currency(user.totalUnpaidAmount, language)}</td>
-      <td>${number(user.damagedCount, language)}</td>
-    </tr>
-  `).join('');
-  const notes = report.librarianNotes.map((note) => `<li>${escapeHtml(note)}</li>`).join('');
-  const definitions = [
-    [c.pressure, language === 'en' ? 'Current overdue + waiting pickup + pending reservations' : 'Quá hạn hiện tại + chờ lấy sách + đặt trước đang chờ', language === 'en' ? 'Used to prioritize librarian shifts' : 'Dùng để ưu tiên xử lý trong ca trực'],
-    [c.circulationBalance, language === 'en' ? 'Returns in period / borrows in period x 100' : 'Lượt trả trong kỳ / lượt mượn trong kỳ x 100', language === 'en' ? '0% when there are no borrows' : '0% nếu không có lượt mượn'],
-    [c.availableStock, language === 'en' ? 'Available copies / total copies x 100' : 'Bản sao có sẵn / tổng bản sao x 100', language === 'en' ? 'Immediate service capacity' : 'Phản ánh năng lực phục vụ ngay'],
-    [c.collectionRate, language === 'en' ? 'Collected fines / created fines x 100' : 'Phí phạt đã thu / phí phạt phát sinh x 100', language === 'en' ? 'Can exceed 100% when collecting older fines' : 'Có thể trên 100% nếu thu khoản phát sinh từ kỳ trước'],
-    [c.netCash, language === 'en' ? 'Deposits collected + fines collected - deposits refunded - lost-book refunds' : 'Cọc đã thu + phí đã thu - cọc đã hoàn - hoàn do tìm lại sách mất', language === 'en' ? 'Deposit applied to fines is not subtracted to avoid double counting' : 'Không trừ cọc đã cấn phạt để tránh đếm trùng dòng tiền'],
-  ].map((row) => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td><td>${escapeHtml(row[2])}</td></tr>`).join('');
-
-  const html = `
-    <!doctype html><html lang="${language}"><head><meta charset="utf-8" />
-    <title>${escapeHtml(reportPrintTitle)}</title>
-    <style>
-      @page { size: A4; margin: 13mm 12mm 18mm; }
-      * { box-sizing: border-box; }
-      body { font-family: Inter, Arial, sans-serif; color: #111827; margin: 0; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      h1 { font-size: 25px; margin: 0 0 5px; letter-spacing: 0; }
-      h2 { break-after: avoid; font-size: 15px; margin: 22px 0 9px; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.02em; }
-      p { margin: 0; color: #4b5563; }
-      small { color: #64748b; font-size: 10px; }
-      .header { border-bottom: 3px solid #dc2626; padding-bottom: 14px; margin-bottom: 16px; }
-      .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-      .pdf-icon { width: 42px; height: 50px; border: 2px solid #dc2626; border-radius: 7px; color: #dc2626; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; position: relative; }
-      .pdf-icon:after { content: ""; position: absolute; right: -2px; top: -2px; border-left: 13px solid transparent; border-bottom: 13px solid #fee2e2; }
-      .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; margin-top: 10px; font-size: 11px; color: #475569; }
-      .meta b { color: #111827; }
-      .badge { display: inline-block; border: 1px solid #fecaca; border-radius: 999px; padding: 4px 10px; color: #b91c1c; font-weight: 800; background: #fff1f2; }
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 14px; }
-      .card { border: 1px solid #d1d5db; border-radius: 8px; padding: 11px; break-inside: avoid; background: #fff; }
-      .label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 800; }
-      .value { font-size: 19px; font-weight: 900; margin-top: 4px; color: #111827; }
-      table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; page-break-inside: auto; }
-      thead { display: table-header-group; }
-      tr { break-inside: avoid; page-break-inside: avoid; }
-      th, td { border: 1px solid #dbe3ea; padding: 6px 7px; text-align: left; vertical-align: top; }
-      th { background: #fff1f2; color: #991b1b; font-weight: 900; }
-      ul { margin: 8px 0 0 18px; padding: 0; }
-      li { margin-bottom: 6px; }
-      .summary { border: 1px solid #fecaca; background: #fff1f2; border-radius: 8px; padding: 13px; margin-top: 14px; break-inside: avoid; }
-      .summary strong { color: #b91c1c; }
-      .muted { color: #64748b; }
-      .section { break-inside: avoid; }
-      .wide-table { font-size: 10.5px; }
-      .footer { margin-top: 18px; border-top: 1px solid #d1d5db; padding-top: 8px; font-size: 10px; color: #64748b; display: flex; justify-content: space-between; gap: 12px; }
-      .pdf-print-footer { display: none; }
-      .print-tip { margin-top: 24px; font-size: 11px; color: #64748b; }
-      @media print {
-        .print-tip { display: none; }
-        body { font-size: 12px; padding-bottom: 14mm; }
-        .footer { display: none; }
-        .pdf-print-footer {
-          display: block;
-          position: fixed;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          border-top: 1px solid #d1d5db;
-          padding-top: 5px;
-          color: #64748b;
-          font-size: 10px;
-        }
-      }
-    </style></head><body>
-      <div class="header">
-        <div class="brand"><div class="pdf-icon">PDF</div><span class="badge">Library74</span></div>
-        <h1>${escapeHtml(c.pdfTitle)}</h1>
-        <p>${escapeHtml(c.pdfDesc)}</p>
-        <div class="meta">
-          <span>${escapeHtml(c.period)}: <b>${dateLabel(report.dateFrom, language)} - ${dateLabel(report.dateTo, language)}</b></span>
-          <span>${language === 'en' ? 'Exported at' : 'Thời điểm xuất'}: <b>${escapeHtml(generatedAt)}</b></span>
-          <span>${language === 'en' ? 'Operating status' : 'Trạng thái vận hành'}: <b>${escapeHtml(status.label)}</b></span>
-          <span>${language === 'en' ? 'Currency' : 'Đơn vị tiền tệ'}: <b>VND</b></span>
-        </div>
-      </div>
-      <div class="summary"><strong>${escapeHtml(c.mainConclusion)}:</strong><p>${escapeHtml(report.librarianNotes[0] || c.noNotes)}</p></div>
-      <div class="grid">
-        <div class="card"><div class="label">${escapeHtml(c.pressure)}</div><div class="value">${number(operationalPressure, language)}</div></div>
-        <div class="card"><div class="label">${escapeHtml(c.circulationBalance)}</div><div class="value">${percent(report.circulation.returnRatePercent, language)}</div></div>
-        <div class="card"><div class="label">${escapeHtml(c.netCash)}</div><div class="value">${currency(report.finance.netCashInPeriod, language)}</div></div>
-        <div class="card"><div class="label">${escapeHtml(c.availableStock)}</div><div class="value">${percent(availableRate, language)}</div><div class="muted">${number(report.inventory.availableItems, language)} / ${number(report.inventory.totalItems, language)}</div></div>
-        <div class="card"><div class="label">${escapeHtml(c.outstandingFines)}</div><div class="value">${currency(report.finance.unpaidFineOutstanding, language)}</div></div>
-        <div class="card"><div class="label">${escapeHtml(c.incidents)}</div><div class="value">${number(incidentTotal, language)}</div></div>
-      </div>
-      <h2>1. ${escapeHtml(c.operationalReview)}</h2><ul>${notes}</ul>
-      <h2>2. ${escapeHtml(c.inventory)}</h2>
-      <table><tr><th>${escapeHtml(c.copyStatus)}</th><th>${escapeHtml(c.totalCopies)}</th><th>${escapeHtml(c.overview)}</th></tr>
-        <tr><td>${escapeHtml(c.available)}</td><td>${number(report.inventory.availableItems, language)}</td><td>${escapeHtml(c.availableRateHint)}</td></tr>
-        <tr><td>${escapeHtml(c.borrowedItems)}</td><td>${number(report.inventory.borrowedItems, language)}</td><td>${escapeHtml(c.activeBorrows)}</td></tr>
-        <tr><td>${escapeHtml(c.reserved)}</td><td>${number(report.inventory.reservedItems, language)}</td><td>${escapeHtml(c.waitingQueue)}</td></tr>
-        <tr><td>${escapeHtml(c.maintenance)}</td><td>${number(report.inventory.maintenanceItems, language)}</td><td>${escapeHtml(c.lostMaintenanceHint)}</td></tr>
-        <tr><td>${escapeHtml(c.lost)}</td><td>${number(report.inventory.lostItems, language)}</td><td>${escapeHtml(c.outstandingFinesHint)}</td></tr>
-      </table>
-      <h2>3. ${escapeHtml(c.operations)}</h2>
-      <table><tr><th>${escapeHtml(c.operations)}</th><th>${escapeHtml(c.totalCopies)}</th><th>${escapeHtml(c.overview)}</th></tr>
-        <tr><td>${escapeHtml(c.circulationInPeriod)}</td><td>${number(report.circulation.borrowCount, language)} ${escapeHtml(c.borrowed)} · ${number(report.circulation.returnCount, language)} ${escapeHtml(c.returned)}</td><td>${escapeHtml(interpolate(c.circulationBalanceHint, { rate: percent(report.circulation.returnRatePercent, language) }))}</td></tr>
-        <tr><td>${escapeHtml(c.overdueReturn)}</td><td>${number(report.circulation.overdueCurrentCount, language)}</td><td>${escapeHtml(c.activeBorrowsHint.replace('{{count}}', String(report.circulation.overdueCurrentCount)))}</td></tr>
-        <tr><td>${escapeHtml(c.waitingQueue)}</td><td>${number(report.circulation.waitingPickupCount, language)}</td><td>${escapeHtml(c.waitingQueueHint.replace('{{pickup}}', String(report.circulation.waitingPickupCount)).replace('{{reservation}}', String(report.circulation.reservationPendingCount)))}</td></tr>
-      </table>
-      <h2>4. ${escapeHtml(c.finance)}</h2>
-      <table><tr><th>${escapeHtml(c.financeCheck)}</th><th>${escapeHtml(c.netCash)}</th><th>${escapeHtml(c.overview)}</th></tr>
-        <tr><td>${escapeHtml(c.depositsCollected)}</td><td>${currency(report.finance.depositsCollected, language)}</td><td>${escapeHtml(c.depositsAndCash)}</td></tr>
-        <tr><td>${escapeHtml(c.depositsRefunded)}</td><td>${currency(report.finance.depositsRefunded, language)}</td><td>${escapeHtml(c.depositsAndCash)}</td></tr>
-        <tr><td>${escapeHtml(c.depositsApplied)}</td><td>${currency(report.finance.depositsAppliedToFines, language)}</td><td>${escapeHtml(c.outstandingFines)}</td></tr>
-        <tr><td>${escapeHtml(c.finesCreated)} / ${escapeHtml(c.finesCollected)}</td><td>${currency(report.finance.finesCreated, language)} / ${currency(report.finance.finesCollected, language)}</td><td>${escapeHtml(c.collectionRate)}</td></tr>
-        <tr><td>${escapeHtml(c.netCash)}</td><td>${currency(report.finance.netCashInPeriod, language)}</td><td>${escapeHtml(c.netCashHint)}</td></tr>
-      </table>
-      <h2>5. ${escapeHtml(c.violationMix)}</h2>
-      <table><tr><th>${escapeHtml(c.violationMix)}</th><th>${language === 'en' ? 'Cases' : 'Số vụ'}</th><th>${escapeHtml(c.overview)}</th></tr>
-        <tr><td>${escapeHtml(c.overdueReturn)}</td><td>${number(report.incidents.overdueFineCount, language)}</td><td>${escapeHtml(c.violationMixHint)}</td></tr>
-        <tr><td>${escapeHtml(c.damagedBook)}</td><td>${number(report.incidents.damagedFineCount, language)}</td><td>${escapeHtml(c.lostMaintenanceHint)}</td></tr>
-        <tr><td>${escapeHtml(c.lostBook)}</td><td>${number(report.incidents.lostFineCount, language)}</td><td>${escapeHtml(c.outstandingFinesHint)}</td></tr>
-        <tr><td>${escapeHtml(c.recoveredLost)}</td><td>${number(report.incidents.recoveredLostBookCount, language)}</td><td>${escapeHtml(c.lostRefunds)}</td></tr>
-      </table>
-      <h2>6. ${escapeHtml(c.trendTitle)}</h2><table><thead><tr><th>${escapeHtml(c.period)}</th><th>${escapeHtml(c.borrowed)}</th><th>${escapeHtml(c.returned)}</th><th>${escapeHtml(c.depositsCollected)}</th><th>${escapeHtml(c.finesCollected)}</th></tr></thead><tbody>${trendRows}</tbody></table>
-      <h2>7. ${escapeHtml(c.topBorrowed)}</h2><table><thead><tr><th>#</th><th>ID</th><th>${escapeHtml(c.topBorrowed)}</th><th>${escapeHtml(c.borrowed)}</th></tr></thead><tbody>${topRows || `<tr><td colspan="4">${escapeHtml(c.noBorrowData)}</td></tr>`}</tbody></table>
-      <h2>8. ${escapeHtml(c.readersToWatch)}</h2><table class="wide-table"><thead><tr><th>#</th><th>${escapeHtml(c.readers)}</th><th>${language === 'en' ? 'Phone' : 'SĐT'}</th><th>${language === 'en' ? 'Credit' : 'Điểm'}</th><th>${escapeHtml(c.overdue)}</th><th>${escapeHtml(c.unpaidFine)}</th><th>${escapeHtml(c.moneyToCollect)}</th><th>${escapeHtml(c.damaged)}</th></tr></thead><tbody>${riskRows || `<tr><td colspan="8">${escapeHtml(c.noRiskData)}</td></tr>`}</tbody></table>
-      <h2>9. ${language === 'en' ? 'Metric Definitions' : 'Định nghĩa chỉ số'}</h2><table><thead><tr><th>${language === 'en' ? 'Metric' : 'Chỉ số'}</th><th>${language === 'en' ? 'Formula' : 'Cách tính'}</th><th>${language === 'en' ? 'Business note' : 'Ghi chú nghiệp vụ'}</th></tr></thead><tbody>${definitions}</tbody></table>
-      <div class="footer">
-        <span>${escapeHtml(reportPrintFooter)}</span>
-        <span>${escapeHtml(c.period)}: ${escapeHtml(report.dateFrom)} - ${escapeHtml(report.dateTo)} · ${escapeHtml(status.label)} · ${language === 'en' ? 'Collection rate' : 'Tỷ lệ thu phí'} ${percent(collectionRate, language)}</span>
-      </div>
-      <div class="pdf-print-footer">${escapeHtml(reportPrintFooter)}</div>
-      <p class="print-tip">${language === 'en' ? 'Choose Save as PDF in the print dialog to save this report.' : 'Chọn Save as PDF trong hộp thoại in để lưu thành tệp PDF.'}</p>
-      <script>
-        document.title = ${JSON.stringify(reportPrintTitle)};
-        window.history.replaceState?.(null, document.title, ${JSON.stringify(`/${reportPrintFilename}`)});
-        const closePrintWindow = () => setTimeout(() => window.close(), 150);
-        window.addEventListener('afterprint', closePrintWindow);
-        if (window.matchMedia) {
-          const mediaQuery = window.matchMedia('print');
-          mediaQuery.addEventListener?.('change', event => {
-            if (!event.matches) closePrintWindow();
-          });
-        }
-        window.addEventListener('load', () => setTimeout(() => {
-          window.focus();
-          window.print();
-        }, 300));
-      </script>
-    </body></html>
-  `;
-
-  const printUrl = new URL(window.location.href);
-  printUrl.pathname = `/${reportPrintFilename}`;
-  printUrl.hash = reportPrintFooter;
-  const win = window.open(printUrl.toString(), '_blank', 'width=1100,height=900');
-  if (!win) {
-    toast.error(c.pdfPopupBlocked);
-    return;
-  }
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
-  win.document.title = reportPrintTitle;
-};
 
 const MetricCard = ({
   title,
@@ -802,7 +471,7 @@ const ProgressRow = ({ label, value, max, tone = 'blue' }: { label: string; valu
 };
 
 const PdfBadgeIcon = ({ className = 'h-5 w-5' }: { className?: string }) => (
-  <span className={`relative inline-flex shrink-0 items-center justify-center rounded-[4px] border-2 border-red-600 bg-white text-[9px] font-black leading-none text-red-600 ${className}`}>
+  <span aria-hidden="true" className={`relative inline-flex shrink-0 items-center justify-center rounded-[4px] border-2 border-red-600 bg-white text-[9px] font-black leading-none text-red-600 ${className}`}>
     PDF
     <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-bl-[3px] border-b border-l border-red-200 bg-red-50" />
   </span>
@@ -1003,7 +672,8 @@ const Reports = () => {
   const [riskyUsers, setRiskyUsers] = useState<RiskyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null);
+  const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
+  const [printPreview, setPrintPreview] = useState<OperationalPrintData | null>(null);
 
   const selectedPeriod = periods.find((item) => item.value === period) || periods[1];
 
@@ -1061,28 +731,29 @@ const Reports = () => {
     return { operationalPressure, availableRate, incidentCount, collectionRate, cashToCollect };
   }, [report]);
 
-  const handleExportCsv = async () => {
-    if (!report) return;
-    const range = reportRange(period, dateFrom, dateTo);
-    setExporting('csv');
+  const handleExportExcel = async () => {
+    if (!report || exporting) return;
+    setExporting('excel');
     try {
-      const blob = await librarianDashboardService.exportReport(period, range.dateFrom, range.dateTo);
-      downloadBlob(blob, `bao-cao-dieu-hanh-${report.dateFrom}-${report.dateTo}.csv`);
-      toast.success(c.csvSuccess);
-    } catch (error) {
-      console.error('CSV export failed, using frontend fallback:', error);
-      downloadBlob(new Blob([buildCsvFallback(report, riskyUsers)], { type: 'text/csv;charset=utf-8' }), `bao-cao-dieu-hanh-${report.dateFrom}-${report.dateTo}.csv`);
-      toast.success(c.csvFallbackSuccess);
+      const blob = await librarianDashboardService.exportExcel(report.dateFrom, report.dateTo);
+      downloadBlob(blob, operationalReportFilename(report.dateFrom, report.dateTo));
+      toast.success(c.excelSuccess);
+    } catch {
+      toast.error(lang === 'en' ? 'Excel export failed. Please retry or select a smaller reporting period.' : 'Xuất Excel không thành công. Vui lòng thử lại hoặc chọn kỳ báo cáo nhỏ hơn.');
     } finally {
       setExporting(null);
     }
   };
 
-  const handlePrintPdf = () => {
-    if (!report) return;
+  const handlePrintPdf = async () => {
+    if (!report || exporting) return;
     setExporting('pdf');
-    printReport(report, riskyUsers, lang, c);
-    window.setTimeout(() => setExporting(null), 800);
+    try {
+      const response = await librarianDashboardService.getPrintReport(report.dateFrom, report.dateTo);
+      setPrintPreview(response.data);
+    } catch {
+      toast.error(lang === 'en' ? 'Unable to load report preview.' : 'Không thể tải bản xem trước báo cáo.');
+    } finally { setExporting(null); }
   };
 
   const toggleWidget = (id: WidgetId) => {
@@ -1296,20 +967,20 @@ const Reports = () => {
                 <button
                   type="button"
                   onClick={handlePrintPdf}
-                  disabled={exporting === 'pdf'}
+                  disabled={exporting !== null || loading}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2.5 text-xs font-black text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-60"
                 >
-                  <PdfBadgeIcon className="h-5 w-5" />
+                  {exporting === 'pdf' ? <RefreshCcw aria-hidden="true" size={15} className="animate-spin" /> : <PdfBadgeIcon className="h-5 w-5" />}
                   {c.pdfButton}
                 </button>
                 <button
                   type="button"
-                  onClick={handleExportCsv}
-                  disabled={exporting === 'csv'}
+                  onClick={handleExportExcel}
+                  disabled={exporting !== null || loading}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-black text-white hover:bg-emerald-700 disabled:opacity-60"
                 >
-                  <FileSpreadsheet size={15} />
-                  {c.csvButton}
+                  {exporting === 'excel' ? <RefreshCcw aria-hidden="true" size={15} className="animate-spin" /> : <FileSpreadsheet aria-hidden="true" size={15} />}
+                  {c.excelButton}
                 </button>
               </div>
             )}
@@ -1672,6 +1343,7 @@ const Reports = () => {
 
         </>
       )}
+      {printPreview && <OperationalReportPreview data={printPreview} language={lang} onClose={() => setPrintPreview(null)} />}
     </div>
   );
 };

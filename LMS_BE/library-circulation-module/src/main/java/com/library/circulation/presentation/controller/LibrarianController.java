@@ -42,6 +42,28 @@ public class LibrarianController {
   private final DashboardRiskyUsersUseCase dashboardRiskyUsersUseCase;
   private final DashboardReportUseCase dashboardReportUseCase;
   private final ReaderProfileUseCase readerProfileUseCase;
+  private final com.library.shared.util.SecurityEvaluator security;
+
+  @GetMapping(value = "/dashboard/report/export-excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+  @RequiresRole(RoleConstants.LIBRARIAN)
+  public ResponseEntity<byte[]> exportExcel(
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    byte[] bytes = dashboardReportUseCase.exportExcel(from, to, security.getCurrentUserId());
+    return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+        "attachment; filename=\"Bao_Cao_Van_Hanh_LMS_" + from + "_" + to + ".xlsx\"")
+        .header(HttpHeaders.CACHE_CONTROL, "no-store")
+        .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        .body(bytes);
+  }
+
+  @GetMapping("/dashboard/report/print")
+  @RequiresRole(RoleConstants.LIBRARIAN)
+  public ApiResponseApp<com.library.circulation.dto.response.OperationalReportPrintResponse> printReport(
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    return ApiResponseApp.success(dashboardReportUseCase.printReport(from, to, security.getCurrentUserId()));
+  }
 
   @GetMapping("/dashboard/summary")
   @RequiresRole(RoleConstants.LIBRARIAN)

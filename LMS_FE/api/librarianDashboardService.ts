@@ -143,6 +143,20 @@ export interface ReaderTimelineResponse {
 
 export type DashboardReportPeriod = 'TODAY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'CUSTOM';
 
+export interface OperationalPrintData {
+  report: DashboardReportResponse['data'];
+  generatedAt: string;
+  preparedBy: string;
+  onTimeReturnRatePercent: number;
+  depositsHeld: number;
+  overdueInPeriod: number;
+  riskyReaders: Array<{
+    studentId: string | null; fullName: string; faculty: string | null;
+    email: string | null; phoneNumber: string | null; overdueCount: number;
+    totalUnpaidAmount: number; creditScore: number;
+  }>;
+}
+
 export interface DashboardReportResponse {
   code: number;
   message: string;
@@ -245,6 +259,14 @@ const librarianDashboardService = {
         dateTo: isDateRange ? dateTo : undefined,
       },
     });
+  },
+  exportExcel: async (from: string, to: string): Promise<Blob> => {
+    return axiosInstance.get('/librarians/dashboard/report/export-excel', {
+      responseType: 'blob', params: { from, to },
+    }) as unknown as Promise<Blob>;
+  },
+  getPrintReport: async (from: string, to: string): Promise<{ data: OperationalPrintData }> => {
+    return axiosInstance.get('/librarians/dashboard/report/print', { params: { from, to } });
   },
   exportReport: async (
     period: DashboardReportPeriod = 'MONTHLY',
