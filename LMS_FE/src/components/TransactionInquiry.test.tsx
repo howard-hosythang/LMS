@@ -50,7 +50,7 @@ test.each(['vi', 'en'])('reader AI recommendations show publication details and 
   open('/librarianpage/transactions?tab=reader&userId=9');
   const section = await screen.findByRole('region', { name: language === 'vi' ? 'Gợi ý sách AI cho bạn đọc' : 'AI Recommendations' });
   await within(section).findByText('AI Book');
-  expect(recommendationService.getReaderRecommendationsForLibrarian).toHaveBeenCalledWith('9', 'CS', 4);
+  expect(recommendationService.getReaderRecommendationsForLibrarian).toHaveBeenCalledWith('9', 'CS', 6);
   expect(within(section).getByRole('img', { name: 'AI Book' })).toHaveAttribute('src', '/covers/ai-book.jpg');
   expect(within(section).getByText('Author One, Author Two')).toBeInTheDocument();
   expect(within(section).getByText('2025')).toBeInTheDocument();
@@ -110,7 +110,7 @@ test('switching readers discards the previous readers pending recommendations', 
   await screen.findByText('Đang tải gợi ý…');
   fireEvent.click(screen.getByRole('button', { name: 'Test Forward' }));
   await screen.findByText('Chưa có gợi ý phù hợp cho bạn đọc này.');
-  expect(recommendationService.getReaderRecommendationsForLibrarian).toHaveBeenLastCalledWith('10', 'CS', 4);
+  expect(recommendationService.getReaderRecommendationsForLibrarian).toHaveBeenLastCalledWith('10', 'CS', 6);
   await act(async () => { finishOld({ code: 200, data: [recommendedBook] }); });
   expect(screen.queryByText('AI Book')).not.toBeInTheDocument();
 });

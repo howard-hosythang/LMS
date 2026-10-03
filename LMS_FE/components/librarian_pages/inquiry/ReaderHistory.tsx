@@ -16,24 +16,28 @@ function ReaderLoans({ userId, returned, actions, refresh }: { userId: string; r
 function ReaderRecommendations({ userId, faculty, refresh }: { userId: string; faculty?: string | null; refresh: number }) {
   const t = useCopy();
   const resource = useResource(JSON.stringify(['recommendations', userId, faculty, refresh]), async () =>
-    (await recommendationService.getReaderRecommendationsForLibrarian(userId, faculty, 4)).data ?? []);
+    (await recommendationService.getReaderRecommendationsForLibrarian(userId, faculty, 6)).data ?? []);
   return <section aria-label={t('Gợi ý sách AI cho bạn đọc', 'AI Recommendations')} className="space-y-4 rounded-xl border border-indigo-200 bg-indigo-50/30 p-5 dark:border-indigo-500/30 dark:bg-indigo-500/5">
     <h3 className="flex items-center gap-2 font-semibold"><Sparkles size={18} className="text-indigo-600 dark:text-indigo-300" aria-hidden="true" />{t('Gợi ý sách AI cho bạn đọc', 'AI Recommendations')}</h3>
     <p className="text-sm text-slate-600 dark:text-slate-300">{t('Gợi ý dựa trên khoa/chuyên ngành và lịch sử đọc của bạn đọc.', 'Suggestions based on the reader’s faculty and reading history.')}</p>
     {resource.loading ? <p role="status" className="py-4 text-sm text-slate-600 dark:text-slate-300">{t('Đang tải gợi ý…', 'Loading recommendations…')}</p>
       : resource.error ? <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">{t('Không thể tải gợi ý sách.', 'Unable to load book recommendations.')} {resource.error}</p>
-        : resource.data?.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{resource.data.map(book => <article key={book.publicationId} className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-          <div className="mb-3 flex h-40 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800">{book.coverImageUrl
-            ? <img src={book.coverImageUrl} alt={book.title} loading="lazy" className="h-full max-w-full rounded object-contain" />
+        : resource.data?.length ? <div className="grid gap-4 md:grid-cols-2">{resource.data.map(book => <article key={book.publicationId} className="flex min-w-0 gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex h-44 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">{book.coverImageUrl
+            ? <img src={book.coverImageUrl} alt={book.title} loading="lazy" className="h-full w-full object-cover" />
             : <BookOpen size={40} className="text-slate-400" aria-hidden="true" />}</div>
-          <h4 className="break-words font-semibold">{book.title}</h4>
-          <p className="mt-1 break-words text-sm text-slate-600 dark:text-slate-300">{book.authorNames?.length ? book.authorNames.join(', ') : t('Chưa có tác giả', 'Authors unavailable')}</p>
-          <dl className="mt-3 space-y-1 text-xs text-slate-600 dark:text-slate-300">
-            <div className="flex flex-wrap justify-between gap-2"><dt>{t('Năm xuất bản', 'Publication year')}</dt><dd>{book.publicationYear ?? '—'}</dd></div>
-            <div className="flex flex-wrap justify-between gap-2"><dt>{t('Bản sao có sẵn', 'Available copies')}</dt><dd className="font-semibold text-indigo-700 dark:text-indigo-300">{book.availableItems}</dd></div>
-          </dl>
-          {book.ratingCount > 0 && book.ratingAverage > 0 && <p className="mt-3 flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300"><Star size={14} aria-hidden="true" /><span>{t('Đánh giá', 'Rating')}: {book.ratingAverage.toFixed(1)}/5 ({book.ratingCount})</span></p>}
-          <div className="mt-auto pt-4"><NewTabLink to={`/librarianpage/books/${book.publicationId}`}>{t('Chi tiết đầu sách', 'Book details')}</NewTabLink></div>
+          <div className="flex min-w-0 flex-1 flex-col justify-between">
+            <div>
+              <h4 className="line-clamp-2 break-words font-semibold text-slate-900 dark:text-white" title={book.title}>{book.title}</h4>
+              <p className="mt-1 line-clamp-1 break-words text-sm text-slate-600 dark:text-slate-300">{book.authorNames?.length ? book.authorNames.join(', ') : t('Chưa có tác giả', 'Authors unavailable')}</p>
+              <dl className="mt-3 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                <div className="flex flex-wrap justify-between gap-2"><dt>{t('Năm xuất bản', 'Publication year')}</dt><dd>{book.publicationYear ?? '—'}</dd></div>
+                <div className="flex flex-wrap justify-between gap-2"><dt>{t('Bản sao có sẵn', 'Available copies')}</dt><dd className="font-semibold text-indigo-700 dark:text-indigo-300">{book.availableItems}</dd></div>
+              </dl>
+              {book.ratingCount > 0 && book.ratingAverage > 0 && <p className="mt-2.5 flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300"><Star size={14} aria-hidden="true" /><span>{t('Đánh giá', 'Rating')}: {book.ratingAverage.toFixed(1)}/5 ({book.ratingCount})</span></p>}
+            </div>
+            <div className="pt-3"><NewTabLink to={`/librarianpage/books/${book.publicationId}`}>{t('Chi tiết đầu sách', 'Book details')}</NewTabLink></div>
+          </div>
         </article>)}</div>
           : <p className="py-4 text-sm text-slate-600 dark:text-slate-300">{t('Chưa có gợi ý phù hợp cho bạn đọc này.', 'No suitable recommendations for this reader yet.')}</p>}
   </section>;
