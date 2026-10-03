@@ -8,6 +8,7 @@ import adminService from '../../api/adminService';
 import circulationPolicyService from '../../api/circulationPolicyService';
 import systemReviewsService from '../../api/systemReviewsService';
 import transactionsService from '../../api/transactionsService';
+import reshelvingService from '../../api/reshelvingService';
 
 jest.mock('../../api/axiosInstance', () => ({
   __esModule: true,
@@ -31,6 +32,21 @@ const mockedAxiosInstance = axiosInstance as jest.Mocked<typeof axiosInstance>;
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('frontend service contracts', () => {
+  it('fetches the shelving queue and count and retains precise string transaction IDs', async () => {
+    await reshelvingService.getWaiting();
+    await reshelvingService.getCount();
+    await reshelvingService.confirm(['893937457479573660'], 'Cơ sở 1 - Lý Thường Kiệt');
+    expect(mockedAxiosInstance.get).toHaveBeenCalledWith('/librarians/reshelving');
+    expect(mockedAxiosInstance.get).toHaveBeenCalledWith('/librarians/reshelving/count');
+    await reshelvingService.getWaiting('Cơ sở 2 - Dĩ An');
+    await reshelvingService.getCount('Cơ sở 2 - Dĩ An');
+    expect(mockedAxiosInstance.get).toHaveBeenCalledWith('/librarians/reshelving', { params: { branch: 'Cơ sở 2 - Dĩ An' } });
+    expect(mockedAxiosInstance.get).toHaveBeenCalledWith('/librarians/reshelving/count', { params: { branch: 'Cơ sở 2 - Dĩ An' } });
+    expect(mockedAxiosInstance.post).toHaveBeenCalledWith('/librarians/reshelving/confirm', {
+      taskIds: ['893937457479573660'],
+      branch: 'Cơ sở 1 - Lý Thường Kiệt',
+    });
+  });
   it('sends an unpaid fine adjustment as a numeric amount', async () => {
     await fineService.updateAmount('10', 100000, 'Correction');
     expect(mockedAxiosInstance.put).toHaveBeenCalledWith('/fines/10/amount', {

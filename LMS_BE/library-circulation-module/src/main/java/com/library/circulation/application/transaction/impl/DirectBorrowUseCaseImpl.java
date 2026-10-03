@@ -90,7 +90,9 @@ public class DirectBorrowUseCaseImpl implements DirectBorrowUseCase {
                   AND r.publication_id = :publicationId
                   AND r.status = 'READY_FOR_PICKUP'
                   AND r.assigned_item_id = :itemId
+                  AND r.hold_expiration_time >= NOW()
                 LIMIT 1
+                FOR UPDATE
                 """,
                 Map.of("userId", userId, "publicationId", item.publicationId(), "itemId", item.id()));
             if (resRows.isEmpty()) throw new AppException(ErrorCode.ITEM_NOT_BORROWABLE);

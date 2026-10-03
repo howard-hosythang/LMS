@@ -22,6 +22,7 @@ export interface DashboardSummaryResponse {
       waitingForPickup: number;
       overdueTransactions: number;
       reservationsPending: number;
+      reshelvingWaiting: number;
     };
     fineSummary: {
       unpaidFineCount: number;

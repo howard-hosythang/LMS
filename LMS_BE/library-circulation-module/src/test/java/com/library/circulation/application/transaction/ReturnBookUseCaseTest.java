@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.library.circulation.application.deposit.BorrowDepositService;
+import com.library.circulation.application.reshelving.ReshelvingService;
 import com.library.circulation.application.policy.CirculationPolicy;
 import com.library.circulation.application.policy.CirculationPolicyService;
 import com.library.circulation.application.transaction.impl.ReturnBookUseCaseImpl;
@@ -59,6 +60,7 @@ class ReturnBookUseCaseTest {
     @Mock private LibrarianNotificationService librarianNotificationService;
     @Mock private ReaderCreditScoreService readerCreditScoreService;
     @Mock private WishlistAvailabilityNotificationService wishlistAvailabilityNotificationService;
+    @Mock private ReshelvingService reshelvingService;
 
     @InjectMocks private ReturnBookUseCaseImpl useCase;
 
@@ -114,8 +116,28 @@ class ReturnBookUseCaseTest {
         assertThat(result.overdue()).isFalse();
         assertThat(result.overdueFineAmount()).isNull();
         assertThat(result.publicationTitle()).isEqualTo("Clean Code");
+        verify(reshelvingService).recordReturn(TRANSACTION_ID, false);
         verify(fineJpaRepository, never()).save(any(FineEntity.class));
         verify(itemStatusPort).updateStatus(ITEM_ID, "AVAILABLE");
+    }
+
+    @Test
+    @DisplayName("Sách trả được giữ cho người đặt trước không vào hàng chờ cất kệ")
+    void returnSuccess_assignedReservationDoesNotRequireShelving() {
+        when(itemStatusPort.lockAndGetByBarcode(BARCODE)).thenReturn(item);
+        when(jdbcTemplate.queryForList(anyString(), any(Map.class)))
+            .thenReturn(List.of(Map.of("id", TRANSACTION_ID)));
+        when(transactionJpaRepository.findById(TRANSACTION_ID))
+            .thenReturn(Optional.of(buildEntity(LocalDate.now(ZONE).plusDays(1))));
+        when(transactionJpaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(borrowDepositService.settleOnReturn(TRANSACTION_ID, LIBRARIAN_ID))
+            .thenReturn(noDepositSettlement());
+        when(reservationAssignmentService.tryAssign(ITEM_ID, PUBLICATION_ID, BRANCH)).thenReturn(true);
+
+        useCase.execute(LIBRARIAN_ID, new ReturnCommand(BARCODE));
+
+        verify(reshelvingService).recordReturn(TRANSACTION_ID, true);
+        verify(wishlistAvailabilityNotificationService, never()).notifyWishlistWatchers(any(), anyString(), any());
     }
 
     @Test

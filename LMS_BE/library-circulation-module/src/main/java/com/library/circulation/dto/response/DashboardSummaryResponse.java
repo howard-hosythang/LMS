@@ -39,6 +39,7 @@ public class DashboardSummaryResponse {
         private long waitingForPickup;
         private long overdueTransactions;
         private long reservationsPending;
+        private long reshelvingWaiting;
     }
 
     @Data

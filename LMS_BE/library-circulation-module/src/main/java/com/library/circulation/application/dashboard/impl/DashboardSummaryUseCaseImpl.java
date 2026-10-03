@@ -37,6 +37,8 @@ public class DashboardSummaryUseCaseImpl implements DashboardSummaryUseCase {
             (SELECT COUNT(*)                    FROM borrowing_transactions WHERE status = 'WAITING_FOR_PICKUP')                    AS waiting_for_pickup,
             (SELECT COUNT(*)                    FROM borrowing_transactions WHERE status = 'OVERDUE')                               AS overdue_transactions,
             (SELECT COUNT(*)                    FROM reservations       WHERE status = 'PENDING')                                   AS reservations_pending,
+            (SELECT COUNT(*) FROM reshelving_tasks q JOIN items i ON i.id = q.item_id
+                WHERE q.status = 'WAITING' AND i.status = 'AVAILABLE') AS reshelving_waiting,
             (SELECT COUNT(*)                    FROM fines              WHERE payment_status = 'UNPAID')                            AS unpaid_fine_count,
             (SELECT COALESCE(SUM(fine_amount), 0) FROM fines            WHERE payment_status = 'UNPAID')                           AS total_unpaid_amount,
             (SELECT COALESCE(SUM(fine_amount), 0) FROM fines            WHERE payment_status = 'PAID' AND paid_date BETWEEN :start AND :end) AS collected_today
@@ -76,6 +78,7 @@ public class DashboardSummaryUseCaseImpl implements DashboardSummaryUseCase {
                 .waitingForPickup(toLong(row.get("waiting_for_pickup")))
                 .overdueTransactions(toLong(row.get("overdue_transactions")))
                 .reservationsPending(toLong(row.get("reservations_pending")))
+                .reshelvingWaiting(toLong(row.get("reshelving_waiting")))
                 .build())
             .fineSummary(DashboardSummaryResponse.FineSummary.builder()
                 .unpaidFineCount(toLong(row.get("unpaid_fine_count")))

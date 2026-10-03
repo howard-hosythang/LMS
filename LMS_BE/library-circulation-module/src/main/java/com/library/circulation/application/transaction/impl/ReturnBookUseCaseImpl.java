@@ -3,6 +3,7 @@ package com.library.circulation.application.transaction.impl;
 import com.library.catalog.domain.valueobject.ItemId;
 import com.library.circulation.application.credit.ReaderCreditScoreService;
 import com.library.circulation.application.deposit.BorrowDepositService;
+import com.library.circulation.application.reshelving.ReshelvingService;
 import com.library.circulation.application.policy.CirculationPolicyService;
 import com.library.circulation.application.transaction.ReturnBookUseCase;
 import com.library.circulation.domain.entities.BorrowingTransaction;
@@ -64,6 +65,7 @@ public class ReturnBookUseCaseImpl implements ReturnBookUseCase {
     private final BorrowDepositService borrowDepositService;
     private final ReaderCreditScoreService readerCreditScoreService;
     private final WishlistAvailabilityNotificationService wishlistAvailabilityNotificationService;
+    private final ReshelvingService reshelvingService;
 
     @Override
     @Transactional
@@ -118,6 +120,7 @@ public class ReturnBookUseCaseImpl implements ReturnBookUseCase {
 
         // 7. Check if any reservation is waiting for this book
         boolean assignedToReservation = reservationAssignmentService.tryAssign(item.id(), item.publicationId(), item.branch());
+        reshelvingService.recordReturn(transactionId, assignedToReservation);
         if (wasPublicationOutOfStock && !assignedToReservation) {
             wishlistAvailabilityNotificationService.notifyWishlistWatchers(
                 item.publicationId(),

@@ -23,6 +23,7 @@ import transactionsService, {
   LibrarianTransaction,
   TransactionStatus,
 } from '../../api/transactionsService';
+import reshelvingService, { RESHELVING_CHANGED } from '../../api/reshelvingService';
 import ReaderProfileDrawer, { ReaderRef } from '../../components/librarian_pages/ReaderProfileDrawer';
 import { useTranslation } from '../../contexts/LanguageContext';
 
@@ -252,6 +253,39 @@ const Dashboard = () => {
   const [selectedReader, setSelectedReader] = useState<ReaderRef | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [shelvingCount, setShelvingCount] = useState<number | null>(null);
+  const [shelvingBranch, setShelvingBranch] = useState('');
+  useEffect(() => {
+    let disposed = false, sequence = 0;
+    const refresh = async () => {
+      const request = ++sequence;
+      try {
+        const response = await reshelvingService.getDefaultBranch();
+        const branch = response.data.branch;
+        const count = await reshelvingService.getCount(branch);
+        if (!disposed && request === sequence) {
+          setShelvingBranch(branch);
+          setShelvingCount(count.data.count);
+        }
+      } catch { /* Never substitute a global count for an unavailable branch count. */ }
+    };
+    void refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener(RESHELVING_CHANGED, refresh);
+    const timer = window.setInterval(refresh, 30000);
+    return () => { disposed = true; window.clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener(RESHELVING_CHANGED, refresh); };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    const refresh = () => { void librarianDashboardService.getSummary().then(response => {
+      if (!disposed) setSummary(response.data);
+    }).catch(() => {}); };
+    window.addEventListener('focus', refresh);
+    window.addEventListener(RESHELVING_CHANGED, refresh);
+    const timer = window.setInterval(refresh, 30000);
+    return () => { disposed = true; window.clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener(RESHELVING_CHANGED, refresh); };
+  }, []);
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -380,7 +414,7 @@ const Dashboard = () => {
             <h2 className="mt-1 text-xl font-black text-slate-950 dark:text-white">{c.shiftBacklog}</h2>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <TaskCard
             title={c.waitingPickup}
             value={number(work.waiting, lang)}
@@ -406,6 +440,15 @@ const Dashboard = () => {
             to="/librarianpage/transactions?status=OVERDUE"
             icon={ShieldAlert}
             tone="red"
+            c={c}
+          />
+          <TaskCard
+            title={lang === 'en' ? 'Books awaiting shelving' : 'Sách chờ cất kệ'}
+            value={shelvingCount === null ? '—' : number(shelvingCount, lang)}
+            hint={shelvingBranch === 'ALL' ? (lang === 'en' ? 'All branches — select a working branch to confirm.' : 'Tất cả cơ sở — chọn cơ sở trực để xác nhận.') : shelvingBranch || (lang === 'en' ? 'Loading branch count…' : 'Đang tải số sách theo cơ sở…')}
+            to="/librarianpage/circulation?tab=reshelving"
+            icon={BookMarked}
+            tone="blue"
             c={c}
           />
           <TaskCard

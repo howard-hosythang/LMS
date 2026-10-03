@@ -118,6 +118,7 @@ public enum ErrorCode {
   RENEWAL_UNPAID_FINES(3020, "The reader has unpaid fines", "Độc giả còn tiền phạt chưa thanh toán, không thể gia hạn", HttpStatus.CONFLICT),
   RENEWAL_NOT_BORROWING(3021, "Only actively borrowed books can be renewed", "Chỉ có thể gia hạn sách đang mượn", HttpStatus.CONFLICT),
   RENEWAL_MISSING_DUE_DATE(3022, "The loan has no due date", "Giao dịch chưa có hạn trả, không thể gia hạn", HttpStatus.CONFLICT),
+  PICKUP_DEADLINE_EXPIRED(3023, "The pickup deadline has expired", "Đã hết hạn nhận sách. Vui lòng tạo yêu cầu mượn hoặc đặt trước mới", HttpStatus.CONFLICT),
 
   // Security Error (2600-2699)
   USER_LOCKED(2600, "User account is locked", "Tài khoản của bạn đã bị khóa", HttpStatus.LOCKED),

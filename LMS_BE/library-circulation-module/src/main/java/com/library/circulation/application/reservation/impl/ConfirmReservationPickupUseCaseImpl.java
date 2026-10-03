@@ -11,6 +11,8 @@ import com.library.circulation.infrastructure.persistence.entity.BorrowingTransa
 import com.library.circulation.infrastructure.persistence.entity.ReservationEntity;
 import com.library.circulation.infrastructure.persistence.repository.BorrowingTransactionJpaRepository;
 import com.library.circulation.infrastructure.persistence.repository.ReservationJpaRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import com.library.shared.exception.AppException;
 import com.library.shared.exception.ErrorCode;
 import com.library.shared.kafka.KafkaTopics;
@@ -46,6 +48,7 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final LibrarianNotificationService librarianNotificationService;
     private final BorrowDepositService borrowDepositService;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional
@@ -65,6 +68,14 @@ public class ConfirmReservationPickupUseCaseImpl implements ConfirmReservationPi
 
         // 3. Lock and Get Item details
         com.library.shared.port.ItemSnapshot item = itemStatusPort.lockAndGet(reservation.getAssignedItemId());
+        entityManager.refresh(reservation, LockModeType.PESSIMISTIC_WRITE);
+        if (!"RESERVED".equals(item.status()) || reservation.getStatus() != ReservationStatus.READY_FOR_PICKUP
+            || !item.id().equals(reservation.getAssignedItemId())) {
+            throw new AppException(ErrorCode.RESERVATION_NOT_READY);
+        }
+        if (reservation.getHoldExpirationTime() != null && reservation.getHoldExpirationTime().isBefore(Instant.now())) {
+            throw new AppException(ErrorCode.PICKUP_DEADLINE_EXPIRED);
+        }
         
         // 4. Update Reservation to COMPLETED
         reservation.setStatus(ReservationStatus.COMPLETED);

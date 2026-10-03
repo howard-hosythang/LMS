@@ -12,6 +12,8 @@ import com.library.circulation.infrastructure.persistence.entity.BorrowingTransa
 import com.library.circulation.infrastructure.persistence.repository.BorrowingTransactionJpaRepository;
 import com.library.shared.exception.AppException;
 import com.library.shared.exception.ErrorCode;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import com.library.shared.kafka.KafkaTopics;
 import com.library.shared.kafka.event.LibraryEmailMessage;
 import com.library.shared.kafka.event.NotificationMessage;
@@ -19,6 +21,7 @@ import com.library.shared.service.LibrarianNotificationService;
 import com.library.user.domain.valueobject.UserId;
 import java.util.Map;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +48,7 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final LibrarianNotificationService librarianNotificationService;
     private final BorrowDepositService borrowDepositService;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional
@@ -55,6 +59,13 @@ public class ConfirmPickupUseCaseImpl implements ConfirmPickupUseCase {
 
         // Infrastructure: lock item
         com.library.shared.port.ItemSnapshot item = itemStatusPort.lockAndGet(entity.getItemId());
+        entityManager.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
+        if (!"RESERVED".equals(item.status()) || entity.getStatus() != TransactionStatus.WAITING_FOR_PICKUP) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+        if (entity.getPickedUpDeadline() != null && entity.getPickedUpDeadline().isBefore(Instant.now())) {
+            throw new AppException(ErrorCode.PICKUP_DEADLINE_EXPIRED);
+        }
 
         // Reconstruct domain entity from persistence
         BorrowingTransaction transaction = toDomain(entity);

@@ -13,6 +13,7 @@ const MESSAGES = {
     reviewWindowExpired: 'Thời hạn đánh giá đã hết. Đánh giá cần được gửi trong vòng 7 ngày kể từ ngày trả sách.',
     reviewEditExpired: 'Thời hạn chỉnh sửa đánh giá đã hết.',
     borrowLimit: 'Bạn đã đạt giới hạn mượn sách tối đa. Vui lòng trả bớt sách trước khi mượn thêm.',
+    pickupExpired: 'Đã hết hạn nhận sách. Vui lòng tạo yêu cầu mượn hoặc đặt trước mới.',
     loginRequired: 'Bạn cần đăng nhập để thực hiện chức năng này.',
     forbidden: 'Bạn không có quyền thực hiện thao tác này.',
   },
@@ -28,6 +29,7 @@ const MESSAGES = {
     reviewWindowExpired: 'The review period has expired. Reviews must be submitted within 7 days after return.',
     reviewEditExpired: 'The review edit period has expired.',
     borrowLimit: 'You have reached the maximum borrowing limit. Please return some books before borrowing more.',
+    pickupExpired: 'The pickup deadline has expired. Please create a new borrowing request or reservation.',
     loginRequired: 'Please log in to continue.',
     forbidden: 'You do not have permission to perform this action.',
   },
@@ -55,6 +57,7 @@ export const getFriendlyErrorMessage = (error: any, language: Language = 'vi') =
   if (code === 2702) return dictionary.reviewWindowExpired;
   if (code === 2703) return dictionary.reviewEditExpired;
   if (code === 3002) return dictionary.borrowLimit;
+  if (code === 3023) return dictionary.pickupExpired;
   if (status === 401) return dictionary.loginRequired;
   if (status === 403) return dictionary.forbidden;
   if (normalized.includes('network') || normalized.includes('không kết nối')) return dictionary.network;

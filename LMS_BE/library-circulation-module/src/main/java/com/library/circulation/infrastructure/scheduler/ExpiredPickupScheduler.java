@@ -1,6 +1,7 @@
 package com.library.circulation.infrastructure.scheduler;
 
 import com.library.circulation.infrastructure.service.ReservationAssignmentService;
+import com.library.circulation.application.reshelving.ReshelvingService;
 import com.library.shared.kafka.KafkaTopics;
 import com.library.shared.kafka.event.NotificationMessage;
 import java.util.List;
@@ -27,18 +28,21 @@ public class ExpiredPickupScheduler {
         JOIN publications p ON p.id = i.publication_id
         WHERE t.status = 'WAITING_FOR_PICKUP'
           AND t.picked_up_deadline < NOW()
+        ORDER BY t.item_id ASC, t.id ASC
         """;
 
     private static final String CANCEL_TRANSACTIONS_SQL = """
         UPDATE borrowing_transactions
         SET status = 'CANCELLED', updated_at = NOW()
-        WHERE id = :transactionId AND status = 'WAITING_FOR_PICKUP'
+        WHERE id = :transactionId AND item_id = :itemId
+          AND status = 'WAITING_FOR_PICKUP' AND picked_up_deadline < NOW()
         """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final com.library.shared.port.ItemStatusPort itemStatusPort;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ReservationAssignmentService reservationAssignmentService;
+    private final ReshelvingService reshelvingService;
 
     @Scheduled(fixedDelay = 3_600_000)
     @Transactional
@@ -56,9 +60,13 @@ public class ExpiredPickupScheduler {
             String title       = (String) row.get("publication_title");
             String branch      = (String) row.get("branch");
 
-            // Cancel transaction
-            jdbcTemplate.update(CANCEL_TRANSACTIONS_SQL,
-                new MapSqlParameterSource("transactionId", transactionId));
+            // Copy first: synchronize with pickup/borrowing. Recheck the live row,
+            // not the snapshot gathered at the beginning of the scheduler run.
+            var lockedItem = itemStatusPort.lockAndGet(itemId);
+            if (!"RESERVED".equals(lockedItem.status())) continue;
+            int changed = jdbcTemplate.update(CANCEL_TRANSACTIONS_SQL,
+                new MapSqlParameterSource("transactionId", transactionId).addValue("itemId", itemId));
+            if (changed == 0) continue;
 
             // Release item via port (catalog module's responsibility)
             itemStatusPort.updateStatus(itemId, "AVAILABLE");
@@ -67,13 +75,15 @@ public class ExpiredPickupScheduler {
             kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(
                 userId, "BORROW_CANCELLED_EXPIRED",
                 "Yêu cầu mượn sách đã bị hủy",
-                String.format("Yêu cầu mượn '%s' đã bị hủy do quá 24h không đến nhận.", title),
+                String.format("Yêu cầu mượn '%s' đã bị hủy do quá hạn nhận sách.", title),
                 "/userpage/my-books?highlight=" + transactionId, transactionId
             ));
 
             // Check if any reservation is waiting for this book
-            reservationAssignmentService.tryAssign(itemId, publicationId,
+            boolean reassigned = reservationAssignmentService.tryAssign(itemId, publicationId,
                 branch != null ? branch : "ANY");
+            if (!reassigned) reshelvingService.recordAvailable(itemId, transactionId, null, userId,
+                ReshelvingService.Source.PICKUP_EXPIRED);
         }
 
         log.info("Cancelled {} expired pickup transaction(s)", expired.size());

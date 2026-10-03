@@ -1,6 +1,7 @@
 package com.library.circulation.infrastructure.scheduler;
 
 import com.library.circulation.infrastructure.service.ReservationAssignmentService;
+import com.library.circulation.application.reshelving.ReshelvingService;
 import com.library.shared.kafka.KafkaTopics;
 import com.library.shared.kafka.event.NotificationMessage;
 import java.util.List;
@@ -27,18 +28,21 @@ public class ExpiredReservationScheduler {
         LEFT JOIN items i ON i.id = r.assigned_item_id
         WHERE r.status = 'READY_FOR_PICKUP'
           AND r.hold_expiration_time < NOW()
+        ORDER BY r.assigned_item_id ASC NULLS LAST, r.id ASC
         """;
 
     private static final String EXPIRE_SQL = """
         UPDATE reservations
         SET status = 'EXPIRED', updated_at = NOW()
-        WHERE id = :reservationId AND status = 'READY_FOR_PICKUP'
+        WHERE id = :reservationId AND assigned_item_id IS NOT DISTINCT FROM :itemId
+          AND status = 'READY_FOR_PICKUP' AND hold_expiration_time < NOW()
         """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final com.library.shared.port.ItemStatusPort itemStatusPort;
     private final ReservationAssignmentService assignmentService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ReshelvingService reshelvingService;
 
     @Scheduled(fixedDelay = 3_600_000)
     @Transactional
@@ -57,8 +61,13 @@ public class ExpiredReservationScheduler {
             String title       = (String) row.get("publication_title");
             String branch      = (String) row.get("branch");
 
-            jdbcTemplate.update(EXPIRE_SQL,
-                new MapSqlParameterSource("reservationId", reservationId));
+            if (itemId != null) {
+                var lockedItem = itemStatusPort.lockAndGet(itemId);
+                if (!"RESERVED".equals(lockedItem.status())) continue;
+            }
+            int changed = jdbcTemplate.update(EXPIRE_SQL,
+                new MapSqlParameterSource("reservationId", reservationId).addValue("itemId", itemId));
+            if (changed == 0) continue;
 
             kafkaTemplate.send(KafkaTopics.NOTIFICATION_SEND, new NotificationMessage(
                 userId, "RESERVATION_EXPIRED",
@@ -69,7 +78,9 @@ public class ExpiredReservationScheduler {
 
             if (itemId != null) {
                 itemStatusPort.updateStatus(itemId, "AVAILABLE");
-                assignmentService.tryAssign(itemId, publicationId, branch != null ? branch : "ANY");
+                boolean reassigned = assignmentService.tryAssign(itemId, publicationId, branch != null ? branch : "ANY");
+                if (!reassigned) reshelvingService.recordAvailable(itemId, null, reservationId, userId,
+                    ReshelvingService.Source.RESERVATION_EXPIRED);
             }
         }
 

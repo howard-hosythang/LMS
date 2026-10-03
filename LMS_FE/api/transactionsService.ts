@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { notifyReshelvingChanged } from './reshelvingService';
 
 export interface BorrowRequest {
   itemId: string;
@@ -318,6 +319,7 @@ const transactionsService = {
   },
   confirmPickup: async (transactionId: string): Promise<ConfirmPickupResponse> => {
     const response = await axiosInstance.post(`/transactions/${transactionId}/confirm-pickup`);
+    notifyReshelvingChanged();
     return response as any;
   },
   renew: async (transactionId: string | number): Promise<BorrowResponse> => {
@@ -330,6 +332,7 @@ const transactionsService = {
   },
   borrowDirect: async (data: DirectBorrowRequest): Promise<DirectBorrowResponse> => {
     const response = await axiosInstance.post('/transactions/borrow-direct', data);
+    notifyReshelvingChanged();
     return response as any;
   },
   getStudentActive: async (studentId: string): Promise<StudentActiveTransactionsResponse> => {
@@ -342,10 +345,12 @@ const transactionsService = {
   },
   returnBook: async (barcode: string): Promise<ReturnResponse> => {
     const response = await axiosInstance.post('/transactions/return', { barcode });
+    notifyReshelvingChanged();
     return response as any;
   },
   reportIssue: async (transactionId: string, type: IssueType, fineAmount: number): Promise<ReportIssueResponse> => {
     const response = await axiosInstance.post(`/transactions/${transactionId}/report-issue`, { type, fineAmount });
+    notifyReshelvingChanged();
     return response as any;
   },
   restoreLostBook: async (
@@ -353,6 +358,7 @@ const transactionsService = {
     data: { barcode?: string; newItemStatus: 'AVAILABLE' | 'IN_MAINTENANCE'; refundAmount: number; recoveryReason: string; note?: string },
   ): Promise<RestoreLostBookResponse> => {
     const response = await axiosInstance.post(`/transactions/${transactionId}/restore-lost`, data);
+    notifyReshelvingChanged();
     return response as any;
   },
   previewLostBookRecovery: async (transactionId: string): Promise<LostBookRecoveryPreviewResponse> => {

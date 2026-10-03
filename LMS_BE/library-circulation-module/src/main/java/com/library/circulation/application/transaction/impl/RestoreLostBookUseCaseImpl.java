@@ -1,6 +1,8 @@
 package com.library.circulation.application.transaction.impl;
 
 import com.library.circulation.application.transaction.RestoreLostBookUseCase;
+import com.library.circulation.application.reshelving.ReshelvingService;
+import com.library.circulation.infrastructure.service.ReservationAssignmentService;
 import com.library.circulation.dto.request.RestoreLostBookCommand;
 import com.library.circulation.dto.response.RestoreLostBookResponse;
 import com.library.circulation.infrastructure.persistence.entity.BorrowingTransactionEntity;
@@ -41,6 +43,8 @@ public class RestoreLostBookUseCaseImpl implements RestoreLostBookUseCase {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final AuditLogService auditLogService;
+    private final ReshelvingService reshelvingService;
+    private final ReservationAssignmentService reservationAssignmentService;
 
     @Override
     @Transactional
@@ -108,6 +112,14 @@ public class RestoreLostBookUseCaseImpl implements RestoreLostBookUseCase {
                 .addValue("refundAmount", refundAmount)
                 .addValue("note", note.isBlank() ? null : note));
 
+        String finalItemStatus = newItemStatus;
+        if ("AVAILABLE".equals(newItemStatus)) {
+            boolean reassigned = reservationAssignmentService.tryAssign(item.id(), item.publicationId(), item.branch());
+            if (reassigned) finalItemStatus = "RESERVED";
+            else reshelvingService.recordAvailable(item.id(), transactionId, null, transaction.getUserId(),
+                ReshelvingService.Source.LOST_RECOVERED);
+        }
+
         auditLogService.log(
             librarianId,
             RoleConstants.LIBRARIAN,
@@ -120,6 +132,7 @@ public class RestoreLostBookUseCaseImpl implements RestoreLostBookUseCase {
                 "itemId", item.id(),
                 "barcode", item.barcode(),
                 "newItemStatus", newItemStatus,
+                "finalItemStatus", finalItemStatus,
                 "recoveryReason", recoveryReason,
                 "reversedLostFineAmount", reversedLostFineAmount,
                 "refundAmount", refundAmount
@@ -144,7 +157,7 @@ public class RestoreLostBookUseCaseImpl implements RestoreLostBookUseCase {
             .transactionId(transactionId)
             .publicationTitle(item.publicationTitle())
             .barcode(item.barcode())
-            .itemStatus(newItemStatus)
+            .itemStatus(finalItemStatus)
             .reversedLostFineAmount(reversedLostFineAmount)
             .refundAmount(refundAmount)
             .recoveryReason(recoveryReason)

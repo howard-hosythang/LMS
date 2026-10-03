@@ -17,6 +17,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
+import { useSearchParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import fineService, { Fine, FinePaymentLinkResponse } from '../../api/fineService';
@@ -36,10 +37,12 @@ import transactionsService, {
 import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 import CurrencyInput from '../../components/CurrencyInput';
 import FineAdjustmentDialog from '../../components/librarian_pages/FineAdjustmentDialog';
+import ReshelvingTab from '../../components/librarian_pages/ReshelvingTab';
+import reshelvingService, { RESHELVING_CHANGED } from '../../api/reshelvingService';
 import { useAppDialog } from '../../contexts/AppDialogContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-type MainTab = 'pickup' | 'direct' | 'return' | 'restoreLost' | 'fines';
+type MainTab = 'pickup' | 'direct' | 'return' | 'reshelving' | 'restoreLost' | 'fines';
 type LookupMode = 'qr' | 'manual';
 type ReturnMode = 'normal' | 'issue';
 
@@ -1485,9 +1488,38 @@ const RestoreLostTab = () => {
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 const Circulation = () => {
-  const [mainTab, setMainTab] = useState<MainTab>('pickup');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { language } = useLanguage();
+  const requestedTab = searchParams.get('tab');
+  const mainTab: MainTab = ['pickup', 'direct', 'return', 'reshelving', 'restoreLost', 'fines'].includes(requestedTab || '') ? requestedTab as MainTab : 'pickup';
+  const setMainTab = (tab: MainTab) => setSearchParams(previous => { const next = new URLSearchParams(previous); next.set('tab', tab); return next; }, { replace: true });
+  const [reshelvingCount, setReshelvingCount] = useState<number | null>(null);
+  const [reshelvingBranch, setReshelvingBranch] = useState<string | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    reshelvingService.getDefaultBranch().then(response => {
+      if (!disposed) setReshelvingBranch(response.data.branch);
+    }).catch(() => { if (!disposed) setReshelvingBranch('ALL'); });
+    return () => { disposed = true; };
+  }, []);
   const [policy, setPolicy] = useState<CirculationPolicy | null>(null);
   const [policyError, setPolicyError] = useState('');
+
+  useEffect(() => {
+    if (reshelvingBranch === null) return;
+    let disposed = false, sequence = 0;
+    const refresh = () => {
+      const request = ++sequence;
+      void reshelvingService.getCount(reshelvingBranch).then(response => {
+        if (!disposed && request === sequence) setReshelvingCount(response.data.count);
+      }).catch(() => { /* Preserve the last known count; the tab exposes loading errors. */ });
+    };
+    refresh();
+    window.addEventListener(RESHELVING_CHANGED, refresh);
+    window.addEventListener('focus', refresh);
+    const timer = window.setInterval(refresh, 30000);
+    return () => { disposed = true; window.clearInterval(timer); window.removeEventListener(RESHELVING_CHANGED, refresh); window.removeEventListener('focus', refresh); };
+  }, [mainTab, reshelvingBranch]);
 
   useEffect(() => {
     circulationPolicyService.getPolicy()
@@ -1517,7 +1549,7 @@ const Circulation = () => {
       </div>
 
       {/* Main tab */}
-      <div className="flex gap-3 border-b border-slate-200">
+      <div className="flex flex-wrap gap-3 border-b border-slate-200">
         <button
           onClick={() => setMainTab('pickup')}
           className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-colors ${
@@ -1543,6 +1575,12 @@ const Circulation = () => {
           Trả sách
         </button>
         <button
+          onClick={() => setMainTab('reshelving')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-colors ${mainTab === 'reshelving' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+        >
+          {language === 'en' ? 'Reshelving' : 'Xếp giá sách'} <span className="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{reshelvingCount ?? '…'}</span>
+        </button>
+        <button
           onClick={() => setMainTab('restoreLost')}
           className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-colors ${
             mainTab === 'restoreLost' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -1561,22 +1599,24 @@ const Circulation = () => {
       </div>
 
       {/* Tab content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 dark:bg-slate-900 dark:border-slate-700">
         {mainTab === 'pickup'
           ? <PickupTab policy={policy} />
           : mainTab === 'direct'
             ? <DirectBorrowTab policy={policy} />
             : mainTab === 'return'
               ? <ReturnTab policy={policy} />
+              : mainTab === 'reshelving'
+                ? <ReshelvingTab onCount={setReshelvingCount} onBranch={setReshelvingBranch} />
               : mainTab === 'restoreLost'
                 ? <RestoreLostTab />
                 : <FineTab />}
       </div>
 
       {/* Info card */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 dark:bg-blue-500/10 dark:border-blue-500/30">
         <Info size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-blue-700 space-y-1">
+        <div className="text-sm text-blue-700 space-y-1 dark:text-blue-300">
           {mainTab === 'pickup' ? (
             <>
               <p><span className="font-semibold">Quét QR:</span> User mang QR từ app — scanner tự điền mã giao dịch.</p>
@@ -1597,6 +1637,8 @@ const Circulation = () => {
               <p>Chọn từng cuốn để <span className="font-semibold">Trả</span>, <span className="font-semibold">Báo hư</span> hoặc <span className="font-semibold">Báo mất</span>. Phí trễ hạn (<span className="font-semibold">{formatVND(Number(policy.overdueFinePerDay || 0))}/ngày</span>) được tính tự động khi trả.</p>
               <p>Khi hoàn tất trả sách, hệ thống tự quyết toán: phạt gốc trừ cọc đã thu, sau đó hiển thị số hoàn lại hoặc số cần thu thêm.</p>
             </>
+          ) : mainTab === 'reshelving' ? (
+            <p>{language === 'en' ? 'Select the books physically shelved, then confirm. Books borrowed or held for reservations automatically leave this queue.' : 'Chọn đúng các cuốn đã cất lên kệ rồi xác nhận. Sách được mượn tiếp hoặc giữ cho người đặt trước tự động rời hàng chờ này.'}</p>
           ) : mainTab === 'restoreLost' ? (
             <>
               <p>Áp dụng khi một bản sao đã được báo <span className="font-semibold">Mất</span> nhưng sau đó tìm lại được.</p>
