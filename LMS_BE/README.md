@@ -132,6 +132,8 @@ Khi AI chạy trong Docker, tránh dùng `localhost` cho webhook callback về b
 
 Tài liệu xuất Excel 6 sheet và bản in A4: [OPERATIONAL_REPORT_EXPORT.md](docs/OPERATIONAL_REPORT_EXPORT.md).
 
+Bộ dữ liệu mô phỏng V62 (tự seed một lần khi khởi động BE, được tính vào báo cáo): [DEMO_SEED_V62.md](docs/DEMO_SEED_V62.md).
+
 - Schema do Flyway quản lý, `spring.jpa.hibernate.ddl-auto=validate`.
 - Không chạy `flyway clean` trong môi trường có dữ liệu thật.
 - JWT key nằm trong classpath `certs/privateKey.pem` và `certs/publicKey.pem`.
