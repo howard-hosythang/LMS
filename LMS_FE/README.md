@@ -285,6 +285,8 @@ File `api/axiosInstance.ts` cấu hình Axios với các tính năng:
 
 ## 🤝 Đóng góp
 
+Trước khi đóng góp, đọc [quy tắc đóng góp và kiểm thử chung](../CONTRIBUTING.md) và [hướng dẫn kiểm thử Frontend](docs/TESTING.md). Pull Request sử dụng [checklist chung](../.github/pull_request_template.md), kèm kết quả Jest, TypeScript và build cho thay đổi mã Frontend.
+
 1. Fork repository
 2. Tạo nhánh mới: `git checkout -b feature/ten-tinh-nang`
 3. Commit thay đổi: `git commit -m "feat: mô tả ngắn"`

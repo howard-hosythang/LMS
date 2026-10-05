@@ -100,6 +100,8 @@ API chạy mặc định tại:
 
 ## Kiểm thử
 
+Thành viên tham gia cần đọc [quy tắc đóng góp và kiểm thử chung](../CONTRIBUTING.md) và [hướng dẫn kiểm thử Backend](docs/TESTING.md). Các tài liệu quy định cách viết test, kiểm tra migration và cung cấp bằng chứng trong Pull Request.
+
 Chạy toàn bộ test:
 
 ```bash
