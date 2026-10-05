@@ -110,11 +110,11 @@ Ghi bằng chứng như: `npm test -- --runInBand: PASS, ... tests; npx tsc --no
 
 | Kiểm tra | Hiện trạng |
 | --- | --- |
-| Backend CI | Chạy `mvn test` và build Docker image |
+| Backend CI | Chạy `mvn test` và build Docker image; đồng thời chạy Jest, TypeScript và build FE trong job riêng |
 | Frontend CI | Chạy `npm ci`, Jest, Vite build và build Docker image |
-| TypeScript đầy đủ | Quy định chạy `npx tsc --noEmit`; chưa có bước riêng trong Frontend CI |
+| TypeScript đầy đủ | Backend CI kiểm tra FE bằng `npx tsc --noEmit`; Frontend CI độc lập chưa có bước riêng này |
 | Tương thích BE/FE | Chưa có gate tích hợp chung; phải bổ sung bằng chứng theo phạm vi PR |
-| Chọn workflow | CI dùng bộ lọc đường dẫn; sửa BE không tự kích hoạt FE CI |
+| Chọn workflow | Sửa BE kích hoạt Backend CI, bao gồm kiểm tra cả BE và FE; không kích hoạt Frontend CD chỉ vì kiểm tra FE trong Backend CI |
 | Bắt buộc review/chặn merge | Không thể xác nhận chỉ từ mã nguồn; phụ thuộc GitHub rulesets/branch protection |
 
 **Đề xuất để ràng buộc thành viên:** dùng PR cho `main`, yêu cầu ít nhất một reviewer, giải quyết các review còn mở và các status check áp dụng phải thành công. Không để push trực tiếp bỏ qua quy trình nếu nhóm muốn cưỡng chế quy tắc.

@@ -94,4 +94,4 @@ Test chọn lọc không thay cho suite đầy đủ trước PR. `npm run build
 - Với sửa lỗi tương tác, mô tả cách tái hiện và test hồi quy mới.
 - Với thay đổi thị giác, ghi kích thước/mode đã kiểm tra; ảnh trước/sau khi hữu ích.
 - Không có script `npm run lint` trong cấu hình hiện tại; không yêu cầu thành viên chạy lệnh không tồn tại.
-- Frontend CI hiện chạy Jest và build, chưa có bước TypeScript riêng. Việc thêm bước đó vào CI là thay đổi cấu hình riêng, không được ngầm coi là đã áp dụng.
+- Khi sửa BE, Backend CI chạy thêm job kiểm tra FE: Jest, `npx tsc --noEmit` và build. Các job BE/FE chạy song song; Backend CI chỉ thành công khi cả hai pass, nên lỗi FE cũng chặn Backend CD tự động. Đây không phải test tích hợp API thật và không kích hoạt Frontend CD. Frontend CI độc lập hiện chạy Jest và build, chưa có bước TypeScript riêng.

@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - 'LMS_BE/**'
+      - '.github/workflows/backend-*.yml'
   workflow_dispatch:
 
 permissions:
@@ -20,6 +21,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  frontend-check:
+    name: Frontend regression checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./LMS_FE
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ./LMS_FE/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm test -- --runInBand
+
+      - name: Check TypeScript
+        run: npx tsc --noEmit
+
+      - name: Build frontend
+        run: npm run build
+
   test-and-build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
