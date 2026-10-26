@@ -111,7 +111,7 @@ const OnboardingPage = () => {
               value={formData.phoneNumber}
               onChange={handleInputChange}
               required
-              placeholder="Ví dụ: 0886765392"
+              placeholder="Ví dụ: 0399728845"
             />
             
             <div>

@@ -161,7 +161,7 @@ const FAQPage = () => {
             items: [
               {
                 q: 'How do I contact the library?',
-                a: 'Use the Contact page, call +84 88 676 5392, or email support@library74.uk.',
+                a: 'Use the Contact page, call 0399728845, or email support@library74.uk.',
               },
               {
                 q: 'Does the system support English search?',
@@ -269,7 +269,7 @@ const FAQPage = () => {
             items: [
               {
                 q: 'Làm thế nào để liên hệ với thư viện?',
-                a: 'Bạn có thể liên hệ qua trang Liên hệ, gọi điện đến số +84 88 676 5392, hoặc gửi email đến support@library74.uk. Thư viện mở cửa từ 8:00 - 20:00 các ngày trong tuần.',
+                a: 'Bạn có thể liên hệ qua trang Liên hệ, gọi điện đến số 0399728845, hoặc gửi email đến support@library74.uk. Thư viện mở cửa từ 8:00 - 20:00 các ngày trong tuần.',
               },
               {
                 q: 'Tôi có thể đề xuất sách mới không?',
@@ -384,10 +384,10 @@ const FAQPage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="tel:+84886765392"
+              href="tel:0399728845"
               className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
-              {language === 'en' ? 'Call now' : 'Gọi ngay'}: +84 88 676 5392
+              {language === 'en' ? 'Call now' : 'Gọi ngay'}: 0399728845
             </a>
             <a
               href="/publicpage/contact"

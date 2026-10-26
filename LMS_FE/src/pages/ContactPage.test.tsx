@@ -22,8 +22,8 @@ describe('ContactPage', () => {
     renderPage();
 
     expect(
-      screen.getByRole('link', { name: '+84 88 676 5392' })
-    ).toHaveAttribute('href', 'tel:+84886765392');
+      screen.getByRole('link', { name: '0399728845' })
+    ).toHaveAttribute('href', 'tel:0399728845');
     expect(
       screen.getByRole('link', { name: 'support@library74.uk' })
     ).toHaveAttribute('href', 'mailto:support@library74.uk');

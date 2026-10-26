@@ -380,7 +380,7 @@ const Settings = () => {
             </div>
             <div className="p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
               <div>support@library74.uk</div>
-              <div>+84 88 676 5392</div>
+              <div>0399728845</div>
             </div>
           </section>
         </aside>

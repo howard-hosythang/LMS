@@ -288,7 +288,7 @@ const libraryBranches = [
     campus: 'Cơ sở 1',
     address: '268 Lý Thường Kiệt, Phường 14, Quận 10, TP.HCM',
     email: 'support@library74.uk',
-    phone: '+84 88 676 5392',
+    phone: '0399728845',
     hours: '08:00-17:00',
     days: 'Thứ 2-Thứ 6',
     mapQuery: '268 Ly Thuong Kiet, District 10, Ho Chi Minh City',

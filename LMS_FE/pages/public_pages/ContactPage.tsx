@@ -82,10 +82,10 @@ const ContactPage = () => {
                     {t('contact.phone', 'Điện thoại')}
                   </p>
                   <a
-                    href="tel:+84886765392"
+                    href="tel:0399728845"
                     className="mt-1 block text-sm font-semibold text-blue-600 hover:underline"
                   >
-                    +84 88 676 5392
+                    0399728845
                   </a>
                 </div>
               </div>

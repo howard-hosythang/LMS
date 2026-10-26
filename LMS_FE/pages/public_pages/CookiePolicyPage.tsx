@@ -499,10 +499,10 @@ const CookiePolicyPage = () => {
               <li>
                 Điện thoại:{' '}
                 <a
-                  href="tel:+84886765392"
+                  href="tel:0399728845"
                   className="text-blue-600 hover:underline"
                 >
-                  +84 88 676 5392
+                  0399728845
                 </a>
               </li>
               <li>

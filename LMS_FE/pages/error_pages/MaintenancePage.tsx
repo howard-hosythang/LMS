@@ -105,7 +105,7 @@ const MaintenancePage: React.FC = () => {
             <div className="hidden sm:block text-gray-300">|</div>
             <div className="flex items-center gap-2 text-gray-600">
               <Phone className="w-4 h-4 text-primary-600" />
-              <span className="text-sm">+84 88 676 5392</span>
+              <span className="text-sm">0399728845</span>
             </div>
           </div>
         </div>

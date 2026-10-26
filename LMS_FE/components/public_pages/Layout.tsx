@@ -202,7 +202,7 @@ export const Footer = () => {
                 </svg>
               </a>
               <a
-                href="tel:+84886765392"
+                href="tel:0399728845"
                 className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-green-600 hover:text-white transition-colors"
                 aria-label="Call"
               >
@@ -315,8 +315,8 @@ export const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Phone size={16} className="mr-2 flex-shrink-0" />
-                <a href="tel:+84886765392" className="hover:text-blue-400">
-                  +84 88 676 5392
+                <a href="tel:0399728845" className="hover:text-blue-400">
+                  0399728845
                 </a>
               </li>
             </ul>
