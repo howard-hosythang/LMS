@@ -3,11 +3,29 @@ import { BookOpen, Loader2, MessageCircle, Send, Trash2, X } from 'lucide-react'
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUpload } from '../contexts/UploadContext';
-import { chatbotService, FaqAnswer, FaqSuggestion } from '../api/chatbotService';
+import { chatbotService, FaqAnswer, FaqContent, FaqSuggestion } from '../api/chatbotService';
 
-type Message = { role: 'user' | 'assistant'; text: string; sourceTitle?: string; sourcePath?: string };
+type Message = { role: 'user' | 'assistant'; text: string; content?: FaqContent | null; sourceTitle?: string; sourcePath?: string };
 const safeSource = (path?: string) => !!path && /^\/publicpage\/(guide|faq|about|contact|privacy-policy)$/.test(path);
 const focusClass = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900';
+
+function AnswerBody({ text, content }: { text: string; content?: FaqContent | null }) {
+  if (!content || typeof content.summary !== 'string' || typeof content.note !== 'string'
+    || !Array.isArray(content.steps) || !content.steps.every(step => typeof step === 'string')
+    || !Array.isArray(content.bullets) || !content.bullets.every(bullet => typeof bullet === 'string')) {
+    return <p className="whitespace-pre-wrap break-words">{text}</p>;
+  }
+  return <div className="space-y-3 break-words">
+    {content.summary && <p>{content.summary}</p>}
+    {content.steps.length > 0 && <ol className="list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700 dark:marker:text-blue-300">
+      {content.steps.map((step, index) => <li key={index} className="pl-1">{step}</li>)}
+    </ol>}
+    {content.bullets.length > 0 && <ul className="list-disc space-y-2 pl-5">
+      {content.bullets.map((bullet, index) => <li key={index}>{bullet}</li>)}
+    </ul>}
+    {content.note && <p className="border-l-2 border-blue-400 pl-3 text-slate-600 dark:text-slate-300">{content.note}</p>}
+  </div>;
+}
 
 /** No browser persistence, account access, HTML/Markdown rendering or conversation upload. */
 function FaqChatbotPanel({ language }: { language: 'vi' | 'en' }) {
@@ -61,7 +79,7 @@ function FaqChatbotPanel({ language }: { language: 'vi' | 'en' }) {
       if (controller.signal.aborted || current.current !== controller) return;
       const answer: FaqAnswer = response.data;
       setMessages(previous => [...previous, { role: 'assistant' as const, text: answer.answer,
-        sourceTitle: answer.sourceTitle, sourcePath: answer.sourcePath }].slice(-40));
+        content: answer.content, sourceTitle: answer.sourceTitle, sourcePath: answer.sourcePath }].slice(-40));
     } catch (reason: unknown) {
       if (controller.signal.aborted || current.current !== controller) return;
       const status = (reason as { response?: { status?: number } })?.response?.status;
@@ -77,29 +95,24 @@ function FaqChatbotPanel({ language }: { language: 'vi' | 'en' }) {
 
   return <>
     {open && <section id="library74-faq-chat" role="dialog" aria-modal="false" aria-labelledby="faq-chat-title"
-      aria-describedby="faq-chat-scope"
       onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); close(); } }}
       className="fixed bottom-24 left-3 right-3 z-40 flex h-[min(36rem,calc(100dvh-8rem))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl sm:left-auto sm:right-6 sm:w-[25rem] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
       <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-blue-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
         <BookOpen aria-hidden="true" size={24} className="text-blue-700 dark:text-blue-300" />
-        <div className="min-w-0 flex-1"><h2 id="faq-chat-title" className="font-bold">{t('Trợ lý hướng dẫn Library74', 'Library74 help assistant')}</h2>
-          <p className="text-xs text-slate-600 dark:text-slate-300">{t('Chỉ dùng câu trả lời đã duyệt', 'Reviewed answers only')}</p></div>
+        <div className="min-w-0 flex-1"><h2 id="faq-chat-title" className="font-bold">{t('Trợ lý hướng dẫn Library74', 'Library74 help assistant')}</h2></div>
         <button type="button" onClick={clear} aria-label={t('Xóa hội thoại', 'Clear conversation')} className={`rounded-lg p-2.5 hover:bg-blue-100 dark:hover:bg-slate-700 ${focusClass}`}><Trash2 aria-hidden="true" size={18} /></button>
         <button type="button" onClick={close} aria-label={t('Đóng trợ lý', 'Close assistant')} className={`rounded-lg p-2.5 hover:bg-blue-100 dark:hover:bg-slate-700 ${focusClass}`}><X aria-hidden="true" size={18} /></button>
       </header>
-      <p id="faq-chat-scope" className="shrink-0 border-b border-slate-200 px-4 py-3 text-xs leading-relaxed text-slate-600 dark:border-slate-700 dark:text-slate-300">
-        {t('Chỉ hướng dẫn sử dụng, không tra cứu tài khoản hoặc dữ liệu hiện tại. Câu hỏi có thể được gửi tới AI để chọn chủ đề; không nhập thông tin nhạy cảm.', 'Instructions only, without account or live data access. Questions may be sent to AI for topic matching; do not enter sensitive information.')}
-      </p>
       <div ref={transcript} role="log" aria-label={t('Hội thoại hướng dẫn', 'Help conversation')} aria-live="polite" aria-relevant="additions" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
         <p className="rounded-xl bg-slate-100 p-3 text-sm leading-relaxed dark:bg-slate-800">{t('Xin chào! Bạn cần hướng dẫn mượn sách, đặt trước hay sử dụng Library74? Mỗi câu hỏi nên tập trung vào một chủ đề.', 'Hello! Do you need help borrowing, reserving or using Library74? Please ask about one topic at a time.')}</p>
         {messages.map((message, index) => <div key={index} className={`max-w-[95%] rounded-xl p-3 text-sm leading-relaxed ${message.role === 'user' ? 'ml-auto bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>
           <span className="sr-only">{message.role === 'user' ? t('Bạn: ', 'You: ') : t('Trợ lý: ', 'Assistant: ')}</span>
-          <p className="whitespace-pre-wrap break-words">{message.text}</p>
+          <AnswerBody text={message.text} content={message.role === 'assistant' ? message.content : undefined} />
           {safeSource(message.sourcePath) && <Link to={message.sourcePath!} onClick={close} className={`mt-2 inline-block rounded text-xs font-semibold text-blue-700 underline dark:text-blue-300 ${focusClass}`}>
             {t('Xem hướng dẫn: ', 'Read guide: ')}{message.sourceTitle}
           </Link>}
         </div>)}
-        {busy && <p role="status" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><Loader2 aria-hidden="true" size={16} className="motion-safe:animate-spin" />{t('Đang đối chiếu hướng dẫn…', 'Matching reviewed guidance…')}</p>}
+        {busy && <p role="status" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><Loader2 aria-hidden="true" size={16} className="motion-safe:animate-spin" />{t('Đang soạn hướng dẫn…', 'Preparing your answer…')}</p>}
       </div>
       <div className="shrink-0 space-y-2 border-t border-slate-200 px-4 py-3 dark:border-slate-700">
         {suggestionError && <p role="status" className="text-xs text-amber-800 dark:text-amber-300">{t('Chưa tải được câu hỏi gợi ý. Bạn có thể nhập câu hỏi hoặc mở hướng dẫn.', 'Suggested questions could not be loaded. Type a question or open the guide.')}</p>}

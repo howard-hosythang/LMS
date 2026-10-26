@@ -24,13 +24,49 @@ beforeEach(() => {
   ask.mockResolvedValue({ data: { status: 'ANSWERED', faqId: 'borrow', answer: 'Hướng dẫn đã duyệt.', sourceTitle: 'Mượn sách', sourcePath: '/publicpage/guide' } });
 });
 
-test('opens on demand, explains scope and focuses the question without making an AI request', async () => {
+test('opens on demand without removed notices and focuses the question without an AI request', async () => {
   view(); expect(suggestions).not.toHaveBeenCalled();
   await open();
   expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'false');
-  expect(screen.getByText(/không tra cứu tài khoản/)).toBeInTheDocument();
+  expect(screen.queryByText(/Chỉ hướng dẫn sử dụng/)).not.toBeInTheDocument();
+  expect(screen.queryByText('Chỉ dùng câu trả lời đã duyệt')).not.toBeInTheDocument();
+  expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-describedby');
   expect(screen.getByRole('textbox')).toHaveFocus();
   expect(ask).not.toHaveBeenCalled();
+});
+
+test('renders a structured answer as separate paragraphs, ordered steps, bullets and note', async () => {
+  ask.mockResolvedValue({ data: { status: 'ANSWERED', answer: 'Legacy text', content: {
+    summary: 'Bạn có thể gửi yêu cầu mượn trên website.', steps: ['Đăng nhập.', 'Tìm sách và gửi yêu cầu.'],
+    bullets: ['Nhận sách tại quầy.'], note: 'Kiểm tra thông báo nhận sách.',
+  } } });
+  view(); await open();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Hướng dẫn mượn' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+  expect(await screen.findByText('Bạn có thể gửi yêu cầu mượn trên website.')).toBeInTheDocument();
+  expect(screen.getByText('Đăng nhập.').closest('ol')).toBeInTheDocument();
+  expect(screen.getByText('Nhận sách tại quầy.').closest('ul')).toBeInTheDocument();
+  expect(screen.getByText('Kiểm tra thông báo nhận sách.')).toBeInTheDocument();
+  expect(screen.queryByText('Legacy text')).not.toBeInTheDocument();
+});
+
+test('malformed structured content safely uses the compatible answer field', async () => {
+  ask.mockResolvedValue({ data: { answer: 'Fallback instructions', content: { summary: 'Invalid', steps: null } } });
+  view(); await open();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Question' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+  expect(await screen.findByText('Fallback instructions')).toBeInTheDocument();
+});
+
+test('structured text is escaped and never rendered as generated HTML', async () => {
+  ask.mockResolvedValue({ data: { answer: 'Text', content: {
+    summary: '<img src=x onerror=alert(1)>', steps: [], bullets: [], note: '',
+  } } });
+  view(); await open();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Question' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+  expect(await screen.findByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
 });
 
 test('typing does not send, Enter sends only current message/language and displays reviewed source', async () => {

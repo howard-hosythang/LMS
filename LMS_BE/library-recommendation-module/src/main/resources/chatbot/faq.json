@@ -370,7 +370,7 @@
     "sourcePath": "/publicpage/privacy-policy",
     "vi": {
       "question": "Chatbot có đọc tài khoản và dữ liệu cá nhân không?",
-      "answer": "Không. Trợ lý FAQ này chỉ dùng bộ hướng dẫn đã duyệt, không truy vấn database, đọc source code hoặc tra cứu Internet. Câu hỏi cần nhận diện ngữ nghĩa có thể được gửi tới dịch vụ AI bên ngoài để chọn chủ đề; không gửi dữ liệu nhạy cảm. Hội thoại không được lưu vào database của chatbot.",
+      "answer": "Không. Trợ lý FAQ này chỉ dùng nội dung hướng dẫn của Library74, không truy vấn database, đọc source code hoặc tra cứu Internet. Câu hỏi và nội dung hướng dẫn có thể được gửi tới dịch vụ AI bên ngoài để soạn câu trả lời; không gửi dữ liệu nhạy cảm. Hội thoại không được lưu vào database của chatbot.",
       "aliases": [
         "Chatbot có thể làm gì?",
         "Trợ lý có truy cập database không?"
@@ -378,7 +378,7 @@
     },
     "en": {
       "question": "Does this chatbot access account records?",
-      "answer": "No. This FAQ assistant uses reviewed instructions only, with no database queries, source-code access or Internet search. Questions needing semantic matching may be sent to an external AI service to select a topic; do not submit sensitive information. The chatbot does not store conversations in a database.",
+      "answer": "No. This FAQ assistant uses Library74 instructions, with no database queries, source-code access or Internet search. Questions and reference instructions may be sent to an external AI service to compose an answer; do not submit sensitive information. The chatbot does not store conversations in a database.",
       "aliases": [
         "What can this assistant do?"
       ]

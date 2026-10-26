@@ -1,10 +1,12 @@
 import axiosInstance from './axiosInstance';
 
 export interface FaqSuggestion { id: string; question: string }
+export interface FaqContent { summary: string; steps: string[]; bullets: string[]; note: string }
 export interface FaqAnswer {
   status: 'ANSWERED' | 'UNSUPPORTED' | 'UNAVAILABLE';
   faqId?: string;
   answer: string;
+  content?: FaqContent | null;
   sourceTitle?: string;
   sourcePath?: string;
 }
