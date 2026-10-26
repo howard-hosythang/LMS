@@ -187,7 +187,7 @@ export const Footer = () => {
             </p>
             <div className="flex space-x-4 mt-6">
               <a
-                href="https://www.facebook.com/howard.hosythang"
+                href="https://www.facebook.com/quang.thang.973341"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-blue-600 hover:text-white transition-colors"
