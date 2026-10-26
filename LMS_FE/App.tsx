@@ -22,6 +22,7 @@ import UploadPanel from './components/UploadPanel';
 import { Toaster } from 'sonner';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import { RouteSeo } from './components/Seo';
+import FaqChatbot from './components/FaqChatbot';
 
 const AboutPage = lazy(() => import('./pages/public_pages/AboutPage'));
 const BookDetailPage = lazy(() => import('./pages/public_pages/BookDetailPage'));
@@ -469,6 +470,7 @@ function App() {
                     <AppContent />
                   </Suspense>
                   <CookieConsentBanner />
+                  <FaqChatbot />
                 </Router>
                 <Toaster
                   position="bottom-right"

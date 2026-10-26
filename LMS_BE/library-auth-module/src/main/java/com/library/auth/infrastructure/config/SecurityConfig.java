@@ -29,6 +29,7 @@ public class SecurityConfig {
   private final CustomJwtDecoder customJwtDecoder;
 
   public static final String[] PUBLIC_ENDPOINTS = {
+      "/api/v1/chatbot/faqs",
       "/api/v1/publications/newest",
       "/api/v1/publications/search",
       "/api/v1/publications/{id}",
@@ -78,6 +79,7 @@ public class SecurityConfig {
   };
 
   public static final String[] AI_PUBLIC_ENDPOINTS = {
+      "/api/v1/chatbot/messages",
       "/api/v1/ai/semantic-search",
       "/api/ai/callback",
       "/api/v1/fines/payments/payos/webhook",

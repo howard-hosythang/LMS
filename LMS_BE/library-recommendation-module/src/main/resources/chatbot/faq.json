@@ -1,0 +1,387 @@
+[
+  {
+    "id": "creator",
+    "sourcePath": "/publicpage/about",
+    "vi": {
+      "question": "Ai là người tạo ra Library74?",
+      "answer": "Library74 được phát triển bởi Võ Quang Thắng (MSSV 2213214) trong khuôn khổ đồ án tốt nghiệp về hệ thống quản lý thư viện trực tuyến tích hợp AI hỗ trợ tìm kiếm và gợi ý sách tại Trường Đại học Bách Khoa, ĐHQG-HCM.",
+      "aliases": [
+        "Ai là người tạo ra trang web?",
+        "Ai tạo trang web này?",
+        "Web này của ai làm?",
+        "Người phát triển Library74 là ai?"
+      ]
+    },
+    "en": {
+      "question": "Who created Library74?",
+      "answer": "Library74 was developed by Võ Quang Thắng (student ID 2213214) as a graduation project on an online library management system with AI-assisted search and recommendations at Ho Chi Minh City University of Technology, VNU-HCM.",
+      "aliases": [
+        "Who built this website?",
+        "Who is the developer?"
+      ]
+    }
+  },
+  {
+    "id": "about",
+    "sourcePath": "/publicpage/about",
+    "vi": {
+      "question": "Library74 là hệ thống gì?",
+      "answer": "Library74 hỗ trợ tra cứu sách, yêu cầu mượn, đặt trước, theo dõi mượn–trả và phí phạt. AI hỗ trợ tìm kiếm và gợi ý sách. Việc giao nhận sách vật lý vẫn do thủ thư xử lý tại quầy.",
+      "aliases": [
+        "Website này dùng để làm gì?",
+        "Trang web có những chức năng gì?"
+      ]
+    },
+    "en": {
+      "question": "What is Library74?",
+      "answer": "Library74 supports book discovery, borrowing requests, reservations, loan tracking and fines. AI assists search and recommendations. Librarians still handle physical book handover and returns at the desk.",
+      "aliases": [
+        "What does this website do?"
+      ]
+    }
+  },
+  {
+    "id": "register",
+    "sourcePath": "/publicpage/faq",
+    "vi": {
+      "question": "Làm thế nào để đăng ký tài khoản?",
+      "answer": "Mở trang Đăng ký, nhập email và thông tin được yêu cầu, rồi xác minh email theo hướng dẫn. Sau đó đăng nhập và hoàn thiện hồ sơ nếu được yêu cầu. Nếu gặp lỗi tài khoản, liên hệ thư viện; không gửi mật khẩu hoặc mã xác minh vào khung chat.",
+      "aliases": [
+        "Cách tạo tài khoản?",
+        "Tôi muốn đăng ký thành viên"
+      ]
+    },
+    "en": {
+      "question": "How do I create an account?",
+      "answer": "Open Sign up, enter the required email and profile details, and follow the email verification instructions. Then sign in and complete your profile if prompted. Contact the library for account issues; never send passwords or verification codes in this chat.",
+      "aliases": [
+        "How do I register?"
+      ]
+    }
+  },
+  {
+    "id": "login",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm thế nào để đăng nhập?",
+      "answer": "Mở trang Đăng nhập và dùng thông tin tài khoản đã đăng ký, hoặc lựa chọn Google nếu phù hợp. Hoàn thành bước xác minh/hồ sơ nếu hệ thống yêu cầu. Chatbot không kiểm tra tài khoản và không tiếp nhận mật khẩu.",
+      "aliases": [
+        "Cách đăng nhập vào website?",
+        "Đăng nhập bằng cách nào?"
+      ]
+    },
+    "en": {
+      "question": "How do I sign in?",
+      "answer": "Open Sign in and use your registered account, or Google sign-in where appropriate. Complete verification or profile steps if prompted. This assistant cannot inspect accounts and does not accept passwords.",
+      "aliases": [
+        "How do I log in?"
+      ]
+    }
+  },
+  {
+    "id": "password",
+    "sourcePath": "/publicpage/faq",
+    "vi": {
+      "question": "Tôi quên mật khẩu thì làm gì?",
+      "answer": "Tại trang Đăng nhập, chọn Quên mật khẩu và thực hiện hướng dẫn gửi tới email của tài khoản. Kiểm tra cả thư rác nếu chưa thấy thư. Không gửi mật khẩu, mã OTP hoặc liên kết đặt lại mật khẩu cho chatbot.",
+      "aliases": [
+        "Cách lấy lại mật khẩu?",
+        "Làm sao đặt lại mật khẩu?"
+      ]
+    },
+    "en": {
+      "question": "What should I do if I forget my password?",
+      "answer": "Choose Forgot password on the Sign in page and follow the instructions sent to your account email. Check spam if necessary. Do not send passwords, OTPs or reset links to this assistant.",
+      "aliases": [
+        "How do I reset my password?"
+      ]
+    }
+  },
+  {
+    "id": "search",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm thế nào để tìm sách?",
+      "answer": "Dùng ô tìm kiếm để nhập tên sách, tác giả, ISBN hoặc nhu cầu tìm tài liệu. Kết hợp các bộ lọc đang có và mở chi tiết sách để xem thông tin, cơ sở và bản sao. Chatbot này chỉ hướng dẫn, không tra cứu danh mục hoặc số lượng sách hiện tại.",
+      "aliases": [
+        "Cách tìm kiếm sách?",
+        "Tìm sách theo tên tác giả ở đâu?"
+      ]
+    },
+    "en": {
+      "question": "How do I find a book?",
+      "answer": "Use search with a title, author, ISBN or learning need, apply the available filters, and open book details to inspect publication and copy information. This assistant provides instructions only and cannot query the current catalog or stock.",
+      "aliases": [
+        "How do I search for books?"
+      ]
+    }
+  },
+  {
+    "id": "borrow",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm cách nào để mượn sách?",
+      "answer": "1. Đăng nhập và tìm sách muốn mượn.\n2. Mở chi tiết, kiểm tra cơ sở và chọn bản sao khả dụng theo giao diện.\n3. Gửi yêu cầu mượn nếu đủ điều kiện.\n4. Xem phiếu và hạn nhận trong Sách của tôi, rồi đến đúng quầy để thủ thư xác nhận giao sách và thu cọc nếu có.\nYêu cầu trên web chưa có nghĩa đã nhận sách. Bạn cũng có thể liên hệ thủ thư để mượn trực tiếp tại quầy.",
+      "aliases": [
+        "Hướng dẫn mượn sách",
+        "Tôi muốn biết cách mượn sách",
+        "Mượn sách như thế nào?"
+      ]
+    },
+    "en": {
+      "question": "How can I borrow a book?",
+      "answer": "1. Sign in and find the book.\n2. Open its details, check the campus and choose an available copy as shown.\n3. Submit a borrowing request if eligible.\n4. Check the slip and pickup deadline in My books, then visit the correct desk for handover and any required deposit.\nAn online request is not a completed handover. You may also ask a librarian about borrowing directly at the desk.",
+      "aliases": [
+        "How do I borrow books?",
+        "Show me the borrowing instructions"
+      ]
+    }
+  },
+  {
+    "id": "reservation",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm thế nào để đặt trước sách?",
+      "answer": "Khi chưa có bản sao phù hợp để mượn, mở chi tiết sách và dùng lựa chọn đặt trước nếu hệ thống cho phép. Theo dõi yêu cầu và thông báo. Khi được báo sẵn sàng nhận, đến đúng cơ sở trước hạn; đặt trước chưa có nghĩa đã có sách đang giữ cho bạn.",
+      "aliases": [
+        "Đặt trước sách như thế nào?",
+        "Hết sách thì làm gì?"
+      ]
+    },
+    "en": {
+      "question": "How do I reserve a book?",
+      "answer": "If no suitable copy is available, open the book details and use the reservation option if allowed. Monitor your reservations and notifications. When a copy is ready, collect it at the specified campus before the deadline. Joining the queue does not mean a copy has already been held.",
+      "aliases": [
+        "How do reservations work?"
+      ]
+    }
+  },
+  {
+    "id": "pickup",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Sau khi yêu cầu mượn, tôi nhận sách như thế nào?",
+      "answer": "Mở Sách của tôi hoặc yêu cầu đặt trước để xem phiếu, cơ sở và hạn nhận. Đến quầy, cung cấp thông tin/phiếu để thủ thư đối chiếu, hoàn thành thu cọc nếu cần rồi nhận sách. Nếu quá hạn nhận, hãy kiểm tra trạng thái và liên hệ thư viện, không mặc định phiếu vẫn còn hiệu lực.",
+      "aliases": [
+        "Cách nhận sách tại quầy?",
+        "Làm gì khi không đến nhận sách đúng hạn?"
+      ]
+    },
+    "en": {
+      "question": "How do I pick up requested books?",
+      "answer": "Check the slip, campus and pickup deadline in My books or your reservation. Visit the desk, show the required information for verification, complete any deposit and collect the book. If the deadline has passed, check the status or contact the library rather than assuming the slip is still valid.",
+      "aliases": [
+        "Where are the pickup instructions?"
+      ]
+    }
+  },
+  {
+    "id": "renewal",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm thế nào để gia hạn sách?",
+      "answer": "Mở danh sách sách đang mượn và chọn Gia hạn nếu có. Kiểm tra hạn mới sau khi thành công; bạn cũng có thể nhờ thủ thư hỗ trợ. Gia hạn phụ thuộc cửa sổ thời gian, lượt còn lại, quá hạn, đặt trước và nợ phạt. Chatbot không kiểm tra điều kiện của riêng bạn hoặc tự gia hạn.",
+      "aliases": [
+        "Cách gia hạn sách?",
+        "Vì sao có thể không gia hạn được?"
+      ]
+    },
+    "en": {
+      "question": "How do I renew a loan?",
+      "answer": "Open your active loans and choose Renew if available, then check the new due date. A librarian can also assist. Eligibility depends on the renewal window, remaining attempts, overdue status, reservations and unpaid fines. This assistant cannot inspect your eligibility or renew on your behalf.",
+      "aliases": [
+        "How does book renewal work?"
+      ]
+    }
+  },
+  {
+    "id": "returns",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm thế nào để trả sách?",
+      "answer": "Mang đúng bản sao đến quầy để thủ thư tiếp nhận, kiểm tra tình trạng và xác nhận trả. Kiểm tra kết quả, tiền phạt và quyết toán cọc nếu có. Không chỉ đánh dấu trên web rồi coi là đã trả; việc đưa sách trở lại kệ là công việc tiếp theo của thư viện.",
+      "aliases": [
+        "Trả sách ở đâu?",
+        "Hướng dẫn trả sách"
+      ]
+    },
+    "en": {
+      "question": "How do I return a book?",
+      "answer": "Bring the correct copy to the library desk for inspection and return confirmation. Check the result, any fine and the deposit settlement. Marking something online is not a physical return; reshelving is a separate library task.",
+      "aliases": [
+        "Where do I return borrowed books?"
+      ]
+    }
+  },
+  {
+    "id": "my_books",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Xem sách đang mượn và hạn trả ở đâu?",
+      "answer": "Đăng nhập rồi mở Sách của tôi để xem các giao dịch và hạn trả hiển thị trên tài khoản. Xem mục đặt trước cho hàng đợi/phiếu liên quan. Chatbot không đọc danh sách cá nhân; vui lòng kiểm tra trực tiếp trên màn hình hoặc hỏi thủ thư.",
+      "aliases": [
+        "Cách xem lịch sử mượn?",
+        "Hạn trả sách xem ở đâu?"
+      ]
+    },
+    "en": {
+      "question": "Where can I check my loans and due dates?",
+      "answer": "Sign in and open My books to view the transactions and due dates shown for your account. Check Reservations for related requests. This assistant does not read personal records; inspect the account page or ask a librarian.",
+      "aliases": [
+        "Where do I find my borrowing history?"
+      ]
+    }
+  },
+  {
+    "id": "policy",
+    "sourcePath": "/publicpage/faq",
+    "vi": {
+      "question": "Xem quy định mượn và tiền cọc ở đâu?",
+      "answer": "Xem mục FAQ/hướng dẫn và thông tin chính sách hiển thị khi mượn, nhận sách hoặc gia hạn. Mức cọc, số ngày mượn, giới hạn lượt và mức phạt có thể thay đổi theo chính sách. Chatbot không truy cập cấu hình hiện tại nên không cung cấp các con số đang áp dụng.",
+      "aliases": [
+        "Tìm quy định mượn trả ở đâu?",
+        "Cách xem chính sách thư viện?"
+      ]
+    },
+    "en": {
+      "question": "Where can I find borrowing and deposit rules?",
+      "answer": "Read the FAQ/guide and policy information shown during borrowing, pickup or renewal. Deposit amounts, loan periods, limits and fines may change with policy. This assistant cannot access the current configuration and does not quote current numeric limits.",
+      "aliases": [
+        "Where are the library rules?"
+      ]
+    }
+  },
+  {
+    "id": "fines",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm thế nào để xem và thanh toán phí phạt?",
+      "answer": "Đăng nhập và mở mục Phí phạt để xem thông tin và lựa chọn thanh toán được cung cấp, hoặc liên hệ thủ thư tại quầy. Với chuyển khoản payOS, kiểm tra trạng thái hệ thống thay vì chỉ dựa vào ảnh chuyển tiền. Chatbot không đọc công nợ, không tạo QR và không xác nhận bạn đã thanh toán.",
+      "aliases": [
+        "Cách nộp phí phạt?",
+        "Phí phạt xem ở đâu?"
+      ]
+    },
+    "en": {
+      "question": "How do I view and pay fines?",
+      "answer": "Sign in and open Fines to check the information and payment options, or contact the library desk. For payOS payments, verify the system status rather than relying only on a transfer screenshot. This assistant cannot read debts, create QR codes or confirm payment.",
+      "aliases": [
+        "How do I pay a library fine?"
+      ]
+    }
+  },
+  {
+    "id": "deposit",
+    "sourcePath": "/publicpage/faq",
+    "vi": {
+      "question": "Tiền cọc được xử lý như thế nào?",
+      "answer": "Nếu chính sách yêu cầu, thủ thư thu cọc khi giao sách bằng hình thức được hỗ trợ. Khi trả, hệ thống ghi nhận cấn cọc vào phạt nếu có, phần hoàn và phần còn phải đóng. Ghi nhận hoàn cọc không có nghĩa chatbot hoặc hệ thống đã tự chuyển tiền ngân hàng; cần đối soát với thủ thư.",
+      "aliases": [
+        "Tiền cọc là gì?",
+        "Cách nhận lại tiền cọc?"
+      ]
+    },
+    "en": {
+      "question": "How are deposits handled?",
+      "answer": "If required by policy, the librarian collects the deposit at handover using an available payment method. Return settlement records any amount applied to fines, refund and remaining debt. A recorded refund does not mean an automatic bank transfer has occurred; confirm with the librarian.",
+      "aliases": [
+        "How do deposit refunds work?"
+      ]
+    }
+  },
+  {
+    "id": "lost",
+    "sourcePath": "/publicpage/faq",
+    "vi": {
+      "question": "Làm mất hoặc hỏng sách thì cần làm gì?",
+      "answer": "Liên hệ thư viện càng sớm càng tốt và cung cấp thông tin sách/phiếu mượn để thủ thư kiểm tra, ghi nhận sự cố và hướng dẫn bồi thường theo quy định. Nếu tìm lại sách đã báo mất, báo cho thủ thư; không tự coi tiền đã nộp là được hoàn hoặc trạng thái đã tự phục hồi.",
+      "aliases": [
+        "Báo mất sách như thế nào?",
+        "Sách bị hỏng thì làm sao?"
+      ]
+    },
+    "en": {
+      "question": "What should I do if a book is lost or damaged?",
+      "answer": "Contact the library promptly with the book and loan details so a librarian can inspect the issue and explain the applicable compensation. If a previously lost book is found, inform the librarian; do not assume a payment is automatically refunded or the copy status is restored.",
+      "aliases": [
+        "How do I report a lost book?"
+      ]
+    }
+  },
+  {
+    "id": "wishlist",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Làm thế nào để lưu sách yêu thích?",
+      "answer": "Mở chi tiết sách và dùng nút yêu thích nếu có, rồi xem danh sách trong mục Yêu thích. Lưu yêu thích chỉ đánh dấu quan tâm, không đặt trước hoặc giữ một bản sao cho bạn.",
+      "aliases": [
+        "Wishlist có giữ chỗ không?",
+        "Cách dùng danh sách yêu thích?"
+      ]
+    },
+    "en": {
+      "question": "How do I save books to my wishlist?",
+      "answer": "Open book details and use the wishlist action if available, then view saved books in Wishlist. Saving a book expresses interest only; it does not create a reservation or hold a copy.",
+      "aliases": [
+        "Does a wishlist hold a copy?"
+      ]
+    }
+  },
+  {
+    "id": "notifications",
+    "sourcePath": "/publicpage/guide",
+    "vi": {
+      "question": "Xem thông báo của thư viện ở đâu?",
+      "answer": "Sau khi đăng nhập, mở biểu tượng hoặc mục Thông báo để xem thông tin liên quan. Khi nhận thông báo có sách hoặc sắp đến hạn, mở giao dịch để kiểm tra trạng thái và thời hạn hiện tại. Chatbot không đọc thông báo của bạn.",
+      "aliases": [
+        "Cách xem thông báo?",
+        "Thông báo nhận sách ở đâu?"
+      ]
+    },
+    "en": {
+      "question": "Where can I read library notifications?",
+      "answer": "After signing in, open the notification icon or page. For pickup or due-date notices, open the associated record to check its current status and deadline. This assistant does not access your notifications.",
+      "aliases": [
+        "How do I view notifications?"
+      ]
+    }
+  },
+  {
+    "id": "support",
+    "sourcePath": "/publicpage/contact",
+    "vi": {
+      "question": "Làm thế nào để liên hệ thủ thư?",
+      "answer": "Mở mục Liên hệ/Hỗ trợ. Với tài khoản đã đăng nhập, bạn có thể tạo phiếu hỗ trợ, nêu vấn đề và theo dõi phản hồi. Không gửi mật khẩu, mã xác minh hoặc thông tin ngân hàng nhạy cảm. Chatbot không tự tạo hoặc xử lý ticket.",
+      "aliases": [
+        "Cách gửi yêu cầu hỗ trợ?",
+        "Tôi cần gặp thủ thư"
+      ]
+    },
+    "en": {
+      "question": "How can I contact a librarian?",
+      "answer": "Open Contact/Support. Signed-in readers can create a support ticket, describe the issue and follow replies. Do not include passwords, verification codes or sensitive banking information. This assistant cannot create or handle tickets.",
+      "aliases": [
+        "How do I get support?"
+      ]
+    }
+  },
+  {
+    "id": "privacy",
+    "sourcePath": "/publicpage/privacy-policy",
+    "vi": {
+      "question": "Chatbot có đọc tài khoản và dữ liệu cá nhân không?",
+      "answer": "Không. Trợ lý FAQ này chỉ dùng bộ hướng dẫn đã duyệt, không truy vấn database, đọc source code hoặc tra cứu Internet. Câu hỏi cần nhận diện ngữ nghĩa có thể được gửi tới dịch vụ AI bên ngoài để chọn chủ đề; không gửi dữ liệu nhạy cảm. Hội thoại không được lưu vào database của chatbot.",
+      "aliases": [
+        "Chatbot có thể làm gì?",
+        "Trợ lý có truy cập database không?"
+      ]
+    },
+    "en": {
+      "question": "Does this chatbot access account records?",
+      "answer": "No. This FAQ assistant uses reviewed instructions only, with no database queries, source-code access or Internet search. Questions needing semantic matching may be sent to an external AI service to select a topic; do not submit sensitive information. The chatbot does not store conversations in a database.",
+      "aliases": [
+        "What can this assistant do?"
+      ]
+    }
+  }
+]

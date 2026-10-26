@@ -13,8 +13,10 @@ export const isPublicRequest = (config?: InternalAxiosRequestConfig | any): bool
   }
 
   if (method === 'post' && pathname === '/ai/semantic-search') return true;
+  if (method === 'post' && pathname === '/chatbot/messages') return true;
 
   if (method !== 'get') return false;
+  if (pathname === '/chatbot/faqs') return true;
 
   if (pathname === '/publications/librarian') return false;
   if (pathname === '/publications/book-lookup') return false;
