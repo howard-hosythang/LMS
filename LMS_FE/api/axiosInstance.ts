@@ -138,7 +138,7 @@ axiosInstance.interceptors.response.use(
             localStorage.removeItem('userType');
             
             // Redirect về trang login vì phiên đăng nhập đã hỏng hoàn toàn
-            window.location.href = '/#/publicpage/login';
+            window.location.href = '/publicpage/login';
 
             return Promise.reject({
               status,
@@ -153,7 +153,7 @@ axiosInstance.interceptors.response.use(
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('userType');
-          window.location.href = '/#/publicpage/login';
+          window.location.href = '/publicpage/login';
           
           return Promise.reject({
             status,

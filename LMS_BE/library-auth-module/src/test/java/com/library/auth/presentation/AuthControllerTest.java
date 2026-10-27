@@ -4,6 +4,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -59,11 +61,27 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
+        org.springframework.test.util.ReflectionTestUtils.setField(controller, "frontendUrl", "https://library74.uk");
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
             .setValidator(validator)
             .build();
+    }
+
+    @Test void verificationRedirectsToBrowserRoute() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/verify-email").param("token", "valid-token"))
+            .andExpect(status().isFound())
+            .andExpect(redirectedUrl("https://library74.uk/publicpage/verify-success"));
+        verify(verifyEmailUseCase).execute("valid-token");
+    }
+
+    @Test void failedVerificationRedirectsToBrowserFailureRoute() throws Exception {
+        org.mockito.Mockito.doThrow(new IllegalArgumentException("Expired token"))
+            .when(verifyEmailUseCase).execute("expired-token");
+        mockMvc.perform(get("/api/v1/auth/verify-email").param("token", "expired-token"))
+            .andExpect(status().isFound())
+            .andExpect(redirectedUrl("https://library74.uk/publicpage/verify-failed"));
     }
 
     @Test

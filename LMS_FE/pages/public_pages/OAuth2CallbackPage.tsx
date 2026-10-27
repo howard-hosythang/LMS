@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { getFriendlyErrorMessage } from '../../utils/errorMessages';
@@ -6,10 +7,15 @@ import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 const OAuth2CallbackPage = () => {
   const { language, t } = useTranslation();
   const { socialLogin } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState('');
+  const started = useRef(false);
 
   useEffect(() => {
-    // Trích xuất mã code từ query string thực thay vì Hash Router
+    // Authorization codes are single-use, including during StrictMode effect replay.
+    if (started.current) return;
+    started.current = true;
+    // Google redirects to /oauth2/callback with the authorization code in the query string.
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get('code');
 
@@ -23,13 +29,13 @@ const OAuth2CallbackPage = () => {
         const { role, isNewUser } = await socialLogin('google', code);
         
         if (isNewUser) {
-          window.location.href = '/#/publicpage/onboarding';
+          navigate('/publicpage/onboarding', { replace: true });
         } else if (role === 'librarian') {
-          window.location.href = '/#/librarianpage/dashboard';
+          navigate('/librarianpage/dashboard', { replace: true });
         } else if (role === 'admin') {
-          window.location.href = '/#/adminpage/librarians';
+          navigate('/adminpage/librarians', { replace: true });
         } else {
-          window.location.href = '/#/userpage/dashboard';
+          navigate('/userpage/dashboard', { replace: true });
         }
       } catch (err: any) {
         console.error('Social login error:', err);
@@ -48,7 +54,7 @@ const OAuth2CallbackPage = () => {
           <h2 className="text-2xl font-bold text-red-600 mb-4">{t('oauth.failedTitle', 'Đăng nhập thất bại')}</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button 
-            onClick={() => { window.location.href = '/#/publicpage/login'; }}
+            onClick={() => navigate('/publicpage/login', { replace: true })}
             className="px-4 py-2 bg-blue-600 text-white rounded-md"
           >
             {t('oauth.backToLogin', 'Quay lại trang đăng nhập')}

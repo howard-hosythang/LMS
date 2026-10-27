@@ -51,7 +51,8 @@ const openNotificationLink = (link: string) => {
     window.location.href = link;
     return;
   }
-  window.location.href = link.startsWith('/#') ? link : `/#${link}`;
+  const path = link.replace(/^\/?#\//, '/');
+  window.location.href = `/${path.replace(/^\/+/, '')}`;
 };
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {

@@ -119,12 +119,16 @@ class DepositPaymentServiceTest {
         verify(client, never()).createPaymentLink(anyLong(), anyInt(), anyString(), anyString(), anyString(), anyString(), anyString());
     }
     @Test void createsLinkWithDepositDescriptionNotFineDescription() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "frontendUrl", "https://library74.uk");
         var request = new DepositPaymentRequest("TRANSACTION", null, null, 10L);
         when(store.prepare(request, 9L)).thenReturn(order("CREATING"));
         when(client.createPaymentLink(eq(CODE), eq(50000), eq("LMS COC 00123"), eq("Reader"), eq("Library borrowing deposit"), anyString(), anyString()))
             .thenReturn(new PayOsClient.PayOsPaymentLink("link", "https://pay.payos.vn/link", "qr"));
         when(store.find(CODE, false)).thenReturn(order("PENDING"));
         assertThat(service.create(request, 9L).qrCode()).isEqualTo("qr");
+        verify(client).createPaymentLink(eq(CODE), eq(50000), eq("LMS COC 00123"), eq("Reader"),
+            eq("Library borrowing deposit"), eq("https://library74.uk/librarianpage/circulation?deposit=cancelled"),
+            eq("https://library74.uk/librarianpage/circulation?deposit=success"));
         verify(jdbc).update(contains("status=CASE"), any(MapSqlParameterSource.class));
     }
     @Test void timeoutRecoversSameOrderCode() {

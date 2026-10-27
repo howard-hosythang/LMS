@@ -40,7 +40,7 @@ public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
     Instant expiresAt = Instant.now().plusSeconds(15 * 60);
     passwordResetTokenRepository.save(new PasswordResetToken(token, user.getId().getValue(), expiresAt));
 
-    String resetLink = frontendUrl + "/#/publicpage/reset-password?token=" + token;
+    String resetLink = frontendUrl + "/publicpage/reset-password?token=" + token;
 
     kafkaPublisher.publish(new ForgotPasswordMessage(
         user.getEmail().getValue(),

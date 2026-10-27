@@ -18,9 +18,6 @@ const emptySummary: SystemReviewSummary = {
   satisfactionPercent: 0,
 };
 
-const getPublicPrefix = () =>
-  window.location.hash.includes('/librarianpage/public') ? '/librarianpage/public' : '/publicpage';
-
 const ReviewStars = ({ rating, size = 16 }: { rating: number; size?: number }) => (
   <div className="flex gap-1 text-yellow-400">
     {Array.from({ length: 5 }).map((_, index) => (
@@ -110,7 +107,7 @@ const SystemReviewsPage = () => {
   const { language } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const publicPrefix = getPublicPrefix();
+  const publicPrefix = location.pathname.startsWith('/librarianpage/public') ? '/librarianpage/public' : '/publicpage';
   const isLibrarianPublic = location.pathname.startsWith('/librarianpage/public');
 
   const [reviews, setReviews] = useState<SystemReview[]>([]);

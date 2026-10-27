@@ -47,8 +47,8 @@ public class DepositPaymentService {
         try {
             link = payOsClient.createPaymentLink(code, ((BigDecimal) order.get("amount")).intValueExact(),
                 (String) order.get("description"), (String) order.get("full_name"), "Library borrowing deposit",
-                frontendUrl + "/#/librarianpage/circulation?deposit=cancelled",
-                frontendUrl + "/#/librarianpage/circulation?deposit=success");
+                frontendUrl + "/librarianpage/circulation?deposit=cancelled",
+                frontendUrl + "/librarianpage/circulation?deposit=success");
         } catch (RuntimeException createError) {
             // A timeout may have occurred AFTER payOS created the link. Recover the same code, never a new one.
             try {

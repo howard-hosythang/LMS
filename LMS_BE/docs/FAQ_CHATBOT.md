@@ -1,5 +1,7 @@
 # Trợ lý FAQ Library74
 
+> Ngữ cảnh nâng cấp RAG/crawl (chưa hiện thực) và lịch sử thảo luận router: [CHATBOT_RAG_DISCUSSION.md](CHATBOT_RAG_DISCUSSION.md). Mã nguồn đã chuyển BrowserRouter; xem [hướng dẫn triển khai](../../LMS_FE/docs/BROWSER_ROUTER_MIGRATION.md).
+
 ## Phạm vi đã hiện thực
 
 Widget hướng dẫn xuất hiện trong ứng dụng, hỗ trợ Việt/Anh qua LanguageContext và light/dark. Có nhập câu hỏi, Enter để gửi (Shift+Enter xuống dòng), danh sách câu hỏi gợi ý, nguồn hướng dẫn, xóa hội thoại và Escape/đóng. Khung chat không khóa cuộn trang, không đổi URL khi mở/đóng; chỉ liên kết hướng dẫn mới điều hướng.
@@ -138,7 +140,7 @@ Hội thoại chỉ giữ trong state FE, tối đa 40 tin; không lưu localSto
 
 Đã bỏ hai dòng thông báo phạm vi và “Chỉ dùng câu trả lời đã duyệt” khỏi widget theo yêu cầu. FAQ riêng tư vẫn giải thích rằng câu hỏi và nội dung hướng dẫn có thể được gửi tới AI để soạn câu trả lời. Không có cơ chế tự động phát hiện/che mọi thông tin cá nhân người dùng tự gõ. Hạ tầng/proxy có thể có access log theo cấu hình riêng; cần kiểm tra không ghi request body, key hoặc thông tin nhạy cảm. Code chatbot không log câu hỏi, provider body hay exception chứa secret.
 
-Đáp án được render bằng đoạn văn, danh sách ol/ul và phần lưu ý riêng; hỗ trợ light/dark, Việt/Anh. Không dùng dangerouslySetInnerHTML/Markdown, không render link do AI tạo. FE cũ vẫn đọc answer; FE mới vẫn nhận được response cũ không có content. Link dùng React Router Link để tương thích HashRouter; FE kiểm tra allowlist nguồn. Dialog là **non-modal**, hỗ trợ mở/focus, Escape, khôi phục focus; không trap focus hoặc khóa trang như modal.
+Đáp án được render bằng đoạn văn, danh sách ol/ul và phần lưu ý riêng; hỗ trợ light/dark, Việt/Anh. Không dùng dangerouslySetInnerHTML/Markdown, không render link do AI tạo. FE cũ vẫn đọc answer; FE mới vẫn nhận được response cũ không có content. Link dùng React Router Link để tương thích BrowserRouter; FE kiểm tra allowlist nguồn. Dialog là **non-modal**, hỗ trợ mở/focus, Escape, khôi phục focus; không trap focus hoặc khóa trang như modal.
 
 ## Kiểm thử và checklist
 

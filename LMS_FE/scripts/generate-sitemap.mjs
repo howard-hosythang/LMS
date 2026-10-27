@@ -23,7 +23,7 @@ const escapeXml = (value) =>
     .replaceAll("'", '&apos;');
 
 const urlEntry = (path, priority) => `  <url>
-    <loc>${escapeXml(`${siteUrl}/#${path}`)}</loc>
+    <loc>${escapeXml(`${siteUrl}${path}`)}</loc>
     <priority>${priority}</priority>
   </url>`;
 

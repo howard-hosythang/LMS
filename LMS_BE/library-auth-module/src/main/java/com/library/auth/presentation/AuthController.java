@@ -88,9 +88,9 @@ public class AuthController {
       HttpServletResponse response) throws IOException {
     try {
       verifyEmailUseCase.execute(token);
-      response.sendRedirect(frontendUrl + "/#/publicpage/verify-success");
+      response.sendRedirect(frontendUrl + "/publicpage/verify-success");
     } catch (Exception e) {
-      response.sendRedirect(frontendUrl + "/#/publicpage/verify-failed");
+      response.sendRedirect(frontendUrl + "/publicpage/verify-failed");
     }
   }
 

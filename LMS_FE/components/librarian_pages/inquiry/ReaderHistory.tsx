@@ -24,7 +24,7 @@ function ReaderRecommendations({ userId, faculty, refresh }: { userId: string; f
     {resource.loading ? <p role="status" className="py-4 text-sm text-slate-600 dark:text-slate-300">{t('Đang tải gợi ý…', 'Loading recommendations…')}</p>
       : resource.error ? <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">{t('Không thể tải gợi ý sách.', 'Unable to load book recommendations.')} {resource.error}</p>
         : resource.data?.length ? <div className="grid gap-4 md:grid-cols-2">{resource.data.map(book => {
-          const lifecycleHref = `#/librarianpage/transactions?tab=lifecycle&pubId=${book.publicationId}`;
+          const lifecycleHref = `/librarianpage/transactions?tab=lifecycle&pubId=${book.publicationId}`;
           const toLifecycle = (event: React.MouseEvent) => {
             if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) {
               event.preventDefault();

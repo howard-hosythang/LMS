@@ -156,8 +156,8 @@ public class FinePaymentServiceImpl implements FinePaymentService {
             description,
             fullName,
             rows.size(),
-            frontendUrl + "/#/librarianpage/circulation?payment=cancelled",
-            frontendUrl + "/#/librarianpage/circulation?payment=success"
+            frontendUrl + "/librarianpage/circulation?payment=cancelled",
+            frontendUrl + "/librarianpage/circulation?payment=success"
         );
 
         Long orderId = TsIdGenerator.next();

@@ -36,14 +36,16 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { formatReviewerAcademicLine } from '../../utils/reviewerMeta';
 
 const BOOK_COVER_PLACEHOLDER = '/books/book-placeholder.svg';
-const getPublicPrefix = () =>
-  window.location.hash.includes('/librarianpage/public') ? '/librarianpage/public' : '/publicpage';
+const usePublicPrefix = () => {
+  const { pathname } = useLocation();
+  return pathname.startsWith('/librarianpage/public') ? '/librarianpage/public' : '/publicpage';
+};
 
 const HeroSection = ({ stats }: { stats: PublicLibraryStats }) => {
   const navigate = useNavigate();
   const { userType } = useAuth();
   const { language, t } = useTranslation();
-  const publicPrefix = getPublicPrefix();
+  const publicPrefix = usePublicPrefix();
   const [searchInput, setSearchInput] = useState('');
   const [history, setHistory] = useState<import('../../api/searchHistoryService').SearchHistoryItem[]>([]);
 
@@ -267,7 +269,7 @@ const BookCard = ({
   color = 'blue',
 }: any) => {
   const { t } = useTranslation();
-  const publicPrefix = getPublicPrefix();
+  const publicPrefix = usePublicPrefix();
 
   return (
   <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
@@ -349,7 +351,7 @@ const formatCompactNumber = (value?: number) => {
 
 const CategoryItem = ({ category, accent }: { category: Category; accent: typeof CATEGORY_ACCENTS[number] }) => {
   const { t } = useTranslation();
-  const publicPrefix = getPublicPrefix();
+  const publicPrefix = usePublicPrefix();
 
   return (
   <Link
@@ -387,7 +389,7 @@ const TrendingItem = ({
   image,
 }: any) => {
   const { t } = useTranslation();
-  const publicPrefix = getPublicPrefix();
+  const publicPrefix = usePublicPrefix();
 
   return (
   <div className="flex items-start bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -435,7 +437,9 @@ const TrendingItem = ({
   );
 };
 
-const FeatureBox = ({ icon, title, desc }: any) => (
+const FeatureBox = ({ icon, title, desc }: any) => {
+  const publicPrefix = usePublicPrefix();
+  return (
   <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-shadow text-center group">
     <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-blue-600 transition-colors">
       <div className="text-blue-600 group-hover:text-white transition-colors">
@@ -445,13 +449,14 @@ const FeatureBox = ({ icon, title, desc }: any) => (
     <h3 className="text-lg font-bold text-gray-900 mb-3">{title}</h3>
     <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
     <Link
-      to={`${getPublicPrefix()}/guide`}
+      to={`${publicPrefix}/guide`}
       className="inline-flex items-center text-sm font-medium text-blue-600 mt-4 hover:underline"
     >
       <FeatureLearnMore />
     </Link>
   </div>
-);
+  );
+};
 
 const FeatureLearnMore = () => {
   const { t } = useTranslation();

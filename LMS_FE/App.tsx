@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import {
   Navigate,
   Route,
-  HashRouter as Router,
+  BrowserRouter as Router,
   Routes,
   useLocation,
 } from 'react-router-dom';
@@ -23,6 +23,7 @@ import { Toaster } from 'sonner';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import { RouteSeo } from './components/Seo';
 import FaqChatbot from './components/FaqChatbot';
+import { LegacyHashRedirect } from './components/LegacyHashRedirect';
 
 const AboutPage = lazy(() => import('./pages/public_pages/AboutPage'));
 const BookDetailPage = lazy(() => import('./pages/public_pages/BookDetailPage'));
@@ -159,13 +160,10 @@ const ProtectedRoute: React.FC<{
 
 // Wrapper to conditionally render Layout
 const AppContent = () => {
-  // Bắt callback từ Google OAuth2 (Google redirect trực tiếp vào trình duyệt, không có dấu #)
-  if (window.location.pathname === '/oauth2/callback') {
-    return <OAuth2CallbackPage />;
-  }
-
   const location = useLocation();
   const { userType } = useAuth();
+
+  if (location.pathname === '/oauth2/callback') return <OAuth2CallbackPage />;
 
   const legacyRedirects: Record<string, string> = {
     '/': `${PUBLIC_PREFIX}`,
@@ -206,16 +204,16 @@ const AppContent = () => {
   };
 
   if (legacyRedirects[location.pathname]) {
-    return <Navigate to={legacyRedirects[location.pathname]} replace state={location.state} />;
+    return <Navigate to={`${legacyRedirects[location.pathname]}${location.search}${location.hash}`} replace state={location.state} />;
   }
 
   // Handle dynamic nested routes (e.g., /librarian/books/1)
   if (location.pathname.startsWith('/librarian/')) {
-    return <Navigate to={location.pathname.replace('/librarian/', `${LIB_PREFIX}/`)} replace state={location.state} />;
+    return <Navigate to={`${location.pathname.replace('/librarian/', `${LIB_PREFIX}/`)}${location.search}${location.hash}`} replace state={location.state} />;
   }
 
   if (location.pathname.startsWith('/admin/')) {
-    return <Navigate to={location.pathname.replace('/admin/', `${ADMIN_PREFIX}/`)} replace state={location.state} />;
+    return <Navigate to={`${location.pathname.replace('/admin/', `${ADMIN_PREFIX}/`)}${location.search}${location.hash}`} replace state={location.state} />;
   }
 
   const isAuthPage =
@@ -223,6 +221,7 @@ const AppContent = () => {
     location.pathname === `${PUBLIC_PREFIX}/register` ||
     location.pathname === `${PUBLIC_PREFIX}/check-email` ||
     location.pathname === `${PUBLIC_PREFIX}/verify-success` ||
+    location.pathname === `${PUBLIC_PREFIX}/verify-failed` ||
     location.pathname === `${PUBLIC_PREFIX}/forgot-password` ||
     location.pathname === `${PUBLIC_PREFIX}/reset-password` ||
     location.pathname === `${PUBLIC_PREFIX}/onboarding`;
@@ -311,6 +310,7 @@ const AppContent = () => {
         <Route path={`${PUBLIC_PREFIX}/register`} element={<RegisterPage />} />
         <Route path={`${PUBLIC_PREFIX}/check-email`} element={<CheckEmailPage />} />
         <Route path={`${PUBLIC_PREFIX}/verify-success`} element={<VerificationSuccessPage />} />
+        <Route path={`${PUBLIC_PREFIX}/verify-failed`} element={<VerificationSuccessPage failed />} />
         <Route path={`${PUBLIC_PREFIX}/forgot-password`} element={<ForgotPasswordPage />} />
         <Route path={`${PUBLIC_PREFIX}/reset-password`} element={<ResetPasswordPage />} />
         <Route path={`${PUBLIC_PREFIX}/onboarding`} element={<OnboardingPage />} />
@@ -464,13 +464,15 @@ function App() {
             <UploadProvider>
               <AppDialogProvider>
                 <Router>
-                  <ScrollToTop />
-                  <RouteSeo />
-                  <Suspense fallback={<PageFallback />}>
-                    <AppContent />
-                  </Suspense>
-                  <CookieConsentBanner />
-                  <FaqChatbot />
+                  <LegacyHashRedirect>
+                    <ScrollToTop />
+                    <RouteSeo />
+                    <Suspense fallback={<PageFallback />}>
+                      <AppContent />
+                    </Suspense>
+                    <CookieConsentBanner />
+                    <FaqChatbot />
+                  </LegacyHashRedirect>
                 </Router>
                 <Toaster
                   position="bottom-right"

@@ -44,7 +44,7 @@ const recommendedBook: RecommendedPublication = {
   availableItems: 3, ratingAverage: 4.6, ratingCount: 12, borrowCount: 20, authorNames: ['Author One', 'Author Two'],
 };
 
-test.each(['vi', 'en'])('reader AI recommendations show publication details and a hash new-tab link in %s', async language => {
+test.each(['vi', 'en'])('reader AI recommendations show publication details and a browser new-tab link in %s', async language => {
   mockLanguage = language;
   jest.mocked(recommendationService.getReaderRecommendationsForLibrarian).mockResolvedValue({ code: 200, data: [recommendedBook] } as any);
   open('/librarianpage/transactions?tab=reader&userId=9');
@@ -57,12 +57,12 @@ test.each(['vi', 'en'])('reader AI recommendations show publication details and 
   expect(within(section).getByText('3')).toBeInTheDocument();
   expect(within(section).getByText(/4.6\/5 \(12\)/)).toBeInTheDocument();
   const link = within(section).getByRole('link', { name: language === 'vi' ? /Chi tiết đầu sách/ : /Book details/ });
-  expect(link).toHaveAttribute('href', '#/librarianpage/books/88'); expect(link).toHaveAttribute('target', '_blank');
+  expect(link).toHaveAttribute('href', '/librarianpage/books/88'); expect(link).toHaveAttribute('target', '_blank');
   expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   const titleLink = within(section).getByRole('link', { name: 'AI Book' });
-  expect(titleLink).toHaveAttribute('href', '#/librarianpage/transactions?tab=lifecycle&pubId=88');
+  expect(titleLink).toHaveAttribute('href', '/librarianpage/transactions?tab=lifecycle&pubId=88');
   const coverLink = within(section).getByRole('link', { name: language === 'vi' ? 'Xem vòng đời sách: AI Book' : 'View book lifecycle: AI Book' });
-  expect(coverLink).toHaveAttribute('href', '#/librarianpage/transactions?tab=lifecycle&pubId=88');
+  expect(coverLink).toHaveAttribute('href', '/librarianpage/transactions?tab=lifecycle&pubId=88');
   const returnedHeading = screen.getByText(language === 'vi' ? 'Lịch sử sách đã trả' : 'Returned books');
   expect(returnedHeading.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
@@ -142,8 +142,8 @@ test('book click opens only quick view and external links preserve the inquiry t
   within(copiesTable).getAllByRole('columnheader').forEach(header => expect(header).toHaveClass('w-1/4'));
   expect(inquiry.transaction).not.toHaveBeenCalled();
   expect(within(drawer).getByRole('link', { name: /Mở chi tiết đầu sách/ })).toHaveAttribute('target', '_blank');
-  expect(within(drawer).getByRole('link', { name: /Mở chi tiết đầu sách/ })).toHaveAttribute('href', '#/librarianpage/books/22');
-  expect(screen.getByRole('link', { name: /Bản sao/ })).toHaveAttribute('href', '#/librarianpage/copies/5');
+  expect(within(drawer).getByRole('link', { name: /Mở chi tiết đầu sách/ })).toHaveAttribute('href', '/librarianpage/books/22');
+  expect(screen.getByRole('link', { name: /Bản sao/ })).toHaveAttribute('href', '/librarianpage/copies/5');
   fireEvent.keyDown(drawer, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });

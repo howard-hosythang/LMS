@@ -56,12 +56,13 @@ const Seo = ({
   type = 'website',
   jsonLd,
 }: SeoProps) => {
+  const { pathname } = useLocation();
   useEffect(() => {
     const fullTitle = title === DEFAULT_TITLE ? title : `${title} | Library74`;
     const siteUrl = getSiteUrl();
     const canonical = canonicalPath
-      ? `${siteUrl}/#${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`
-      : `${siteUrl}${window.location.hash || '#/publicpage'}`;
+      ? `${siteUrl}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`
+      : `${siteUrl}${pathname}`;
     const imageUrl = absoluteUrl(image);
 
     document.title = fullTitle;
@@ -88,7 +89,7 @@ const Seo = ({
       script.textContent = JSON.stringify(jsonLd);
       document.head.appendChild(script);
     }
-  }, [canonicalPath, description, image, jsonLd, title, type]);
+  }, [canonicalPath, description, image, jsonLd, pathname, title, type]);
 
   return null;
 };

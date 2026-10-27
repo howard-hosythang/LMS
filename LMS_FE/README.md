@@ -11,12 +11,19 @@ Giao diện người dùng cho hệ thống quản lý thư viện thông minh, 
 | React | ^19.2.3 | UI Framework |
 | TypeScript | ~5.8.2 | Type safety |
 | Vite | ^6.4.1 | Build tool / Dev server |
-| React Router DOM | ^7.10.1 | Client-side routing (HashRouter) |
+| React Router DOM | ^7.10.1 | Client-side routing (BrowserRouter) |
 | Axios | ^1.13.2 | HTTP client |
 | Lucide React | ^0.561.0 | Icon library |
 | React Select | ^5.10.2 | Dropdown / Multi-select |
 
 ---
+
+## URL và triển khai BrowserRouter
+
+Đường dẫn sử dụng dạng `/publicpage/guide`, không còn `/#/publicpage/guide`.
+Link hash cũ được chuyển sang đường dẫn mới trong ứng dụng, giữ query params.
+Nginx/reverse proxy cần phục vụ `index.html` cho các route frontend khi mở trực tiếp hoặc F5.
+Xem [hướng dẫn chuyển đổi và checklist triển khai](docs/BROWSER_ROUTER_MIGRATION.md).
 
 ## ⚙️ Yêu cầu hệ thống
 
@@ -168,14 +175,14 @@ LMS_fe/
 
 ## 🗺️ Routing
 
-Ứng dụng sử dụng **HashRouter** (URL dạng `/#/...`) để tương thích với các môi trường hosting tĩnh.
+Ứng dụng sử dụng **BrowserRouter** (URL dạng `/publicpage/...`). Hosting phải phục vụ SPA fallback cho các đường dẫn frontend; liên kết hash cũ được chuyển đổi tự động trong ứng dụng.
 
 | Tiền tố | Mô tả |
 |---------|-------|
-| `/#/publicpage/...` | Trang công khai |
-| `/#/userpage/...` | Khu vực sinh viên (cần đăng nhập) |
-| `/#/librarianpage/...` | Khu vực thủ thư (cần đăng nhập) |
-| `/oauth2/callback` | Xử lý OAuth2 callback (không qua HashRouter) |
+| `/publicpage/...` | Trang công khai |
+| `/userpage/...` | Khu vực sinh viên (cần đăng nhập) |
+| `/librarianpage/...` | Khu vực thủ thư (cần đăng nhập) |
+| `/oauth2/callback` | Xử lý OAuth2 callback qua BrowserRouter |
 
 ### Trang công khai (`/publicpage`)
 

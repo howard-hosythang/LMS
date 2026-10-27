@@ -88,7 +88,7 @@ const ForbiddenPage: React.FC = () => {
                 Email hỗ trợ
               </a>
               <a
-                href="/#/publicpage/faq"
+                href="/publicpage/faq"
                 className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
               >
                 <HelpCircle className="w-4 h-4" />

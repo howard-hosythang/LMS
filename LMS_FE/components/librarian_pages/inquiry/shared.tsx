@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router-dom';
 import { X, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getFriendlyErrorMessage } from '../../../utils/errorMessages';
@@ -59,7 +60,7 @@ export function Pager({ data, onPage }: { data: Pick<InquiryPage<unknown>, 'curr
     <div className="flex gap-2"><button className={buttonClass} disabled={data.currentPage <= 0} onClick={() => onPage(data.currentPage - 1)}>{t('Trước', 'Previous')}</button><button className={buttonClass} disabled={data.currentPage + 1 >= data.totalPages} onClick={() => onPage(data.currentPage + 1)}>{t('Sau', 'Next')}</button></div>
   </div>;
 }
-export function NewTabLink({ to, children }: { to: string; children: ReactNode }) { const t = useCopy(); return <a href={`#${to.startsWith('/') ? to : `/${to}`}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-indigo-700 hover:underline dark:text-indigo-300" onClick={event => event.stopPropagation()}>{children}<ExternalLink size={13} aria-label={t('Mở tab mới', 'Opens in new tab')} /></a>; }
+export function NewTabLink({ to, children }: { to: string; children: ReactNode }) { const t = useCopy(); return <Link to={to.startsWith('/') ? to : `/${to}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-indigo-700 hover:underline dark:text-indigo-300" onClick={event => event.stopPropagation()}>{children}<ExternalLink size={13} aria-label={t('Mở tab mới', 'Opens in new tab')} /></Link>; }
 export function InquiryDrawer({ title, onClose, children, widthClass = 'max-w-4xl' }: { title: string; onClose: () => void; children: ReactNode; widthClass?: string }) {
   const t = useCopy();
   const ref = useRef<HTMLDivElement>(null);
