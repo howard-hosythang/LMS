@@ -98,11 +98,13 @@ Các đường BE → AI nội bộ:
 - POST /internal/chatbot/knowledge/sync (revision, version, documents công khai)
 - POST /internal/chatbot/knowledge/search (query, language, version, không identity)
 
-Tất cả yêu cầu header X-Chatbot-Service-Key. Chưa đặt key hoặc sai key trả 403. Chỉ BE giữ secret; không đưa ra FE hoặc mở reverse proxy public cho /internal/.
+Tất cả yêu cầu header X-Chatbot-Service-Key. BE gửi khóa và AI kiểm tra khóa dùng chung này. Chưa đặt key hoặc sai key trả 403. Không đưa khóa ra trình duyệt hoặc mở reverse proxy public cho /internal/.
 
 ## 6. Cấu hình và release
 
-Các file mẫu đã cập nhật: .env.prod.example, LMS_BE/.env.example, LMS_AI/.env.example. Không sửa secret thật.
+**Với CI/CD và Docker Compose hiện tại, cấu hình trong file .env.prod ở thư mục LMS gốc.** Workflow dùng docker compose --env-file .env.prod và BE/AI đều có env_file: .env.prod. Không cần tạo thêm file .env trong LMS_BE hoặc LMS_AI khi triển khai theo cách này.
+
+.env.prod.example là mẫu cho cách triển khai trên. LMS_BE/.env.example và LMS_AI/.env.example chỉ tham khảo khi chạy riêng từng service ngoài Compose. Không sửa secret thật trong tài liệu hoặc commit file .env.prod.
 
 | Biến | Ý nghĩa |
 |---|---|
@@ -110,11 +112,21 @@ Các file mẫu đã cập nhật: .env.prod.example, LMS_BE/.env.example, LMS_A
 | CHATBOT_GEMINI_MODEL | Giữ mặc định cũ gemini-3.5-flash-lite |
 | CHATBOT_GEMINI_FALLBACK_MODEL | Giữ mặc định cũ gemini-3.1-flash-lite |
 | CHATBOT_RAG_ENABLED | true mặc định; false tắt sync/retrieval |
-| CHATBOT_INTERNAL_API_KEY | Secret dài ngẫu nhiên, giống nhau trên BE và AI |
-| AI_GATEWAY_BASE_URL | URL AI nội bộ, cấu hình phía BE |
-| DATABASE_URL | Database phía AI đã được migrate V63 |
+| CHATBOT_INTERNAL_API_KEY | Tự tạo secret ngẫu nhiên, đặt một lần trong .env.prod; BE và AI cùng nhận giá trị này |
+| BE_DATABASE_URL | Cấu hình BE đã có trong .env.prod; Compose chuyển thành DATABASE_URL của container backend |
+| AI_DATABASE_URL | Cấu hình AI đã có trong .env.prod; Compose chuyển thành DATABASE_URL của container ai-api |
 
-Tên Gemini là cấu hình sẵn có, không phải cam kết Google luôn cung cấp model/quota đó. Chọn model có quyền truy cập thực tế trong project của bạn. Compose production dùng chung env file cho BE/AI; chạy riêng cần cấp internal key trùng nhau cho hai service.
+AI_GATEWAY_BASE_URL được Compose đặt sẵn cho backend là http://ai-api:8001, không cần thêm biến này vào .env.prod. DATABASE_URL là tên biến bên trong từng container, không phải yêu cầu thêm một biến database mới vào file gốc. BE dùng URL JDBC còn AI dùng URL PostgreSQL. Migration V63 chạy trên database LMS hiện có, chỉ thêm bảng knowledge cho chatbot; không tạo database riêng.
+
+CHATBOT_INTERNAL_API_KEY là khóa xác thực giao tiếp BE → AI cho các API status/sync/search kho tri thức, không phải key Gemini, không lấy từ Google và không dùng để đăng nhập bạn đọc. Tự tạo 32 byte ngẫu nhiên bằng lệnh sau trên máy của bạn:
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Dán kết quả vào CHATBOT_INTERNAL_API_KEY trong file LMS/.env.prod. Chỉ đặt một lần vì Compose nạp cùng file cho cả BE và AI. Sau khi đổi env, cần tạo lại container BE và AI để chúng nhận giá trị mới; restart tiến trình đơn thuần không cập nhật môi trường container.
+
+Tên Gemini là cấu hình sẵn có, không phải cam kết Google luôn cung cấp model/quota đó. Chọn model có quyền truy cập thực tế trong project của bạn. Nếu chạy riêng ngoài Compose, cần tự cấp internal key trùng nhau cho hai service.
 
 Thứ tự release:
 1. Staging có pgvector và quyền Flyway tạo extension/schema. Kiểm tra quyền/schema production trước release.
