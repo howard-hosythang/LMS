@@ -52,6 +52,29 @@ class FaqIntentSelectorTest {
             "steps", List.of("Đăng nhập vào Library74."), "bullets", List.of(), "note", "", "evidence", evidence));
     }
 
+    @Test void nativeToolCallingAdvertisesOnlyAllowedReadToolsAndParsesStructuredCall() throws Exception {
+        var tools = com.library.recommendation.application.chatbot.ChatbotTool.available(false);
+        String payload = mapper.writeValueAsString(Map.of("candidates", List.of(Map.of("finishReason", "STOP", "content", Map.of("parts", List.of(
+            Map.of("functionCall", Map.of("name", "search_catalog", "args", Map.of("query", "Clean Code")))))))));
+        server.expect(requestTo(url(PRIMARY)))
+            .andExpect(jsonPath("$.tools[0].functionDeclarations.length()").value(7))
+            .andExpect(jsonPath("$.generationConfig.responseMimeType").doesNotExist())
+            .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
+        var result = selector.chooseTool("Find Clean Code", tools, "en");
+        assertThat(result.name()).isEqualTo("search_catalog");
+        assertThat(result.arguments().path("query").asText()).isEqualTo("Clean Code");
+        assertThat(tools).noneMatch(tool -> tool.personal);
+        server.verify();
+    }
+
+    @Test void fabricatedToolOrPersonalToolOnAnonymousRequestIsRejectedWithoutBackup() throws Exception {
+        String payload = mapper.writeValueAsString(Map.of("candidates", List.of(Map.of("finishReason", "STOP", "content", Map.of("parts", List.of(
+            Map.of("functionCall", Map.of("name", "get_my_loans", "args", Map.of()))))))));
+        server.expect(anything()).andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
+        assertThat(selector.chooseTool("My loans", com.library.recommendation.application.chatbot.ChatbotTool.available(false), "en")).isNull();
+        server.verify();
+    }
+
     @Test void composesFromLocalizedReferencesInOneRequestWithoutTools() throws Exception {
         String reference = catalog.find("borrow").orElseThrow().vi().answer();
         server.expect(requestTo(url(PRIMARY)))

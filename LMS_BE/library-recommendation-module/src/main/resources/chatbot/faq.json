@@ -1,4 +1,4 @@
-[
+{"revision": 1, "entries": [
   {
     "id": "creator",
     "sourcePath": "/publicpage/about",
@@ -370,7 +370,7 @@
     "sourcePath": "/publicpage/privacy-policy",
     "vi": {
       "question": "Chatbot có đọc tài khoản và dữ liệu cá nhân không?",
-      "answer": "Không. Trợ lý FAQ này chỉ dùng nội dung hướng dẫn của Library74, không truy vấn database, đọc source code hoặc tra cứu Internet. Câu hỏi và nội dung hướng dẫn có thể được gửi tới dịch vụ AI bên ngoài để soạn câu trả lời; không gửi dữ liệu nhạy cảm. Hội thoại không được lưu vào database của chatbot.",
+      "answer": "Trợ lý dùng hướng dẫn, chính sách và thông tin sách của Library74. Khi đăng nhập bằng tài khoản bạn đọc, bạn có thể tra cứu sách đang mượn, lịch sử, phí phạt, đặt trước, yêu thích và thông báo của chính mình. Trợ lý chỉ đọc, không thực hiện giao dịch hoặc đọc dữ liệu của người khác. Câu hỏi và hướng dẫn tham khảo có thể được gửi đến dịch vụ AI; dữ liệu cá nhân tra cứu được hiển thị trực tiếp từ hệ thống. Không gửi mật khẩu hoặc mã xác minh trong câu hỏi. Hội thoại không được lưu vào database của chatbot.",
       "aliases": [
         "Chatbot có thể làm gì?",
         "Trợ lý có truy cập database không?"
@@ -378,10 +378,10 @@
     },
     "en": {
       "question": "Does this chatbot access account records?",
-      "answer": "No. This FAQ assistant uses Library74 instructions, with no database queries, source-code access or Internet search. Questions and reference instructions may be sent to an external AI service to compose an answer; do not submit sensitive information. The chatbot does not store conversations in a database.",
+      "answer": "The assistant uses Library74 guidance, policies and book information. Signed-in readers can look up their own loans, history, fines, reservations, wishlist and notifications. It is read-only and cannot perform transactions or access other people's records. Questions and reference guidance may be sent to an AI provider; personal lookup results are displayed directly from the system. Do not enter passwords or verification codes. The chatbot does not store conversations in a database.",
       "aliases": [
         "What can this assistant do?"
       ]
     }
   }
-]
+]}

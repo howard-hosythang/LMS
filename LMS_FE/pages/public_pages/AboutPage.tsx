@@ -1,3 +1,4 @@
+import { HelpTopicSnippet } from '../../components/HelpCenter';
 import { Award, BookOpen, Heart, Sparkles, Target, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -34,6 +35,7 @@ const AboutPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-4xl px-4 py-6"><HelpTopicSnippet topicId="creator" /></div>
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

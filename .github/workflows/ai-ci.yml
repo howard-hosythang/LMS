@@ -22,6 +22,20 @@ concurrency:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_DB: chatbot_test
+          POSTGRES_USER: chatbot_test
+          POSTGRES_PASSWORD: chatbot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chatbot_test -d chatbot_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      CHATBOT_TEST_DATABASE_URL: postgresql://chatbot_test:chatbot_test@localhost:5432/chatbot_test
     timeout-minutes: 15
     defaults:
       run:

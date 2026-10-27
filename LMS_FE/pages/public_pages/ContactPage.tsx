@@ -1,3 +1,4 @@
+import { HelpTopicSnippet } from '../../components/HelpCenter';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -16,6 +17,7 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+        <div className="mx-auto max-w-4xl px-4 py-6"><HelpTopicSnippet topicId="support" /></div>
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
           <div>

@@ -6,6 +6,9 @@ import { chatbotService } from '../../api/chatbotService';
 
 let mockLanguage: 'vi' | 'en' = 'vi';
 let mockUploads: unknown[] = [];
+let mockUserType: string | null = null;
+let mockSessionVersion = 0;
+jest.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ userType: mockUserType, sessionVersion: mockSessionVersion }) }));
 jest.mock('../../contexts/LanguageContext', () => ({ useLanguage: () => ({ language: mockLanguage }) }));
 jest.mock('../../contexts/UploadContext', () => ({ useUpload: () => ({ uploads: mockUploads }) }));
 jest.mock('../../api/chatbotService', () => ({ chatbotService: { suggestions: jest.fn(), ask: jest.fn() } }));
@@ -19,7 +22,7 @@ async function open() {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks(); mockLanguage = 'vi'; mockUploads = [];
+  jest.clearAllMocks(); mockLanguage = 'vi'; mockUploads = []; mockUserType = null; mockSessionVersion = 0;
   suggestions.mockResolvedValue({ data: [{ id: 'borrow', question: 'Làm cách nào để mượn sách?' }] });
   ask.mockResolvedValue({ data: { status: 'ANSWERED', faqId: 'borrow', answer: 'Hướng dẫn đã duyệt.', sourceTitle: 'Mượn sách', sourcePath: '/publicpage/guide' } });
 });
@@ -169,6 +172,48 @@ test('language change clears conversation and aborts pending requests', async ()
   expect(screen.getByRole('dialog')).toHaveAccessibleName('Library74 help assistant');
   expect(screen.queryByText('Question')).not.toBeInTheDocument();
   await waitFor(() => expect(suggestions).toHaveBeenLastCalledWith('en', expect.any(AbortSignal)));
+});
+
+test('reader chat uses the authenticated path and clears private cards on session changes', async () => {
+  mockUserType = 'student';
+  ask.mockResolvedValue({ data: { answer: 'Dữ liệu của bạn', cards: [{ id: '1', title: 'Private book', path: '/userpage/my-books',
+    facts: [{ label: 'Hạn trả', value: '2026-11-01' }] }], total: 1, page: 0 } });
+  const result = view(); await open();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Sách tôi đang mượn' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+  expect(await screen.findByText('Private book')).toBeInTheDocument();
+  expect(ask).toHaveBeenCalledWith('Sách tôi đang mượn', 'vi', expect.any(AbortSignal), true);
+  const link = screen.getByRole('link', { name: 'Mở chi tiết ở tab mới' });
+  expect(link).toHaveAttribute('href', '/userpage/my-books');
+  expect(link).toHaveAttribute('target', '_blank');
+  mockSessionVersion++;
+  result.rerender(<MemoryRouter><FaqChatbot /></MemoryRouter>);
+  expect(screen.queryByText('Private book')).not.toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('cards reject external navigation and executable image URLs', async () => {
+  ask.mockResolvedValue({ data: { answer: 'Books', cards: [{ id: '1', title: 'Book', path: 'https://evil.example',
+    imageUrl: 'javascript:alert(1)', facts: [] }] } });
+  view(); await open();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Find a book' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+  expect(await screen.findByText('Book')).toBeInTheDocument();
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: 'Mở chi tiết ở tab mới' })).not.toBeInTheDocument();
+});
+
+test('an expired reader session clears previously displayed private results', async () => {
+  mockUserType = 'student';
+  ask.mockResolvedValueOnce({ data: { answer: 'Private account result' } }).mockRejectedValueOnce({ status: 401 });
+  view(); await open();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'My loans' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+  expect(await screen.findByText('Private account result')).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'My fines' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+  expect(await screen.findByRole('alert')).toHaveTextContent('đăng nhập lại');
+  expect(screen.queryByText('Private account result')).not.toBeInTheDocument();
 });
 
 test('upload progress takes priority so the two floating panels do not overlap', () => {

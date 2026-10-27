@@ -17,6 +17,7 @@ from ai_etl.pipeline import AIEtlPipeline
 from ai_etl.pdf_processing import Chunk, extract_pdf_text, sliding_window_chunk
 from ai_gateway.config import ApiSettings, load_api_settings
 from ai_gateway.recommender import RecommenderEngine
+from ai_gateway.chatbot_knowledge import KnowledgeStore, create_router as create_knowledge_router
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from psycopg2.extras import Json
@@ -903,6 +904,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="LMS AI Gateway", version="1.0.0", lifespan=lifespan)
+
+
+def _chatbot_knowledge_store():
+    state = app.state.ctx
+    return KnowledgeStore(state.settings.database_url, state.embedding_model, state.settings.embedding_model_name)
+
+
+app.include_router(create_knowledge_router(_chatbot_knowledge_store))
 
 
 @app.get("/health")

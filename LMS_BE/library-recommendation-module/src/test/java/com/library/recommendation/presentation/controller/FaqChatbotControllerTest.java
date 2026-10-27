@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.recommendation.application.chatbot.FaqChatbotService;
 import com.library.recommendation.application.chatbot.FaqContent;
+import com.library.recommendation.application.chatbot.ChatbotService;
+import com.library.recommendation.application.chatbot.ChatbotReply;
+import com.library.shared.util.SecurityEvaluator;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,12 +24,15 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 class FaqChatbotControllerTest {
     final ObjectMapper mapper = new ObjectMapper();
     FaqChatbotService service;
+    ChatbotService chat;
+    SecurityEvaluator security;
     MockMvc mvc;
 
     @BeforeEach void setUp() {
         service = mock(FaqChatbotService.class);
+        chat = mock(ChatbotService.class); security = mock(SecurityEvaluator.class);
         var validator = new LocalValidatorFactoryBean(); validator.afterPropertiesSet();
-        mvc = MockMvcBuilders.standaloneSetup(new FaqChatbotController(service))
+        mvc = MockMvcBuilders.standaloneSetup(new FaqChatbotController(service, chat, security))
             .setValidator(validator).build();
     }
 
@@ -39,9 +45,9 @@ class FaqChatbotControllerTest {
     }
 
     @Test void validRequestIsTrimmedAndReturnsReviewedAnswer() throws Exception {
-        when(service.answer("Cách mượn sách?", "vi")).thenReturn(new FaqChatbotService.Answer(
+        when(chat.answer("Cách mượn sách?", "vi", null)).thenReturn(new ChatbotReply(
             "ANSWERED", "borrow", "Reviewed answer", "Borrow", "/publicpage/guide",
-            new FaqContent("Summary", List.of("Sign in"), List.of(), "")));
+            new FaqContent("Summary", List.of("Sign in"), List.of(), ""), List.of(), List.of(), null, null, null));
         mvc.perform(post("/api/v1/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
             .content(mapper.writeValueAsString(Map.of("message", " Cách mượn sách? ", "language", "vi"))))
             .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
@@ -54,7 +60,7 @@ class FaqChatbotControllerTest {
     void emptyMessagesAreRejected(String value) throws Exception {
         mvc.perform(post("/api/v1/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
             .content(mapper.writeValueAsString(Map.of("message", value)))).andExpect(status().isBadRequest());
-        verifyNoInteractions(service);
+        verifyNoInteractions(service, chat);
     }
 
     @Test void longMessageOrUnsupportedLanguageIsRejectedBeforeProviderCall() throws Exception {
@@ -66,10 +72,27 @@ class FaqChatbotControllerTest {
     }
 
     @Test void providerUnavailableReturnsTheFaqFallbackWithoutALocalQuotaError() throws Exception {
-        when(service.answer(anyString(), any())).thenReturn(
-            new FaqChatbotService.Answer("UNAVAILABLE", null, "Please choose a suggested question.", null, null, null));
+        when(chat.answer(anyString(), any(), isNull())).thenReturn(
+            ChatbotReply.message("UNAVAILABLE", "Please choose a suggested question."));
         mvc.perform(post("/api/v1/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
             .content("{\"message\":\"hello\"}")).andExpect(status().isOk())
             .andExpect(jsonPath("$.data.status").value("UNAVAILABLE"));
+    }
+
+    @Test void personalChatRejectsAnonymousRequestsBeforeToolSelection() throws Exception {
+        mvc.perform(post("/api/v1/chatbot/my/messages").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"My fines\"}")).andExpect(status().isUnauthorized());
+        verifyNoInteractions(chat);
+    }
+
+    @Test void authenticatedReaderIdentityComesOnlyFromSecurityContext() throws Exception {
+        when(security.isAuthenticated()).thenReturn(true);
+        when(security.hasAnyRole("STUDENT", "FACULTY")).thenReturn(true);
+        when(security.getCurrentUserId()).thenReturn(7L);
+        when(chat.answer("My fines", "en", 7L)).thenReturn(ChatbotReply.message("ANSWERED", "Your fines"));
+        mvc.perform(post("/api/v1/chatbot/my/messages").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"My fines\",\"language\":\"en\",\"userId\":999}"))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"));
+        verify(chat).answer("My fines", "en", 7L);
     }
 }

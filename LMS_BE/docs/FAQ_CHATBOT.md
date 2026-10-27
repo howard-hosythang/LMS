@@ -1,194 +1,163 @@
-# Trợ lý FAQ Library74
+# Trợ lý tra cứu Library74 — RAG và công cụ chỉ đọc
 
-> Ngữ cảnh nâng cấp RAG/crawl (chưa hiện thực) và lịch sử thảo luận router: [CHATBOT_RAG_DISCUSSION.md](CHATBOT_RAG_DISCUSSION.md). Mã nguồn đã chuyển BrowserRouter; xem [hướng dẫn triển khai](../../LMS_FE/docs/BROWSER_ROUTER_MIGRATION.md).
+Cập nhật: 27/10/2026. Mô tả mã nguồn hiện tại, chưa xác nhận triển khai production. Phạm vi được chốt tại [CHATBOT_AI_FINAL_PROPOSAL.md](CHATBOT_AI_FINAL_PROPOSAL.md). Hai tài liệu thảo luận/kế hoạch RAG sơ bộ đã được loại bỏ để tránh dùng nhầm thiết kế cũ.
 
-## Phạm vi đã hiện thực
+## 1. Phạm vi và luồng xử lý
 
-Widget hướng dẫn xuất hiện trong ứng dụng, hỗ trợ Việt/Anh qua LanguageContext và light/dark. Có nhập câu hỏi, Enter để gửi (Shift+Enter xuống dòng), danh sách câu hỏi gợi ý, nguồn hướng dẫn, xóa hội thoại và Escape/đóng. Khung chat không khóa cuộn trang, không đổi URL khi mở/đóng; chỉ liên kết hướng dẫn mới điều hướng.
+| Nguồn | Cách lấy | Ví dụ |
+|---|---|---|
+| Hướng dẫn Library74 | JSON chuẩn dùng chung website/chatbot; RAG pgvector | Ai tạo website? Làm sao mượn sách? |
+| Công khai hiện hành | Adapter SELECT ở BE | Chính sách; tác giả/ISBN; bản sao còn tại cơ sở/kệ nào |
+| Dữ liệu của chính bạn đọc | JWT → userId ở BE → SELECT có ownership | Sách tôi đang mượn; tổng nợ phạt của tôi |
 
-Khi panel tải tài liệu đang có nội dung, chatbot tạm ẩn và hủy request đang chờ để không chồng lên tiến độ upload ở cùng góc. Hội thoại tạm được xóa khi widget bị unmount trong tình huống này.
+Không crawl, không mở Internet/source code, không hỏi đáp nội dung chương/PDF. Không có công cụ ghi dữ liệu, giao dịch/thanh toán, tra cứu tài khoản khác hoặc nghiệp vụ Admin/thủ thư.
 
-Đây là chatbot FAQ, không phải agent hay RAG đọc dữ liệu thư viện:
+1. FE chỉ gửi câu hỏi hiện tại (tối đa 500 ký tự) và ngôn ngữ.
+2. Khớp câu hỏi/alias chuẩn: trả nội dung có cấu trúc, không gọi LLM. Chủ đề quy định/cọc/phạt/nhận/gia hạn được kèm snapshot chính sách hiện hành.
+3. Chưa khớp: Gemini đề xuất tối đa một công cụ từ schema. BE kiểm tra allowlist, tham số và quyền trước khi thực thi.
+4. Nhánh hướng dẫn: vector search đúng version/ngôn ngữ → BE kiểm tra chunk thuộc nguồn → Gemini diễn đạt chỉ từ nguồn → kiểm tra đầu ra.
+5. Nhánh dữ liệu: BE SELECT và dựng thẻ trực tiếp. **Kết quả cá nhân không gửi sang Gemini**. Model vẫn nhận câu hỏi người dùng để chọn công cụ; không nhận JWT, lịch sử hội thoại hoặc toàn bộ hồ sơ.
+6. Ngoài phạm vi/thiếu dữ liệu/lỗi: từ chối, hỏi lại hoặc báo chưa tra cứu được; không tạo số liệu hay câu trả lời ngoài nguồn.
 
-- Không có dependency repository, JDBC, database connection hoặc truy vấn hồ sơ trong luồng chatbot.
-- Không đọc source, PDF, q_a.md hoặc crawl website. Chỉ nạp một resource JSON cố định khi khởi tạo.
-- Không có công cụ tìm Internet, đọc URL, SQL, function calling hay thực hiện giao dịch.
-- Không lấy danh tính, token, route hiện tại hoặc lịch sử hội thoại để gửi AI.
-- Không tạo QR, nhận thanh toán, gia hạn hoặc tự gửi ticket.
-- Không trả số liệu hiện tại, mức cọc/số ngày đang áp dụng hoặc thông tin của bạn đọc cụ thể.
+Không có vòng lặp agent. Mỗi câu hỏi có một lượt phân loại và, riêng RAG, thêm một lượt diễn đạt; fallback provider có thể tạo thêm HTTP request.
 
-Ứng dụng Backend chính vẫn có database cho các chức năng LMS khác; cam kết trên là về luồng chatbot, không phải toàn tiến trình BE chạy không cần database.
+Câu trả lời RAG gồm summary, steps, bullets, note. BE kiểm tra ID nguồn, trích dẫn nguyên văn, kiểu/độ dài, số liệu có trong nguồn và không nhận URL/HTML tự sinh. Nếu chọn nguồn hợp lệ nhưng phần diễn đạt không đạt kiểm tra, dùng nội dung nguồn của chunk đó. Các kiểm tra giảm sai sót, không chứng minh mọi câu diễn đạt đều đúng ngữ nghĩa.
 
-## Kiến trúc và giới hạn trả lời
+## 2. Nguồn hướng dẫn dùng chung
 
-1. FE gửi duy nhất câu hỏi hiện tại (tối đa 500 ký tự) và ngôn ngữ.
-2. BE kiểm tra validation, không áp trần số request/phút hoặc ngày tự đặt.
-3. Nếu khớp chính xác câu hỏi/alias sau chuẩn hóa: trả nội dung nguồn có bố cục tóm tắt, bước thực hiện hoặc gạch đầu dòng, không gọi provider.
-4. Nếu chưa khớp và có Gemini, gửi câu hỏi hiện tại cùng các FAQ và nội dung tham khảo theo ngôn ngữ được chọn. Trong **một lần gọi**, AI chọn một FAQ và diễn đạt lại phù hợp câu hỏi. Model chính/dự phòng giữ nguyên. Không gửi source code, hồ sơ tài khoản hoặc lịch sử hội thoại.
-5. Schema đầu ra gồm faqId, summary, steps, bullets, note, evidence. BE yêu cầu response hoàn tất, JSON hợp lệ, ID trong allowlist; kiểm tra độ dài, kiểu dữ liệu, trích dẫn nguyên văn từ FAQ được chọn, số liệu và URL/HTML. NONE không có nội dung trả lời.
-6. Nội dung soạn lại hợp lệ được trả trong content; answer vẫn chứa bản text để tương thích. SourceTitle/sourcePath luôn lấy từ catalog. Nếu đã chọn FAQ hợp lệ nhưng phần soạn lại thiếu hoặc không đạt kiểm tra, trả đáp án nguồn có cấu trúc, không gọi AI lần nữa.
-7. NONE trả UNSUPPORTED và dừng, không hỏi model dự phòng để tìm một kết quả khác. Thiếu key, hết khả năng xử lý, JSON lỗi, nguồn không hợp lệ hoặc safety block trả UNAVAILABLE, hướng người dùng sang gợi ý/hướng dẫn. Không fallback sang câu trả lời tự do.
+File chuẩn: [faq.json](../library-recommendation-module/src/main/resources/chatbot/faq.json).
 
-### Luồng model dự phòng
+Root gồm revision (số nguyên dương) và entries. Mỗi entry có id, sourcePath, vi/en; mỗi bản dịch gồm question, answer, aliases. Catalog hiện có 20 chủ đề song ngữ. BE kiểm tra metadata/câu hỏi trùng khi khởi động; exact match chuẩn hóa cả câu có/không dấu.
 
-```text
-Câu mẫu/alias → FAQ đã duyệt, không gọi AI
-Cách hỏi khác → model chính nếu không trong thời gian nghỉ sau lỗi provider
-  → nội dung hợp lệ / FAQ có đáp án gốc dự phòng / NONE: kết thúc, không gọi dự phòng
-  → safety block / output không hợp lệ: kết thúc an toàn, không gọi dự phòng
-  → 429, 408, 5xx, timeout/mạng hoặc model 404: tạm nghỉ model chính và thử model dự phòng
-  → model dự phòng lỗi/đang nghỉ: trả UNAVAILABLE + hướng về FAQ gợi ý
-```
+Website lấy cùng nguồn qua GET /api/v1/help/content?language=vi|en:
+- Trang Hướng dẫn và FAQ render nguồn chuẩn này.
+- Giới thiệu/Liên hệ dùng snippet theo chủ đề tương ứng.
+- FAQ đọc thêm API chính sách hiện hành. Lỗi tải có nút thử lại, không dùng giá trị mặc định giả định.
 
-- Mỗi câu hỏi tối đa hai HTTP request AI, mỗi model tối đa một lần; không vòng lặp retry, không sleep chặn request. Fallback có thể trả NONE và vẫn phải dừng.
-- Bỏ qua model đang nghỉ sau lỗi thực tế; model khác vẫn có thể xử lý. Model cấu hình trùng chỉ được gọi một lần; để fallback rỗng nếu muốn tắt dự phòng. Không có bộ đếm hạn mức cục bộ.
-- 400/401/402/403 và các lỗi HTTP khác ngoài nhóm cho phép không gọi dự phòng; tạm ngừng toàn bộ classifier 60 giây để tránh lặp request sai key/cấu hình. Không log key, câu hỏi, response body hoặc exception raw.
-- 429 nghỉ ít nhất 60 giây, tôn trọng thời điểm muộn hơn từ Retry-After (số giây hoặc HTTP date) và RetryInfo.retryDelay. Nếu QuotaFailure có quotaId/quotaMetric cho biết hết ngày, nghỉ đến lần reset nửa đêm Pacific tiếp theo, hoặc lâu hơn nếu provider yêu cầu.
-- 404 nghỉ 10 phút; lỗi mạng/408/5xx nghỉ ít nhất 15 giây, HTTP 408/5xx còn tôn trọng Retry-After. Hết thời gian nghỉ mới được thử lại trong câu hỏi sau.
-- Không coi model dự phòng là quyền vượt quota, không hứa hai hạn mức 500 sẽ thành 1.000 câu trả lời. Quota provider vẫn có thể bị dùng bởi phần metadata, project khác luồng hoặc giới hạn bổ sung.
-- Generation config không gửi temperature/topP/topK cũ khi chuyển Gemini 3.x. Yêu cầu JSON có cấu trúc, giới hạn output 1536 token. Không bật search, URL tools hoặc công cụ khác.
+**Cập nhật nội dung:** sửa JSON, tăng revision theo số nguyên tăng dần, kiểm thử và build/deploy BE. Không cần migration mới hoặc chèn embedding bằng tay. Catalog nạp khi BE khởi động; không có CMS/hot reload trong bản này.
 
-Tham khảo: [quota và reset Pacific](https://ai.google.dev/gemini-api/docs/rate-limits), [chuyển Gemini 3.5 Flash-Lite](https://ai.google.dev/gemini-api/docs/generate-content/whats-new-gemini-3.6), [lỗi và retry](https://ai.google.dev/gemini-api/docs/troubleshooting).
+## 3. Embedding, chunk và phiên bản
 
-AI vẫn có thể chọn nhầm FAQ hoặc diễn đạt sai. Kiểm tra schema, trích dẫn và số liệu chỉ giảm rủi ro; không chứng minh mọi mệnh đề đều được nguồn hỗ trợ. Không cam kết loại bỏ hoàn toàn hallucination. Prompt không phải hàng rào tuyệt đối; cần đánh giá thực tế với câu hỏi ngoài phạm vi, nhiều ý và prompt injection trước khi công bố độ chính xác. FAQ cũ/sai cũng tạo câu trả lời sai dù model chọn đúng; quản lý nội dung là trách nhiệm vận hành.
+AI Gateway tái sử dụng model embedding đã nạp (AI_ETL_EMBEDDING_MODEL, mặc định bkai-foundation-models/vietnamese-bi-encoder). Vector chatbot tách khỏi vector sách, không dùng embedding API trả phí.
 
-Tài liệu kỹ thuật provider: [Gemini structured output](https://ai.google.dev/gemini-api/docs/generate-content/structured-output). Schema không tự chứng minh đáp án phù hợp về ngữ nghĩa.
+- Tiếng Việt tách từ bằng PyVi; query và tài liệu dùng cùng tiền xử lý.
+- Ưu tiên đoạn/câu/bước; câu dài mới tách theo từ. FAQ ngắn có thể giữ một chunk.
+- Tối đa min(224, model.max_seq_length - 8) token, tính cả tiêu đề và special tokens bằng tokenizer thực tế; không cắt cụt âm thầm.
+- Overlap các đơn vị hoàn chỉnh ở cuối, tối đa 32 token; giảm/bỏ overlap nếu không vừa ngân sách.
+- Vector chuẩn hóa, 768 chiều. Model khác chiều bị từ chối.
+- Truy xuất kết hợp cosine pgvector và từ khóa TF-IDF char n-gram (chuẩn hóa dấu), ghép thứ hạng RRF rồi lấy top 5 cùng ngôn ngữ. Model Việt đơn lẻ bỏ sót nhiều cách diễn đạt tiếng Anh nên cần nhánh từ khóa bổ sung.
+- Candidate cần cosine ≥ 0,35 hoặc lexical ≥ 0,15; hai điểm giữ riêng, không coi là xác suất đúng. Đây là ngưỡng ban đầu cho kho hướng dẫn nhỏ; BE tiếp tục kiểm tra nguồn và model phải từ chối khi nguồn không đủ. Tối đa 2.000 candidate trong một lượt truy xuất; cần thiết kế chỉ mục lexical riêng nếu mở rộng kho lớn.
 
-## Nguồn nội dung và cách cập nhật
+BE kiểm tra index khi ApplicationReady và mỗi 60 giây, bất đồng bộ. Khóa cục bộ và PostgreSQL advisory lock tránh hai job xuất bản cùng lúc. Input chunk không đổi được tái sử dụng vector; model/weight revision/context hoặc pipeline đổi sẽ lập lại vector tương ứng.
 
-Catalog tại [faq.json](../library-recommendation-module/src/main/resources/chatbot/faq.json), hiện có 20 chủ đề công khai: tác giả, tổng quan, tài khoản, tìm/mượn/đặt trước/nhận/gia hạn/trả, xem lịch sử, tìm quy định, phạt/cọc, mất/hỏng, yêu thích, thông báo, liên hệ và giới hạn riêng tư.
+Version là SHA-256 catalog. Revision tăng dần ngăn deployment cũ ghi đè mới. Quên tăng revision khi sửa nội dung bị từ chối 409. Khi đổi tiền xử lý, tăng PIPELINE trong chatbot_knowledge.py. HF commit hash được ghi vào model identity nếu model cung cấp; model local không có metadata phải đổi model ID/pipeline thủ công khi đổi weights.
 
-Mỗi mục gồm:
+Generation mới chỉ thành active sau khi toàn bộ chunk/vector hợp lệ và transaction commit. Giữ active + một bản trước; encode/DB lỗi không làm trống active. BE không dùng vector khác version. Rollback về BE revision cũ vẫn có FAQ/tool đọc nhưng RAG không dùng index mới hơn; muốn khôi phục nội dung cũ phải phát hành lại với revision cao hơn.
 
-```json
-{
-  "id": "borrow",
-  "sourcePath": "/publicpage/guide",
-  "vi": {
-    "question": "Làm cách nào để mượn sách?",
-    "answer": "Nội dung hướng dẫn được duyệt...",
-    "aliases": ["Hướng dẫn mượn sách"]
-  },
-  "en": {
-    "question": "How can I borrow a book?",
-    "answer": "Reviewed instructions...",
-    "aliases": ["How do I borrow books?"]
-  }
-}
-```
+BE kiểm tra lại topic, sourcePath, điểm hữu hạn và chunk thực sự thuộc nguồn hiện hành trước khi diễn đạt.
 
-- Duyệt nội dung theo UI/nghiệp vụ thật, không chép nguyên tài liệu bảo vệ hoặc ghi thông tin kỹ thuật nhạy cảm.
-- ID duy nhất dạng chữ thường/gạch dưới; câu hỏi/alias phải không trùng sau chuẩn hóa, kể cả giữa hai ngôn ngữ.
-- SourcePath chỉ cho phép các trang công khai guide, faq, about, contact, privacy-policy. Đây là link đọc thêm, không phải bằng chứng bot đã crawl/kiểm chứng nội dung trang tại thời điểm trả lời.
-- Không chép cứng mức cọc, ngày mượn, tồn kho hoặc nợ đang thay đổi. Hướng dẫn người dùng xem màn hình chính thức.
-- Chạy test, review và deploy lại BE sau khi sửa catalog. Không cần migration hoặc index vector.
+## 4. Allowlist công cụ
 
-## API
+| Công cụ | Phạm vi |
+|---|---|
+| search_library_help | Hướng dẫn công khai đã duyệt |
+| get_current_circulation_policy | Quy định hiện tại; không lộ Admin sửa chính sách |
+| search_catalog | Tên/tác giả/ISBN, có/không dấu, cơ sở |
+| get_publication_details | Metadata, mô tả/tóm tắt đã lưu; không đọc PDF/URL upload |
+| get_publication_availability | AVAILABLE chưa chờ cất kệ; barcode/cơ sở/kệ; không lộ người giữ |
+| list_publications | Mới nhất/mượn nhiều; không chạy job cập nhật |
+| get_publication_rating_summary | Trung bình, tổng, phân bố sao; không đọc danh tính người đánh giá |
+| get_my_loans | Đang mượn/quá hạn; có thể hỏi riêng phiếu chờ nhận |
+| get_my_loan_history | Đã trả, lọc ngày mượn/trả theo giờ Việt Nam |
+| get_my_fines | Của mình; UNPAID mặc định, PAID/ALL khi yêu cầu |
+| get_my_reservations | Trạng thái/hàng đợi/hạn nhận/cơ sở của mình |
+| get_my_wishlist | Yêu thích của mình, không tăng lượt xem |
+| get_my_notifications | Thông báo của mình, không đánh dấu đã đọc |
 
-Hai endpoint công khai, chỉ mở đúng HTTP method, response có Cache-Control: no-store. FE đánh dấu public để không gửi Bearer token cũ hoặc kích hoạt refresh/login không cần thiết.
+Schema không có userId/MSSV, URL hoặc SQL. BE từ chối tham số thừa/sai kiểu, ID vượt Long, ngày/trạng thái sai, page ngoài 0..1000. SELECT dùng bind parameters; các đoạn SQL ghép chỉ từ whitelist cố định. Adapter dùng transaction readOnly, không gọi controller/use case có tracking/ghi dữ liệu.
 
-```http
-GET /api/v1/chatbot/faqs?language=vi
-POST /api/v1/chatbot/messages
-Content-Type: application/json
+Mỗi trang tối đa 5 thẻ; page bắt đầu 0. Tổng count/tiền tính trên toàn bộ bộ lọc, không cộng trang đầu. Chưa có bộ nhớ hội thoại: khi hỏi trang tiếp phải nêu lại chủ đề/tên sách. Nhiều đầu sách phù hợp được trả danh sách để người dùng chỉ rõ tên/ISBN/mã. Khả dụng là snapshot, không giữ chỗ.
 
-{"message":"Làm cách nào để mượn sách?","language":"vi"}
-```
+## 5. API và quyền
 
-Danh sách gợi ý trả các id/question, không chứa đáp án. POST dùng ApiResponseApp, data gồm:
+| Endpoint | Quyền |
+|---|---|
+| GET /api/v1/help/content?language=vi | Public; nguồn chuẩn, revision, version |
+| GET /api/v1/chatbot/faqs?language=vi | Public; câu hỏi gợi ý |
+| POST /api/v1/chatbot/messages | Public; luôn không có identity kể cả body cố chèn userId |
+| POST /api/v1/chatbot/my/messages | JWT bắt buộc; tool cá nhân chỉ dành STUDENT/FACULTY |
 
-```json
-{
-  "status": "ANSWERED",
-  "faqId": "borrow",
-  "answer": "Bản text của câu trả lời",
-  "content": {
-    "summary": "Tóm tắt ngắn",
-    "steps": ["Bước thực hiện khi cần"],
-    "bullets": [],
-    "note": ""
-  },
-  "sourceTitle": "Làm cách nào để mượn sách?",
-  "sourcePath": "/publicpage/guide"
-}
-```
+Body chat chỉ có message và language (vi/en). Không gửi lịch sử, identity hoặc token trong body. FE dùng Authorization hiện có của Axios cho endpoint riêng; public endpoint vẫn tokenless.
 
-Các status nghiệp vụ: ANSWERED, UNSUPPORTED, UNAVAILABLE; hai trạng thái sau không giả mạo nguồn. Request rỗng/quá dài/ngôn ngữ POST không hợp lệ trả HTTP 400. Google trả 429 được xử lý bên trong chuỗi dự phòng; nếu không còn model dùng được thì API trả data.status=UNAVAILABLE, không tự tạo lỗi quota 429 theo số lượt của ứng dụng. Gateway triển khai riêng vẫn có thể trả HTTP 429. Ngôn ngữ mặc định tiếng Việt.
+Hai POST chat là truy vấn: được loại khỏi audit filter dành cho thao tác ghi, không tạo audit_logs cho từng câu hỏi. Lỗi validation trả 400 chung, tránh logger MVC ghi rejected field chứa nội dung chat. Audit các endpoint thay đổi nghiệp vụ khác giữ nguyên.
 
-## Cấu hình và triển khai
+Response giữ status, faqId, answer, sourceTitle, sourcePath, content; thêm sources, cards, total, page, retrievedAt. Các trạng thái: ANSWERED, CLARIFY, AUTH_REQUIRED, UNSUPPORTED, UNAVAILABLE. Private endpoint chưa đăng nhập trả HTTP 401; AI/index lỗi trả trạng thái câu trả lời, không dữ liệu giả. Cache-Control: no-store.
 
-Đặt trên **Backend** qua môi trường, không đặt khóa vào biến VITE hoặc commit secret:
+Các đường BE → AI nội bộ:
+- GET /internal/chatbot/knowledge/status
+- POST /internal/chatbot/knowledge/sync (revision, version, documents công khai)
+- POST /internal/chatbot/knowledge/search (query, language, version, không identity)
 
-```dotenv
-CHATBOT_GEMINI_API_KEY=
-CHATBOT_GEMINI_MODEL=gemini-3.5-flash-lite
-CHATBOT_GEMINI_FALLBACK_MODEL=gemini-3.1-flash-lite
-```
+Tất cả yêu cầu header X-Chatbot-Service-Key. Chưa đặt key hoặc sai key trả 403. Chỉ BE giữ secret; không đưa ra FE hoặc mở reverse proxy public cho /internal/.
 
-- Khóa trống: hệ thống vẫn khởi động; gợi ý/câu mẫu và alias chính xác hoạt động, câu khác trả UNAVAILABLE. Không tự lấy key AI ETL để phát sinh phí ngoài ý muốn.
-- Có khóa: nhận diện câu hỏi và viết lại nội dung tham khảo bằng model được cấu hình trong cùng một lần gọi. Model phải hỗ trợ endpoint generateContent và structured JSON output; người vận hành xác nhận quyền truy cập/quota. Lượt triển khai này không gọi Gemini thật hay xác nhận key production.
-- docker-compose.prod.yml đã truyền .env.prod vào backend bằng env_file; thêm biến vào file môi trường trên máy chủ và recreate/redeploy BE, không chỉ đổi biến phía FE. Không cần chạy AI gateway hoặc worker để phục vụ FAQ.
-- Timeout mỗi lần gọi: kết nối 1 giây, đọc 4 giây; tối đa 4 lượt phân loại đồng thời cho cả chuỗi, không có hàng đợi. Hai lần gọi tuần tự thông thường nằm trong timeout FE 15 giây; đây không phải SLA hoặc deadline tuyệt đối cho mọi điều kiện mạng.
-- Đã bỏ mọi bộ đếm RPM/RPD/TPM tự đặt và trần tổng POST. Chỉ Google quyết định quota provider; khi nâng cấp tài khoản không cần sửa mức 12/450/60 trong ứng dụng. Ba biến hạn mức cũ không còn được đọc, có thể xóa khỏi .env.prod; không cần thay bằng giá trị lớn hơn.
-- Chỉ lưu thời điểm nghỉ trong RAM **sau lỗi thực tế**. Đây là chống gọi lặp lúc provider lỗi, không phải quota. Nếu đã nhận lỗi hết ngày rồi mới nâng cấp quota, cần chờ cooldown hiện tại hoặc recreate BE để xóa thời điểm nghỉ; model dự phòng vẫn có thể dùng trong thời gian đó. Restart/multi-instance không làm tăng quota thật của project.
-- Không có rate limiter hoặc giới hạn chi phí ứng dụng trong luồng này. Khi public rộng hoặc dùng gói tính phí, người vận hành cần thiết lập bảo vệ phù hợp ở gateway/provider và theo dõi sử dụng. Tối đa 4 lượt phân loại đồng thời chỉ bảo vệ tài nguyên xử lý, không chống spam hoặc bảo đảm phục vụ vô hạn.
-- Nếu .env.prod đã đặt model cũ thì giá trị đó vẫn ghi đè default mới: cần sửa rõ CHATBOT_GEMINI_MODEL và bổ sung CHATBOT_GEMINI_FALLBACK_MODEL, rồi recreate BE. Không tự đổi model hoặc khóa metadata. Không có cache câu hỏi hoặc gom request trùng trong bản cập nhật này.
+## 6. Cấu hình và release
 
-## Riêng tư và hiển thị
+Các file mẫu đã cập nhật: .env.prod.example, LMS_BE/.env.example, LMS_AI/.env.example. Không sửa secret thật.
 
-Hội thoại chỉ giữ trong state FE, tối đa 40 tin; không lưu localStorage, sessionStorage hay database. F5 xóa hội thoại; đóng/mở trong cùng phiên giữ tin, đổi ngôn ngữ/xóa sẽ reset. Đóng/xóa/unmount hủy request FE và bỏ qua phản hồi cũ. Abort ở trình duyệt **không bảo đảm** hủy được lời gọi provider đã bắt đầu ở BE.
+| Biến | Ý nghĩa |
+|---|---|
+| CHATBOT_GEMINI_API_KEY | Key server-side, có thể dùng key đã cấp quyền phù hợp |
+| CHATBOT_GEMINI_MODEL | Giữ mặc định cũ gemini-3.5-flash-lite |
+| CHATBOT_GEMINI_FALLBACK_MODEL | Giữ mặc định cũ gemini-3.1-flash-lite |
+| CHATBOT_RAG_ENABLED | true mặc định; false tắt sync/retrieval |
+| CHATBOT_INTERNAL_API_KEY | Secret dài ngẫu nhiên, giống nhau trên BE và AI |
+| AI_GATEWAY_BASE_URL | URL AI nội bộ, cấu hình phía BE |
+| DATABASE_URL | Database phía AI đã được migrate V63 |
 
-Đã bỏ hai dòng thông báo phạm vi và “Chỉ dùng câu trả lời đã duyệt” khỏi widget theo yêu cầu. FAQ riêng tư vẫn giải thích rằng câu hỏi và nội dung hướng dẫn có thể được gửi tới AI để soạn câu trả lời. Không có cơ chế tự động phát hiện/che mọi thông tin cá nhân người dùng tự gõ. Hạ tầng/proxy có thể có access log theo cấu hình riêng; cần kiểm tra không ghi request body, key hoặc thông tin nhạy cảm. Code chatbot không log câu hỏi, provider body hay exception chứa secret.
+Tên Gemini là cấu hình sẵn có, không phải cam kết Google luôn cung cấp model/quota đó. Chọn model có quyền truy cập thực tế trong project của bạn. Compose production dùng chung env file cho BE/AI; chạy riêng cần cấp internal key trùng nhau cho hai service.
 
-Đáp án được render bằng đoạn văn, danh sách ol/ul và phần lưu ý riêng; hỗ trợ light/dark, Việt/Anh. Không dùng dangerouslySetInnerHTML/Markdown, không render link do AI tạo. FE cũ vẫn đọc answer; FE mới vẫn nhận được response cũ không có content. Link dùng React Router Link để tương thích BrowserRouter; FE kiểm tra allowlist nguồn. Dialog là **non-modal**, hỗ trợ mở/focus, Escape, khôi phục focus; không trap focus hoặc khóa trang như modal.
+Thứ tự release:
+1. Staging có pgvector và quyền Flyway tạo extension/schema. Kiểm tra quyền/schema production trước release.
+   Nếu AI dùng DB role khác Flyway, cấp SELECT/INSERT/UPDATE/DELETE trên hai bảng ai_engine.chatbot_knowledge_* cho đúng role AI; không cấp quyền nghiệp vụ thêm cho chatbot.
+2. BE chạy V63__chatbot_knowledge.sql: tạo hai bảng knowledge, không sửa bảng nghiệp vụ hoặc migration đã phát hành; không embedding trong migration.
+3. AI có PyVi/router nội bộ. BE/AI lệch thứ tự tạm thời được xử lý bằng sync thử lại mỗi 60 giây, không chặn BE startup.
+4. Cấu hình internal key, bật RAG; kiểm tra status đúng version/ready qua mạng nội bộ.
+5. FE: kiểm tra nguồn website, exact FAQ, câu hỏi diễn đạt lại, tra sách và hai tài khoản bạn đọc khác nhau.
 
-## Kiểm thử và checklist
+Tắt RAG hoặc bỏ internal key: FAQ chính xác và tool đọc vẫn còn; tool cần Gemini phân loại vẫn phụ thuộc Gemini. Để trống Gemini key sẽ chỉ còn FAQ khớp chính xác ở chat. Không đặt trần RPM/RPD riêng; giữ concurrency bốn request và cooldown provider.
 
-BE: FaqChatbotServiceTest, FaqIntentSelectorTest, FaqModelCooldownTest, FaqChatbotControllerTest và FaqPublicSecurityTest. Provider dùng MockRestServiceServer, không tạo request thật. Ngoài các guard cũ, test kiểm tra model chính/dự phòng, NONE/safety/output lỗi không failover, 429/Retry-After/RetryInfo, lỗi hết ngày/reset Pacific, mạng/timeout, model không tồn tại và key/payload sai. Test hồi quy chứng minh FAQ không bị chặn sau 60 request, 501 lần gọi AI tuần tự tại cùng mốc thời gian vẫn được xử lý khi provider mock chấp nhận, nhưng vẫn chỉ có 4 lượt xử lý AI đồng thời.
+429 tôn trọng Retry-After/quota metadata và có thể dùng model dự phòng. 404/network/5xx có cooldown. Sai key/payload hoặc output/safety lỗi không thử model khác để tìm câu trả lời dễ dãi hơn. Không dùng kiến thức ngoài khi hết quota.
 
-FE: FaqChatbot.test.tsx, chatbotService.test.ts. Kiểm tra bố cục summary/steps/bullets/note, dự phòng khi content lỗi, escape HTML, bỏ hai dòng thông báo, không gửi khi gõ, Enter/Shift+Enter, gợi ý, request đơn, focus/Escape, abort/response cũ, lỗi/429, đổi ngôn ngữ, render text an toàn và nguồn allowlist.
+## 7. FE và riêng tư
 
-```powershell
-# LMS_BE
-mvn test -pl library-recommendation-module,library-auth-module -am
-# LMS_FE
-npm test -- --runInBand
-npx tsc --noEmit
-npm run build
-```
+Widget Việt/Anh, light/dark; Enter gửi, Shift+Enter xuống dòng; loading/error, gợi ý, xóa hội thoại, Escape. Hiển thị tóm tắt/bước/bullet/lưu ý và thẻ sách/phiếu có nguồn/timestamp. Không render HTML từ model; link nội bộ được whitelist, chi tiết mở tab mới bằng Router Link.
 
-Trước production, kiểm tra trên trình duyệt ở 320/375px, desktop, zoom, light/dark; xác nhận không che banner cookie, thông báo/quầy và không làm trang nhảy cuộn. jsdom không chứng minh được bố cục thực tế.
+Đổi ngôn ngữ, đăng nhập/đăng xuất/đổi phiên: unmount panel, hủy request, xóa nội dung riêng tư. Logout xóa state ngay, không chờ HTTP hoàn tất; storage event hỗ trợ đổi phiên giữa các tab. Không lưu transcript vào localStorage. Panel upload đang hoạt động được ưu tiên góc màn hình, chat tạm ẩn/hủy request.
 
-Kiểm tra với key thật chỉ trên môi trường được phép: paraphrase tiếng Việt/không dấu/tiếng Anh, ngoài phạm vi, hỏi nợ cá nhân, yêu cầu hành động, câu trộn nhiều chủ đề và injection. Test mock cho NONE chỉ bảo vệ nhánh xử lý, không chứng minh Gemini thực tế phân loại đúng mọi câu. Không công bố tỷ lệ chính xác nếu chưa có bộ đánh giá và kết quả thật.
+## 8. Kiểm thử và giới hạn nghiệm thu
 
-### Kết quả bản FAQ ban đầu ngày 26/10/2026 (trước nâng cấp dự phòng)
+Chạy tại từng thư mục:
+- LMS_BE: mvn --batch-mode --no-transfer-progress test (cần Docker).
+- LMS_FE: npm test -- --runInBand; npx tsc --noEmit; npm run build.
+- LMS_AI: python -m pytest -q -rs.
 
-- 30 test mới BE: 28 test catalog/service/provider/API và 2 test qua security chain thật, đều pass, không skip.
-- Toàn bộ FE: 31 suites, 188 test pass; có 14 test mới cho widget/service. TypeScript noEmit pass; Vite build pass, còn cảnh báo chunk lớn trên 500 kB.
-- Toàn bộ BE: 55 classes, 304 test; 278 pass, 25 skip, 1 error. Các module user/catalog/circulation/recommendation/auth pass; Bootstrap integration không tìm được Docker. Không tắt hoặc sửa test cũ để báo xanh.
-- Không chạy Gemini thật, không sửa secret/môi trường production, không thay đổi schema/database. Chưa kiểm tra bố cục bằng trình duyệt thật; cần thực hiện checklist ở trên trước khi kết luận thị giác.
+AI integration tests dùng riêng CHATBOT_TEST_DATABASE_URL với dbname bắt buộc chatbot_test, tuyệt đối không dùng DATABASE_URL/production. CI đã tạo pgvector service và database test. Thiếu biến này, bốn test PostgreSQL RAG skip có lý do. Ba test live API cũ vẫn opt-in.
 
-### Kiểm tra bản dự phòng model ngày 26/10/2026 (trước khi bỏ trần cục bộ)
+Bao phủ: allowlist/identity injection/JWT/ownership; không gửi private results cho LLM; SQL thực tế của các adapter không làm tăng interaction/đánh dấu notification; tổng tiền toàn bộ bộ lọc; source/version không hợp lệ; token budget/overlap; sync no-op/vector reuse/giữ hai generation; encode lỗi giữ active; revision cũ bị từ chối; FE loading/error/session reset.
 
-- 55 test FAQ/security pass: service 12, selector 29, ngân sách 6, controller 6, security 2; không skip. Các test provider dùng HTTP giả lập, không chứng minh key/quota hoặc độ chính xác của model thật.
-- Chạy toàn bộ module recommendation/auth và các module phụ thuộc: thành công.
-- Toàn bộ FE: 31 suites, 188 test pass; TypeScript và build pass. Không sửa FE trong task dự phòng; thay đổi Facebook có sẵn trong workspace được giữ riêng.
-- Đã chạy toàn bộ BE: các module nghiệp vụ thành công, Bootstrap vẫn có 1 lỗi và 25 skip do Docker không hoạt động. Không chỉnh test cũ để che lỗi.
-- Không gọi Gemini thật, không đọc/sửa .env.prod, không deploy, không thêm database hoặc migration. Kiểm tra với key/model của project trên môi trường được phép vẫn cần được thực hiện trước khi xác nhận vận hành thực tế.
+Hai test BorrowFlow và Reservation đã đổi image PostgreSQL test sang pgvector để chạy migration mới; không xóa hoặc nới assertion nghiệp vụ cũ.
 
-### Kiểm tra sau khi bỏ trần cục bộ ngày 26/10/2026
+Kết quả chạy local ngày 27/10/2026:
 
-- Đã bỏ ba tham số giới hạn, mọi bộ đếm request/phút/ngày và test yêu cầu chặn theo hạn mức tự đặt. Những test đó được thay bằng hồi quy cho yêu cầu mới, không bỏ guard về nguồn, quyền, validation hoặc output AI.
-- Clean build recommendation/auth và các module phụ thuộc: 109 test pass, gồm 53 test FAQ/security. Test dùng provider giả lập để xác nhận vượt các mốc cũ vẫn gọi được khi provider chấp nhận; không dùng kết quả này để tuyên bố Google đã cấp quota tương ứng.
-- Vẫn có test cooldown theo lỗi quota Google, Retry-After/RetryInfo, model dự phòng và giới hạn 4 lượt phân loại đồng thời. Không có cache hoặc database mới.
-- Toàn bộ FE: 31 suites, 188 test pass; TypeScript và build pass. Còn cảnh báo chunk lớn như trước; không sửa giao diện Facebook đang có trong workspace.
-- Không gọi Gemini thật, sửa .env.prod hoặc deploy. Chỉ giữ key và tên hai model trong cấu hình ví dụ; khi triển khai cần cập nhật server theo phiên bản mới.
+| Kiểm tra | Kết quả |
+|---|---|
+| Toàn bộ Maven test, gồm PostgreSQL/Testcontainers và Flyway V63 | 64 lớp/suite, 383 test đạt, 0 lỗi, 0 skip |
+| Jest FE | 34 suite, 221 test đạt |
+| TypeScript và Vite production build | Đạt; còn cảnh báo bundle lớn có sẵn |
+| Pytest AI, có database pgvector riêng | 92 đạt, 3 live API test opt-in skip |
 
-### Kiểm tra bản AI diễn đạt từ nội dung tham khảo ngày 26/10/2026
+Các con số trên là lượt xác minh mã nguồn, không phải báo cáo chạy trên production hoặc đo độ chính xác Gemini.
 
-- Một lần gọi AI vừa chọn FAQ vừa viết lại nội dung theo câu hỏi; schema gồm tóm tắt, bước thực hiện, gạch đầu dòng, lưu ý và trích dẫn kiểm tra nội bộ. Không có lần gọi AI thứ hai chỉ để viết lại.
-- Câu gợi ý/alias chính xác vẫn trả nguồn ngay để hoạt động khi không có key hoặc hết quota. Nội dung dự phòng được tách thành đoạn/danh sách; không lặp bước đầu ở phần tóm tắt. Câu hỏi tự do không xác định được nguồn sẽ được hướng về gợi ý, không tự đoán đáp án.
-- Kiểm thử mới kiểm tra dữ liệu tham khảo theo ngôn ngữ, viết lại trong một request, trích dẫn giả, số liệu ngoài nguồn, URL/HTML, nguồn liên kết do server quản lý và API content tương thích answer cũ.
-- Backend: recommendation/auth và các module phụ thuộc có 116 test pass, 0 failure/error/skip; gồm 60 test FAQ/security. Không sửa test nghiệp vụ khác để đạt kết quả này. Không chạy lại toàn bộ Bootstrap trong lượt này; giới hạn Docker của lần chạy trước vẫn được ghi trong lịch sử trên.
-- Frontend: 31 suites, 191 test pass; TypeScript noEmit và Vite build pass. Có kiểm tra danh sách bước, gạch đầu dòng, lưu ý, fallback khi content thiếu/sai và escape HTML. Đã bỏ hai dòng thông báo theo yêu cầu, cùng aria-describedby không còn đích tham chiếu. Build còn cảnh báo chunk trên 500 kB như trước.
-- Không gọi Gemini thật, kiểm thử trình duyệt thật, đọc/sửa .env.prod hoặc deploy. Prompt và trích dẫn chưa đủ để chứng minh model không bao giờ diễn đạt sai; cần đánh giá với key/model thực tế trước khi công bố chất lượng trả lời.
+Bộ test tự động không thay thế nghiệm thu Gemini thật: thử Việt/Anh/không dấu, sách trùng tên, ngoài phạm vi/prompt injection, đúng nguồn/số liệu, độ trễ và quota/model trước công bố chất lượng. Không có giao dịch thật hoặc truy cập production trong bước phát triển này.
+
+Đánh giá retrieval riêng với weights thật: tại LMS_AI chạy python -m scripts.evaluate_chatbot_retrieval. Script không gọi DB/Gemini, không đọc dữ liệu tài khoản. Lượt kiểm tra 27/10/2026: 40 tài liệu → 40 chunk, dài nhất 180 token trong context 256, 768 chiều; tìm được nguồn mong đợi trong top 5 ở 19/20 câu diễn đạt lại Việt/Anh. Một câu tiếng Anh về kéo dài thời hạn mượn còn bị bỏ sót. Bộ 20 câu dùng để chỉnh bước truy xuất, không phải tập nghiệm thu độc lập hoặc độ chính xác trả lời 95%. Cần mở rộng bộ đánh giá và kiểm tra routing/diễn đạt Gemini trên staging.

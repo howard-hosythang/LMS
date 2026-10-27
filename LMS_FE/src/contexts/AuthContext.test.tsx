@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 import authService from '../../api/authService';
 
@@ -21,10 +21,11 @@ const makeToken = (payload: Record<string, unknown>) => {
 };
 
 const AuthProbe = () => {
-  const { userType, login, logout, socialLogin } = useAuth();
+  const { userType, sessionVersion, login, logout, socialLogin } = useAuth();
   return (
     <div>
       <span data-testid="user-type">{userType ?? 'none'}</span>
+      <span data-testid="session-version">{sessionVersion}</span>
       <button onClick={() => login('student')}>Manual student</button>
       <button onClick={() => login('email@hcmut.edu.vn', 'secret')}>Password login</button>
       <button onClick={() => socialLogin('google', 'code')}>Social login</button>
@@ -104,5 +105,33 @@ describe('AuthProvider', () => {
     expect(localStorage.getItem('accessToken')).toBeNull();
     expect(localStorage.getItem('refreshToken')).toBeNull();
     expect(localStorage.getItem('userType')).toBeNull();
+  });
+
+  it('clears private state immediately and a slow logout cannot erase a newer login', async () => {
+    localStorage.setItem('userType', 'student');
+    localStorage.setItem('refreshToken', 'old-refresh');
+    let finishLogout!: () => void;
+    (authService.logout as jest.Mock).mockReturnValue(new Promise<void>(resolve => { finishLogout = resolve; }));
+    (authService.login as jest.Mock).mockResolvedValue({ data: {
+      accessToken: makeToken({ scope: 'ROLE_STUDENT' }), refreshToken: 'new-refresh',
+    } });
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+    fireEvent.click(screen.getByText('Logout'));
+    expect(screen.getByTestId('user-type')).toHaveTextContent('none');
+    expect(screen.getByTestId('session-version')).toHaveTextContent('1');
+    fireEvent.click(screen.getByText('Password login'));
+    await waitFor(() => expect(localStorage.getItem('refreshToken')).toBe('new-refresh'));
+    await act(async () => { finishLogout(); });
+    expect(screen.getByTestId('user-type')).toHaveTextContent('student');
+    expect(localStorage.getItem('refreshToken')).toBe('new-refresh');
+  });
+
+  it('invalidates the chat session after another tab clears authentication', () => {
+    localStorage.setItem('userType', 'student');
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+    localStorage.removeItem('userType');
+    act(() => { window.dispatchEvent(new StorageEvent('storage', { key: 'accessToken' })); });
+    expect(screen.getByTestId('user-type')).toHaveTextContent('none');
+    expect(screen.getByTestId('session-version')).toHaveTextContent('1');
   });
 });

@@ -30,6 +30,7 @@ public class SecurityConfig {
 
   public static final String[] PUBLIC_ENDPOINTS = {
       "/api/v1/chatbot/faqs",
+      "/api/v1/help/content",
       "/api/v1/publications/newest",
       "/api/v1/publications/search",
       "/api/v1/publications/{id}",

@@ -2,6 +2,9 @@ import { render, screen } from '@testing-library/react';
 import { LanguageProvider } from '../../contexts/LanguageContext';
 import ContactPage from '../../pages/public_pages/ContactPage';
 
+// Canonical help loading is covered by HelpCenter.test; these tests cover contact channels.
+jest.mock('../../components/HelpCenter', () => ({ HelpTopicSnippet: () => null }));
+
 jest.mock('react-router-dom', () => ({
   Link: ({ to, children, ...props }: any) => (
     <a href={to} {...props}>

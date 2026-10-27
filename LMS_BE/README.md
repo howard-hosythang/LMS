@@ -100,7 +100,7 @@ API chạy mặc định tại:
 
 ## Kiểm thử
 
-Tính năng mới: [Trợ lý FAQ — phạm vi, cấu hình Gemini và cập nhật hướng dẫn](docs/FAQ_CHATBOT.md).
+Tính năng mới: [Trợ lý tra cứu — RAG, công cụ chỉ đọc, cấu hình và cập nhật hướng dẫn](docs/FAQ_CHATBOT.md).
 
 Thành viên tham gia cần đọc [quy tắc đóng góp và kiểm thử chung](../CONTRIBUTING.md) và [hướng dẫn kiểm thử Backend](docs/TESTING.md). Các tài liệu quy định cách viết test, kiểm tra migration và cung cấp bằng chứng trong Pull Request.
 

@@ -1,10 +1,11 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import authService from '../api/authService';
 
 export type UserType = 'student' | 'librarian' | 'admin' | null;
 
 interface AuthContextType {
   userType: UserType;
+  sessionVersion: number;
   login: (username: string, password?: string) => Promise<UserType>;
   socialLogin: (registrationId: string, code: string) => Promise<{ role: UserType; isNewUser?: boolean }>;
   logout: () => void;
@@ -15,11 +16,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const [sessionVersion, setSessionVersion] = useState(0);
   const [userType, setUserType] = useState<UserType>(() => {
     // Load from localStorage if available
     const saved = localStorage.getItem('userType');
     return (saved as UserType) || null;
   });
+
+  useEffect(() => {
+    const changed = (event: StorageEvent) => {
+      if (event.key === 'accessToken' || event.key === 'userType' || event.key === null) {
+        setUserType(localStorage.getItem('userType') as UserType || null);
+        setSessionVersion(version => version + 1);
+      }
+    };
+    window.addEventListener('storage', changed);
+    return () => window.removeEventListener('storage', changed);
+  }, []);
 
   const handleToken = (accessToken: string, refreshToken: string): UserType => {
     let type: UserType = 'student';
@@ -47,6 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
     
     setUserType(type);
+    setSessionVersion(version => version + 1);
     localStorage.setItem('userType', type);
     return type;
   };
@@ -94,6 +108,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const logout = async () => {
     // 1. Gọi backend để đưa refreshToken vào blacklist
     const refreshToken = localStorage.getItem('refreshToken');
+    // Clear private UI immediately, even if the logout HTTP request takes time.
+    setUserType(null);
+    setSessionVersion(version => version + 1);
+    localStorage.removeItem('userType');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     if (refreshToken) {
       try {
         await authService.logout(refreshToken);
@@ -102,15 +122,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       }
     }
 
-    // 2. Clear state nội bộ và local storage
-    setUserType(null);
-    localStorage.removeItem('userType');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
   };
 
   return (
-    <AuthContext.Provider value={{ userType, login, socialLogin, logout }}>
+    <AuthContext.Provider value={{ userType, sessionVersion, login, socialLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );

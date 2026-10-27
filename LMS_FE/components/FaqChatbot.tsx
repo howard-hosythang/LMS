@@ -3,32 +3,15 @@ import { BookOpen, Loader2, MessageCircle, Send, Trash2, X } from 'lucide-react'
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUpload } from '../contexts/UploadContext';
-import { chatbotService, FaqAnswer, FaqContent, FaqSuggestion } from '../api/chatbotService';
+import { useAuth } from '../contexts/AuthContext';
+import { ChatbotAnswerBody, ChatbotCards, safeChatPath } from './ChatbotAnswerBody';
+import { chatbotService, FaqAnswer, FaqContent, FaqSuggestion, FaqCard, FaqSource } from '../api/chatbotService';
 
-type Message = { role: 'user' | 'assistant'; text: string; content?: FaqContent | null; sourceTitle?: string; sourcePath?: string };
-const safeSource = (path?: string) => !!path && /^\/publicpage\/(guide|faq|about|contact|privacy-policy)$/.test(path);
+type Message = { role: 'user' | 'assistant'; text: string; content?: FaqContent | null; sourceTitle?: string; sourcePath?: string; cards?: FaqCard[]; sources?: FaqSource[]; total?: number | null; page?: number | null; retrievedAt?: string | null };
 const focusClass = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900';
 
-function AnswerBody({ text, content }: { text: string; content?: FaqContent | null }) {
-  if (!content || typeof content.summary !== 'string' || typeof content.note !== 'string'
-    || !Array.isArray(content.steps) || !content.steps.every(step => typeof step === 'string')
-    || !Array.isArray(content.bullets) || !content.bullets.every(bullet => typeof bullet === 'string')) {
-    return <p className="whitespace-pre-wrap break-words">{text}</p>;
-  }
-  return <div className="space-y-3 break-words">
-    {content.summary && <p>{content.summary}</p>}
-    {content.steps.length > 0 && <ol className="list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700 dark:marker:text-blue-300">
-      {content.steps.map((step, index) => <li key={index} className="pl-1">{step}</li>)}
-    </ol>}
-    {content.bullets.length > 0 && <ul className="list-disc space-y-2 pl-5">
-      {content.bullets.map((bullet, index) => <li key={index}>{bullet}</li>)}
-    </ul>}
-    {content.note && <p className="border-l-2 border-blue-400 pl-3 text-slate-600 dark:text-slate-300">{content.note}</p>}
-  </div>;
-}
-
-/** No browser persistence, account access, HTML/Markdown rendering or conversation upload. */
-function FaqChatbotPanel({ language }: { language: 'vi' | 'en' }) {
+/** Only current questions are uploaded; private tool results stay server-rendered data. */
+function FaqChatbotPanel({ language, personal }: { language: 'vi' | 'en'; personal: boolean }) {
   const en = language === 'en';
   const t = (vi: string, english: string) => en ? english : vi;
   const [open, setOpen] = useState(false);
@@ -75,15 +58,23 @@ function FaqChatbotPanel({ language }: { language: 'vi' | 'en' }) {
     setBusy(true); setError(''); setDraft('');
     setMessages(previous => [...previous, { role: 'user' as const, text: question }].slice(-39));
     try {
-      const response = await chatbotService.ask(question, language, controller.signal);
+      const response = await (personal
+        ? chatbotService.ask(question, language, controller.signal, true)
+        : chatbotService.ask(question, language, controller.signal));
       if (controller.signal.aborted || current.current !== controller) return;
       const answer: FaqAnswer = response.data;
       setMessages(previous => [...previous, { role: 'assistant' as const, text: answer.answer,
-        content: answer.content, sourceTitle: answer.sourceTitle, sourcePath: answer.sourcePath }].slice(-40));
+        content: answer.content, sourceTitle: answer.sourceTitle, sourcePath: answer.sourcePath,
+        cards: answer.cards, sources: answer.sources, total: answer.total, page: answer.page, retrievedAt: answer.retrievedAt }].slice(-40));
     } catch (reason: unknown) {
       if (controller.signal.aborted || current.current !== controller) return;
-      const status = (reason as { response?: { status?: number } })?.response?.status;
-      setError(status === 429
+      const failure = reason as { status?: number; response?: { status?: number } };
+      const status = failure?.response?.status ?? failure?.status;
+      const authExpired = personal && (status === 401 || status === 403);
+      if (authExpired) setMessages([]);
+      setError(authExpired
+        ? t('Phiên tra cứu đã hết hiệu lực. Bạn hãy đăng nhập lại.', 'Your lookup session is no longer valid. Please sign in again.')
+        : status === 429
         ? t('Trợ lý đang nhận nhiều câu hỏi. Vui lòng thử lại sau một phút.', 'The assistant is receiving many questions. Please try again in a minute.')
         : t('Chưa gửi được câu hỏi. Bạn có thể thử lại hoặc mở hướng dẫn.', 'The question could not be sent. Please retry or open the guide.'));
       setDraft(question);
@@ -104,11 +95,20 @@ function FaqChatbotPanel({ language }: { language: 'vi' | 'en' }) {
         <button type="button" onClick={close} aria-label={t('Đóng trợ lý', 'Close assistant')} className={`rounded-lg p-2.5 hover:bg-blue-100 dark:hover:bg-slate-700 ${focusClass}`}><X aria-hidden="true" size={18} /></button>
       </header>
       <div ref={transcript} role="log" aria-label={t('Hội thoại hướng dẫn', 'Help conversation')} aria-live="polite" aria-relevant="additions" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
-        <p className="rounded-xl bg-slate-100 p-3 text-sm leading-relaxed dark:bg-slate-800">{t('Xin chào! Bạn cần hướng dẫn mượn sách, đặt trước hay sử dụng Library74? Mỗi câu hỏi nên tập trung vào một chủ đề.', 'Hello! Do you need help borrowing, reserving or using Library74? Please ask about one topic at a time.')}</p>
+        <p className="rounded-xl bg-slate-100 p-3 text-sm leading-relaxed dark:bg-slate-800">{t('Xin chào! Tôi có thể hướng dẫn sử dụng, tìm sách và tra cứu thông tin Library74. Bạn đọc đăng nhập có thể xem dữ liệu của chính mình.', 'Hello! I can help you use Library74, find books and look up library information. Signed-in readers can view their own records.')}</p>
         {messages.map((message, index) => <div key={index} className={`max-w-[95%] rounded-xl p-3 text-sm leading-relaxed ${message.role === 'user' ? 'ml-auto bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>
           <span className="sr-only">{message.role === 'user' ? t('Bạn: ', 'You: ') : t('Trợ lý: ', 'Assistant: ')}</span>
-          <AnswerBody text={message.text} content={message.role === 'assistant' ? message.content : undefined} />
-          {safeSource(message.sourcePath) && <Link to={message.sourcePath!} onClick={close} className={`mt-2 inline-block rounded text-xs font-semibold text-blue-700 underline dark:text-blue-300 ${focusClass}`}>
+          <ChatbotAnswerBody text={message.text} content={message.role === 'assistant' ? message.content : undefined} />
+          {message.cards && message.cards.length > 0 && <ChatbotCards cards={message.cards} language={language} />}
+          {message.total != null && <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+            {t('Tổng kết quả', 'Total results')}: {message.total} · {t('Trang', 'Page')} {(message.page ?? 0) + 1}
+          </p>}
+          {message.retrievedAt && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {t('Tra cứu lúc', 'Retrieved at')}: {new Date(message.retrievedAt).toLocaleString(en ? 'en-GB' : 'vi-VN')}
+          </p>}
+          {message.sources && message.sources.length > 1 && message.sources.filter(source => safeChatPath(source.path) && source.path !== message.sourcePath).map((source, sourceIndex) =>
+            <Link key={sourceIndex} to={source.path} onClick={close} className="mt-2 block text-xs text-blue-700 underline dark:text-blue-300">{source.title}</Link>)}
+          {safeChatPath(message.sourcePath) && <Link to={message.sourcePath!} onClick={close} className={`mt-2 inline-block rounded text-xs font-semibold text-blue-700 underline dark:text-blue-300 ${focusClass}`}>
             {t('Xem hướng dẫn: ', 'Read guide: ')}{message.sourceTitle}
           </Link>}
         </div>)}
@@ -145,8 +145,9 @@ function FaqChatbotPanel({ language }: { language: 'vi' | 'en' }) {
 export default function FaqChatbot() {
   const { language } = useLanguage();
   const { uploads } = useUpload();
+  const { userType, sessionVersion } = useAuth();
   // The existing upload panel occupies this corner and takes priority over help.
   if (uploads.length > 0) return null;
   // Language changes discard pending requests and local conversation instead of mixing responses.
-  return <FaqChatbotPanel key={language} language={language} />;
+  return <FaqChatbotPanel key={`${language}:${userType ?? 'guest'}:${sessionVersion ?? 0}`} language={language} personal={userType === 'student'} />;
 }

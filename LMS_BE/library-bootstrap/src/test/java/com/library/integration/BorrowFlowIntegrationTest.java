@@ -49,7 +49,8 @@ class BorrowFlowIntegrationTest {
 
     // ── PostgreSQL container (dùng chung cho cả test class) ──────────────────
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+        org.testcontainers.utility.DockerImageName.parse("pgvector/pgvector:pg15").asCompatibleSubstituteFor("postgres"))
         .withDatabaseName("library_test")
         .withUsername("test")
         .withPassword("test");

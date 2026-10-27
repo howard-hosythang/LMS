@@ -17,6 +17,8 @@ export const isPublicRequest = (config?: InternalAxiosRequestConfig | any): bool
 
   if (method !== 'get') return false;
   if (pathname === '/chatbot/faqs') return true;
+  if (pathname === '/help/content') return true;
+  if (pathname === '/circulation-policies') return true;
 
   if (pathname === '/publications/librarian') return false;
   if (pathname === '/publications/book-lookup') return false;

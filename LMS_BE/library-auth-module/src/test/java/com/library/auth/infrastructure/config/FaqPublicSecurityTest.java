@@ -37,6 +37,7 @@ class FaqPublicSecurityTest {
 
     @Test void anonymousFaqRequestsPassTheRealSecurityChainWithoutTokenOrUserLookup() throws Exception {
         mvc.perform(get("/api/v1/chatbot/faqs")).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/help/content")).andExpect(status().isOk());
         mvc.perform(post("/api/v1/chatbot/messages")).andExpect(status().isOk());
         verifyNoInteractions(decoder, converter);
     }
@@ -45,6 +46,8 @@ class FaqPublicSecurityTest {
         mvc.perform(get("/api/v1/chatbot/messages")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/v1/chatbot/faqs")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/librarians/dashboard")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/chatbot/my/messages")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/help/content")).andExpect(status().isUnauthorized());
     }
 
     @Configuration @EnableWebMvc
@@ -67,6 +70,7 @@ class FaqPublicSecurityTest {
     @RestController
     static class StubEndpoints {
         @GetMapping("/api/v1/chatbot/faqs") String suggestions() { return "reviewed questions"; }
+        @GetMapping("/api/v1/help/content") String help() { return "canonical content"; }
         @PostMapping("/api/v1/chatbot/messages") String message() { return "reviewed answer"; }
     }
 }

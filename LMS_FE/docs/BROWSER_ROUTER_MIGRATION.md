@@ -69,7 +69,7 @@ Không cần thay URI Google đang đăng ký nếu nó vốn là `https://libra
 - API vẫn trả JSON; asset không tồn tại trong `/assets/` trả 404; tải asset hiện có thành công.
 - Canonical, sitemap và URL chia sẻ không còn hash dùng làm route.
 
-Bỏ hash không tự tạo SSR/prerender. Trang React vẫn cần JavaScript để render; việc crawl/RAG tiếp tục được thảo luận riêng tại `LMS_BE/docs/CHATBOT_RAG_DISCUSSION.md`.
+Bỏ hash không tự tạo SSR/prerender. Trang React vẫn cần JavaScript để render; chatbot dùng nguồn hướng dẫn chuẩn của BE, không crawl website. Xem [kiến trúc chatbot](../../LMS_BE/docs/FAQ_CHATBOT.md).
 
 ## Kiểm thử mã nguồn
 

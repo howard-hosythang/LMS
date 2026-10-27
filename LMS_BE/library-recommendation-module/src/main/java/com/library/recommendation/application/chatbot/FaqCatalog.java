@@ -1,6 +1,5 @@
 package com.library.recommendation.application.chatbot;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.Normalizer;
@@ -14,17 +13,27 @@ import org.springframework.stereotype.Component;
 /** Only this reviewed, packaged resource is readable by the FAQ assistant. */
 @Component
 public class FaqCatalog {
+    public record Document(int revision, List<Entry> entries) {}
     public record Copy(String question, String answer, List<String> aliases) {}
     public record Entry(String id, String sourcePath, Copy vi, Copy en) {
         public Copy copy(String language) { return "en".equals(language) ? en : vi; }
     }
 
     private final List<Entry> entries;
+    private final int revision;
+    private final String version;
 
     public FaqCatalog(ObjectMapper mapper) throws IOException {
         try (var input = new ClassPathResource("chatbot/faq.json").getInputStream()) {
-            entries = List.copyOf(mapper.readValue(input, new TypeReference<List<Entry>>() {}));
+            var document = mapper.readValue(input, Document.class);
+            revision = document.revision();
+            if (revision < 1) throw new IllegalStateException("Knowledge revision must be positive");
+            entries = List.copyOf(document.entries());
         }
+        try {
+            version = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(mapper.writeValueAsBytes(entries)));
+        } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
         var ids = new HashSet<String>();
         var questions = new HashSet<String>();
         if (entries.isEmpty()) throw new IllegalStateException("Empty chatbot FAQ catalog");
@@ -50,6 +59,8 @@ public class FaqCatalog {
     }
 
     public List<Entry> entries() { return entries; }
+    public int revision() { return revision; }
+    public String version() { return version; }
     public Optional<Entry> find(String id) {
         return entries.stream().filter(entry -> entry.id().equals(id)).findFirst();
     }
